@@ -3,6 +3,7 @@ package escpos
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -54,6 +55,23 @@ func (d RecursosDirectorio) ImagenRecurso(nombre string) ([]byte, error) {
 		return nil, ErrRecursoNoEncontrado
 	}
 	return datos, err
+}
+
+// RecursosAlmacen entrega las imágenes guardadas en la base de datos del puente.
+type RecursosAlmacen struct {
+	Ctx  context.Context
+	Repo *almacen.RepoRecursos
+}
+
+func (r RecursosAlmacen) ImagenRecurso(nombre string) ([]byte, error) {
+	rec, err := r.Repo.Obtener(r.Ctx, nombre)
+	if errors.Is(err, almacen.ErrNoEncontrado) {
+		return nil, ErrRecursoNoEncontrado
+	}
+	if err != nil {
+		return nil, err
+	}
+	return rec.PNG, nil
 }
 
 // Comandos ESC/POS.
