@@ -1,0 +1,8 @@
+{
+  "version": "1",
+  "id": "3f2b8c1e-5a4d-4e7b-9c2a-1d0e6f8a7b90",
+  "impresora": "192.168.1.50:9100",
+  "operaciones": [
+    {"tipo": "texto", "valor": "Hola"}
+  ]
+}

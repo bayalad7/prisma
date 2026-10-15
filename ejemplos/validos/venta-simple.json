@@ -1,0 +1,26 @@
+{
+  "version": "1",
+  "id": "1211e6f9-f5d5-401a-8cb0-26db89e25154",
+  "impresora": "caja",
+  "referencia": "VTA-004127",
+  "operaciones": [
+    {"tipo": "texto", "valor": "ABARROTES LA ESPERANZA", "alineacion": "centro", "negrita": true, "tamano": [2, 2]},
+    {"tipo": "texto", "valor": "Av. Constitución 1450, Colima, Col.", "alineacion": "centro"},
+    {"tipo": "texto", "valor": "14/10/2026 13:42   Caja 1   Ticket 4127", "alineacion": "centro", "fuente": "B"},
+    {"tipo": "separador"},
+    {"tipo": "fila", "negrita": true, "columnas": [{"texto": "Cant", "ancho": 12}, {"texto": "Producto", "ancho": "auto"}, {"texto": "Importe", "ancho": 25, "alineacion": "derecha"}]},
+    {"tipo": "fila", "columnas": [{"texto": "2", "ancho": 12}, {"texto": "Leche entera 1 L", "ancho": "auto"}, {"texto": "$56.00", "ancho": 25, "alineacion": "derecha"}]},
+    {"tipo": "fila", "columnas": [{"texto": "1", "ancho": 12}, {"texto": "Pan de caja integral grande", "ancho": "auto"}, {"texto": "$62.50", "ancho": 25, "alineacion": "derecha"}]},
+    {"tipo": "fila", "columnas": [{"texto": "3", "ancho": 12}, {"texto": "Jabón de tocador", "ancho": "auto"}, {"texto": "$45.00", "ancho": 25, "alineacion": "derecha"}]},
+    {"tipo": "separador"},
+    {"tipo": "par", "izquierda": "Subtotal", "derecha": "$140.95"},
+    {"tipo": "par", "izquierda": "IVA 16%", "derecha": "$22.55"},
+    {"tipo": "par", "izquierda": "TOTAL", "derecha": "$163.50", "negrita": true},
+    {"tipo": "par", "izquierda": "Efectivo", "derecha": "$200.00"},
+    {"tipo": "par", "izquierda": "Cambio", "derecha": "$36.50"},
+    {"tipo": "salto"},
+    {"tipo": "texto", "valor": "¡Gracias por su compra!", "alineacion": "centro"},
+    {"tipo": "salto", "lineas": 2},
+    {"tipo": "cortar"}
+  ]
+}

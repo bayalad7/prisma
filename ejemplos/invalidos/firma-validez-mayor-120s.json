@@ -1,0 +1,12 @@
+{
+  "version": "1",
+  "id": "3f2b8c1e-5a4d-4e7b-9c2a-1d0e6f8a7b90",
+  "impresora": "caja",
+  "operaciones": [
+    {"tipo": "texto", "valor": "Hola"}
+  ],
+  "cliente_id": "cli_7Hq2MZp4XwR9",
+  "emitido": "2026-10-14T18:30:00Z",
+  "expira": "2026-10-14T18:35:00Z",
+  "firma": "Knuo2kaAG5KM28MGBMlY3uw3K1eK96ih6bPcOxLYo/Hmz6rJ/xynxX3iBWt9oZvR3CwBKsN4LlGESHwi6ijAAA=="
+}

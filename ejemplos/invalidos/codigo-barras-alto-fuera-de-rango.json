@@ -1,0 +1,8 @@
+{
+  "version": "1",
+  "id": "3f2b8c1e-5a4d-4e7b-9c2a-1d0e6f8a7b90",
+  "impresora": "caja",
+  "operaciones": [
+    {"tipo": "codigo_barras", "valor": "4006381333931", "simbologia": "EAN13", "alto": 256}
+  ]
+}

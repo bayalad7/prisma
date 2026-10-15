@@ -1,0 +1,8 @@
+{
+  "version": "1",
+  "id": "3f2b8c1e-5a4d-4e7b-9c2a-1d0e6f8a7b90",
+  "impresora": "caja",
+  "operaciones": [
+    {"tipo": "imagen", "base64": "iVBORw0KGgoAAAANSUhEUgAAAGAAAAAwAQAAAADGbUJiAAAAwklEQVR4nFXPsQ3EIBBE0TkREFICpVAaR2eUQgmEBBZ7YnYNHIHlZ+H9AOHKfILPmS488cIIF7q/0NyFWi6UesG1vDF9TxtPGHFjxCds9DT9RsviNqpI2Si0wXGnYv3NEJhZ0w3rhSGIbmEIYj87Q7XxRLEw4exIC3rINQU2lfNhPX6CnYSbYRmOgUgF14f4KkDYO7JA5osksAwLsAxDsAxDeDMrBL2N3gh6G70RdgbImAcJz0HEOAjoBx7twEGu9Ycf3zSrRUnKHD0AAAAASUVORK5CYII=", "recurso": "logo-tienda"}
+  ]
+}

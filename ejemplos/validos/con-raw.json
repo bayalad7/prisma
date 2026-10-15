@@ -1,0 +1,14 @@
+{
+  "version": "1",
+  "id": "8d13c48c-8dc6-41c6-b242-1584fe42fe32",
+  "impresora": "caja",
+  "referencia": "CORTE-Z-2026-10-14",
+  "operaciones": [
+    {"tipo": "texto", "valor": "CORTE DE CAJA", "alineacion": "centro", "negrita": true},
+    {"tipo": "par", "izquierda": "Ventas del día", "derecha": "$8,412.50"},
+    {"tipo": "raw", "base64": "G3AAGfo="},
+    {"tipo": "abrir_cajon", "pin": 2},
+    {"tipo": "salto", "lineas": 3},
+    {"tipo": "cortar"}
+  ]
+}

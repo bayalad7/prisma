@@ -1,0 +1,15 @@
+{
+  "version": "1",
+  "id": "780bf0ea-9a33-4add-86f3-9f4f23000fc4",
+  "impresora": "caja",
+  "referencia": "PED-000812",
+  "operaciones": [
+    {"tipo": "texto", "valor": "Pedido en línea #812", "negrita": true},
+    {"tipo": "par", "izquierda": "TOTAL", "derecha": "$249.00"},
+    {"tipo": "cortar"}
+  ],
+  "cliente_id": "cli_7Hq2MZp4XwR9",
+  "emitido": "2026-10-14T18:30:00Z",
+  "expira": "2026-10-14T18:31:30Z",
+  "firma": "PN9IWA7gHPPA7ec2VFaqhtZ9BzBh1nZcspFD/nR3w29PM8Q4tAKJMoNilt0+eF2YU4005EPzRGHAmwY+FP6KBQ=="
+}

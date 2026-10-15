@@ -1,0 +1,570 @@
+[
+  {
+    "archivo": "json-mal-formado.json",
+    "codigo": "JSON_INVALIDO",
+    "detecta": "puente",
+    "ruta": "",
+    "regla": "json",
+    "descripcion": "El cuerpo no es JSON válido (coma final)."
+  },
+  {
+    "archivo": "clave-duplicada.json",
+    "codigo": "JSON_INVALIDO",
+    "detecta": "puente",
+    "ruta": "",
+    "regla": "clave_duplicada",
+    "descripcion": "Un objeto repite la clave \"impresora\" (no es I-JSON)."
+  },
+  {
+    "archivo": "documento-no-objeto.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "",
+    "regla": "type",
+    "descripcion": "El documento es un arreglo, no un objeto."
+  },
+  {
+    "archivo": "version-no-soportada.json",
+    "codigo": "VERSION_NO_SOPORTADA",
+    "detecta": "esquema",
+    "ruta": "/version",
+    "regla": "const",
+    "descripcion": "Versión \"2\" enviada a un puente v1."
+  },
+  {
+    "archivo": "version-numerica.json",
+    "codigo": "VERSION_NO_SOPORTADA",
+    "detecta": "esquema",
+    "ruta": "/version",
+    "regla": "const",
+    "descripcion": "La versión es el número 1 en lugar de la cadena \"1\"."
+  },
+  {
+    "archivo": "version-faltante.json",
+    "codigo": "VERSION_NO_SOPORTADA",
+    "detecta": "esquema",
+    "ruta": "",
+    "regla": "required",
+    "descripcion": "Falta el campo version."
+  },
+  {
+    "archivo": "propiedad-adicional-sobre.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "",
+    "regla": "additionalProperties",
+    "descripcion": "El sobre trae un campo que no existe en el contrato."
+  },
+  {
+    "archivo": "llave-en-documento.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "",
+    "regla": "additionalProperties",
+    "descripcion": "La llave de cliente va en el encabezado Authorization, nunca en el documento."
+  },
+  {
+    "archivo": "valor-null.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/copias",
+    "regla": "type",
+    "descripcion": "null no es válido; los campos opcionales se omiten."
+  },
+  {
+    "archivo": "id-faltante.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "",
+    "regla": "required",
+    "descripcion": "Falta el id."
+  },
+  {
+    "archivo": "id-no-uuid-v4.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/id",
+    "regla": "pattern",
+    "descripcion": "El id es un UUID v1, no v4."
+  },
+  {
+    "archivo": "id-mayusculas.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/id",
+    "regla": "pattern",
+    "descripcion": "El id debe ir en minúsculas."
+  },
+  {
+    "archivo": "impresora-faltante.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "",
+    "regla": "required",
+    "descripcion": "Falta el alias de la impresora."
+  },
+  {
+    "archivo": "impresora-no-alias.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/impresora",
+    "regla": "pattern",
+    "descripcion": "Se envió una dirección IP en lugar del alias."
+  },
+  {
+    "archivo": "copias-fuera-de-rango.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/copias",
+    "regla": "maximum",
+    "descripcion": "Más de 5 copias."
+  },
+  {
+    "archivo": "copias-no-entero.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/copias",
+    "regla": "type",
+    "descripcion": "Copias con decimales."
+  },
+  {
+    "archivo": "referencia-demasiado-larga.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/referencia",
+    "regla": "maxLength",
+    "descripcion": "Referencia de más de 64 caracteres."
+  },
+  {
+    "archivo": "operaciones-vacias.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones",
+    "regla": "minItems",
+    "descripcion": "Un documento sin operaciones."
+  },
+  {
+    "archivo": "demasiadas-operaciones.json",
+    "codigo": "DEMASIADAS_OPERACIONES",
+    "detecta": "esquema",
+    "ruta": "/operaciones",
+    "regla": "maxItems",
+    "descripcion": "501 operaciones."
+  },
+  {
+    "archivo": "documento-demasiado-grande.json",
+    "codigo": "DOCUMENTO_DEMASIADO_GRANDE",
+    "detecta": "puente",
+    "ruta": "",
+    "regla": "tamano_maximo",
+    "descripcion": "Cuerpo de más de 256 KB aunque cada campo sea válido."
+  },
+  {
+    "archivo": "operacion-desconocida.json",
+    "codigo": "OPERACION_DESCONOCIDA",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/tipo",
+    "regla": "enum",
+    "descripcion": "Tipo de operación que no existe en v1."
+  },
+  {
+    "archivo": "operacion-sin-tipo.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0",
+    "regla": "required",
+    "descripcion": "Operación sin campo tipo."
+  },
+  {
+    "archivo": "propiedad-adicional-operacion.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0",
+    "regla": "additionalProperties",
+    "descripcion": "Atributo que no existe en la operación texto."
+  },
+  {
+    "archivo": "texto-sin-valor.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0",
+    "regla": "required",
+    "descripcion": "Operación texto sin valor."
+  },
+  {
+    "archivo": "texto-caracter-de-control.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/valor",
+    "regla": "pattern",
+    "descripcion": "El texto contiene ESC (0x1B); los comandos solo pueden ir en raw."
+  },
+  {
+    "archivo": "texto-demasiado-largo.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/valor",
+    "regla": "maxLength",
+    "descripcion": "Texto de más de 4096 caracteres."
+  },
+  {
+    "archivo": "texto-tamano-fuera-de-rango.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/tamano/0",
+    "regla": "maximum",
+    "descripcion": "Multiplicador de ancho 9."
+  },
+  {
+    "archivo": "texto-tamano-incompleto.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/tamano",
+    "regla": "minItems",
+    "descripcion": "tamano con un solo valor."
+  },
+  {
+    "archivo": "texto-fuente-invalida.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/fuente",
+    "regla": "enum",
+    "descripcion": "Fuente C no existe."
+  },
+  {
+    "archivo": "negrita-no-booleano.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/negrita",
+    "regla": "type",
+    "descripcion": "negrita como cadena."
+  },
+  {
+    "archivo": "alineacion-invalida.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/alineacion",
+    "regla": "enum",
+    "descripcion": "Alineación en inglés."
+  },
+  {
+    "archivo": "separador-varios-caracteres.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/caracter",
+    "regla": "maxLength",
+    "descripcion": "Separador de dos caracteres."
+  },
+  {
+    "archivo": "separador-caracter-de-control.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/caracter",
+    "regla": "pattern",
+    "descripcion": "Separador con un tabulador."
+  },
+  {
+    "archivo": "fila-sin-columnas.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/columnas",
+    "regla": "minItems",
+    "descripcion": "Fila con arreglo de columnas vacío."
+  },
+  {
+    "archivo": "fila-demasiadas-columnas.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/columnas",
+    "regla": "maxItems",
+    "descripcion": "Fila con 9 columnas."
+  },
+  {
+    "archivo": "fila-ancho-invalido.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/columnas/0/ancho",
+    "regla": "anyOf",
+    "descripcion": "Ancho como cadena \"50%\" en lugar del número 50."
+  },
+  {
+    "archivo": "fila-salto-de-linea.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/columnas/0/texto",
+    "regla": "pattern",
+    "descripcion": "Las celdas no admiten \\n; el texto largo se parte solo."
+  },
+  {
+    "archivo": "fila-porcentajes-exceden-100.json",
+    "codigo": "FILA_NO_CABE",
+    "detecta": "puente",
+    "ruta": "/operaciones/0/columnas",
+    "regla": "suma_porcentajes",
+    "descripcion": "Los porcentajes suman 120."
+  },
+  {
+    "archivo": "fila-columna-sin-espacio.json",
+    "codigo": "FILA_NO_CABE",
+    "detecta": "puente",
+    "ruta": "/operaciones/0/columnas",
+    "regla": "ancho_minimo",
+    "descripcion": "Los porcentajes suman 100 y la columna auto se queda sin ancho."
+  },
+  {
+    "archivo": "par-sin-derecha.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0",
+    "regla": "required",
+    "descripcion": "par sin el campo derecha."
+  },
+  {
+    "archivo": "salto-fuera-de-rango.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/lineas",
+    "regla": "maximum",
+    "descripcion": "Más de 10 líneas."
+  },
+  {
+    "archivo": "qr-valor-vacio.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/valor",
+    "regla": "minLength",
+    "descripcion": "QR sin contenido."
+  },
+  {
+    "archivo": "qr-tamano-fuera-de-rango.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/tamano",
+    "regla": "maximum",
+    "descripcion": "Tamaño de módulo 17."
+  },
+  {
+    "archivo": "qr-correccion-invalida.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/correccion",
+    "regla": "enum",
+    "descripcion": "Nivel de corrección inexistente."
+  },
+  {
+    "archivo": "codigo-barras-simbologia-invalida.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/simbologia",
+    "regla": "enum",
+    "descripcion": "Simbología no soportada."
+  },
+  {
+    "archivo": "codigo-barras-ean13-no-numerico.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/valor",
+    "regla": "pattern",
+    "descripcion": "EAN13 con letras."
+  },
+  {
+    "archivo": "codigo-barras-ean13-digito-verificador.json",
+    "codigo": "CODIGO_BARRAS_INVALIDO",
+    "detecta": "puente",
+    "ruta": "/operaciones/0/valor",
+    "regla": "digito_verificador",
+    "descripcion": "EAN13 con dígito verificador incorrecto (debería terminar en 1)."
+  },
+  {
+    "archivo": "codigo-barras-itf-longitud-impar.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/valor",
+    "regla": "pattern",
+    "descripcion": "ITF requiere un número par de dígitos."
+  },
+  {
+    "archivo": "codigo-barras-code39-minusculas.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/valor",
+    "regla": "pattern",
+    "descripcion": "CODE39 no admite minúsculas."
+  },
+  {
+    "archivo": "codigo-barras-alto-fuera-de-rango.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/alto",
+    "regla": "maximum",
+    "descripcion": "Alto de 256 puntos."
+  },
+  {
+    "archivo": "imagen-url.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0",
+    "regla": "additionalProperties",
+    "descripcion": "El puente nunca descarga contenido externo: no existe el campo url."
+  },
+  {
+    "archivo": "imagen-data-uri.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/base64",
+    "regla": "pattern",
+    "descripcion": "base64 con prefijo data:."
+  },
+  {
+    "archivo": "imagen-no-png.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/base64",
+    "regla": "pattern",
+    "descripcion": "El base64 es un JPEG, no un PNG."
+  },
+  {
+    "archivo": "imagen-demasiado-grande.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/base64",
+    "regla": "maxLength",
+    "descripcion": "PNG de más de 100 KB."
+  },
+  {
+    "archivo": "imagen-png-corrupto.json",
+    "codigo": "IMAGEN_INVALIDA",
+    "detecta": "puente",
+    "ruta": "/operaciones/0/base64",
+    "regla": "png_valido",
+    "descripcion": "Empieza con la firma PNG pero el contenido está truncado."
+  },
+  {
+    "archivo": "imagen-base64-y-recurso.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0",
+    "regla": "oneOf",
+    "descripcion": "Trae base64 y recurso a la vez."
+  },
+  {
+    "archivo": "imagen-sin-fuente.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0",
+    "regla": "oneOf",
+    "descripcion": "No trae base64 ni recurso."
+  },
+  {
+    "archivo": "imagen-ancho-max-fuera-de-rango.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/ancho_max",
+    "regla": "minimum",
+    "descripcion": "ancho_max de 0 %."
+  },
+  {
+    "archivo": "cortar-parcial-no-booleano.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/parcial",
+    "regla": "type",
+    "descripcion": "parcial como número."
+  },
+  {
+    "archivo": "abrir-cajon-pin-invalido.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/pin",
+    "regla": "enum",
+    "descripcion": "Pin 3 no existe."
+  },
+  {
+    "archivo": "raw-sin-base64.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0",
+    "regla": "required",
+    "descripcion": "raw sin bytes."
+  },
+  {
+    "archivo": "raw-base64-invalido.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/base64",
+    "regla": "pattern",
+    "descripcion": "raw con caracteres que no son base64."
+  },
+  {
+    "archivo": "raw-demasiado-grande.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/operaciones/0/base64",
+    "regla": "maxLength",
+    "descripcion": "raw de más de 64 KB."
+  },
+  {
+    "archivo": "firma-sin-emitido.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "",
+    "regla": "dependentRequired",
+    "descripcion": "Trae firma pero falta emitido."
+  },
+  {
+    "archivo": "firma-sin-firma.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "",
+    "regla": "dependentRequired",
+    "descripcion": "Trae cliente_id, emitido y expira pero no la firma."
+  },
+  {
+    "archivo": "firma-formato-invalido.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/firma",
+    "regla": "pattern",
+    "descripcion": "La firma no mide 64 bytes."
+  },
+  {
+    "archivo": "firma-fecha-sin-zona.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/emitido",
+    "regla": "pattern",
+    "descripcion": "emitido sin zona horaria."
+  },
+  {
+    "archivo": "firma-cliente-id-invalido.json",
+    "codigo": "DOCUMENTO_INVALIDO",
+    "detecta": "esquema",
+    "ruta": "/cliente_id",
+    "regla": "pattern",
+    "descripcion": "cliente_id sin el prefijo cli_."
+  },
+  {
+    "archivo": "firma-alterada.json",
+    "codigo": "FIRMA_INVALIDA",
+    "detecta": "puente",
+    "ruta": "/firma",
+    "regla": "firma_ed25519",
+    "descripcion": "Copia de firmado.json con el total cambiado después de firmar."
+  },
+  {
+    "archivo": "firma-validez-mayor-120s.json",
+    "codigo": "FIRMA_INVALIDA",
+    "detecta": "puente",
+    "ruta": "/expira",
+    "regla": "vigencia_maxima",
+    "descripcion": "Firma correcta, pero expira 300 s después de emitido."
+  },
+  {
+    "archivo": "firma-expira-antes-de-emitido.json",
+    "codigo": "FIRMA_INVALIDA",
+    "detecta": "puente",
+    "ruta": "/expira",
+    "regla": "vigencia_maxima",
+    "descripcion": "Firma correcta, pero expira es anterior a emitido."
+  }
+]

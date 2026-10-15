@@ -1,0 +1,22 @@
+{
+  "version": "1",
+  "id": "cdff67eb-09fd-4f45-bff9-8f3429cb9633",
+  "impresora": "caja",
+  "copias": 2,
+  "referencia": "FAC-A-000981",
+  "operaciones": [
+    {"tipo": "imagen", "base64": "iVBORw0KGgoAAAANSUhEUgAAAGAAAAAwAQAAAADGbUJiAAAAwklEQVR4nFXPsQ3EIBBE0TkREFICpVAaR2eUQgmEBBZ7YnYNHIHlZ+H9AOHKfILPmS488cIIF7q/0NyFWi6UesG1vDF9TxtPGHFjxCds9DT9RsviNqpI2Si0wXGnYv3NEJhZ0w3rhSGIbmEIYj87Q7XxRLEw4exIC3rINQU2lfNhPX6CnYSbYRmOgUgF14f4KkDYO7JA5osksAwLsAxDsAxDeDMrBL2N3gh6G70RdgbImAcJz0HEOAjoBx7twEGu9Ycf3zSrRUnKHD0AAAAASUVORK5CYII=", "alineacion": "centro", "ancho_max": 50},
+    {"tipo": "texto", "valor": "CAFÉ PRISMA", "alineacion": "centro", "negrita": true, "tamano": [2, 1]},
+    {"tipo": "texto", "valor": "RFC: CPR201014AB1\nRégimen: 601 General de Ley", "alineacion": "centro", "fuente": "B"},
+    {"tipo": "separador", "caracter": "="},
+    {"tipo": "par", "izquierda": "1 Capuchino grande", "derecha": "$68.00"},
+    {"tipo": "par", "izquierda": "1 Pan de elote", "derecha": "$42.00"},
+    {"tipo": "separador", "caracter": "="},
+    {"tipo": "par", "izquierda": "TOTAL", "derecha": "$110.00", "negrita": true},
+    {"tipo": "salto"},
+    {"tipo": "texto", "valor": "Facture su compra escaneando el código:", "alineacion": "centro"},
+    {"tipo": "qr", "valor": "https://facturas.example.com/t/FAC-A-000981?c=7KQ2", "tamano": 6, "correccion": "M", "alineacion": "centro"},
+    {"tipo": "salto", "lineas": 3},
+    {"tipo": "cortar", "parcial": true}
+  ]
+}

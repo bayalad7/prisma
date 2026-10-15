@@ -1,0 +1,29 @@
+{
+  "version": "1",
+  "id": "aa1e386e-63ed-4f0b-9895-0c13987eb5d0",
+  "impresora": "caja",
+  "copias": 1,
+  "referencia": "PRUEBA-COMPLETA",
+  "operaciones": [
+    {"tipo": "imagen", "recurso": "logo-tienda", "alineacion": "centro", "ancho_max": 60},
+    {"tipo": "texto", "valor": "Todas las operaciones", "alineacion": "izquierda", "negrita": true, "subrayado": true, "invertido": false, "tamano": [2, 2], "fuente": "A"},
+    {"tipo": "texto", "valor": "Fuente B, centrada,\ncon salto de línea", "alineacion": "centro", "fuente": "B"},
+    {"tipo": "texto", "valor": "Invertido a la derecha", "alineacion": "derecha", "invertido": true},
+    {"tipo": "separador", "caracter": "*"},
+    {"tipo": "fila", "negrita": false, "columnas": [{"texto": "Izquierda", "ancho": 30, "alineacion": "izquierda"}, {"texto": "Centro", "ancho": "auto", "alineacion": "centro"}, {"texto": "Derecha", "ancho": 30, "alineacion": "derecha"}]},
+    {"tipo": "fila", "columnas": [{"texto": "Una sola columna con el ancho por defecto"}]},
+    {"tipo": "par", "izquierda": "Etiqueta", "derecha": "Valor", "negrita": true},
+    {"tipo": "salto", "lineas": 1},
+    {"tipo": "qr", "valor": "PRISMA", "tamano": 4, "correccion": "H", "alineacion": "izquierda"},
+    {"tipo": "codigo_barras", "valor": "4006381333931", "simbologia": "EAN13", "texto": "abajo", "alto": 80, "alineacion": "centro"},
+    {"tipo": "codigo_barras", "valor": "96385074", "simbologia": "EAN8", "texto": "arriba", "alto": 60},
+    {"tipo": "codigo_barras", "valor": "036000291452", "simbologia": "UPCA", "texto": "ninguno", "alto": 60},
+    {"tipo": "codigo_barras", "valor": "00012345678905", "simbologia": "ITF", "alto": 50, "alineacion": "izquierda"},
+    {"tipo": "codigo_barras", "valor": "PRISMA-39", "simbologia": "CODE39"},
+    {"tipo": "codigo_barras", "valor": "Pedido#812/a", "simbologia": "CODE128", "alineacion": "derecha"},
+    {"tipo": "imagen", "base64": "iVBORw0KGgoAAAANSUhEUgAAAGAAAAAwAQAAAADGbUJiAAAAwklEQVR4nFXPsQ3EIBBE0TkREFICpVAaR2eUQgmEBBZ7YnYNHIHlZ+H9AOHKfILPmS488cIIF7q/0NyFWi6UesG1vDF9TxtPGHFjxCds9DT9RsviNqpI2Si0wXGnYv3NEJhZ0w3rhSGIbmEIYj87Q7XxRLEw4exIC3rINQU2lfNhPX6CnYSbYRmOgUgF14f4KkDYO7JA5osksAwLsAxDsAxDeDMrBL2N3gh6G70RdgbImAcJz0HEOAjoBx7twEGu9Ycf3zSrRUnKHD0AAAAASUVORK5CYII=", "alineacion": "derecha", "ancho_max": 25},
+    {"tipo": "abrir_cajon", "pin": 5},
+    {"tipo": "raw", "base64": "G0A="},
+    {"tipo": "cortar", "parcial": false}
+  ]
+}

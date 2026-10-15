@@ -1,0 +1,8 @@
+{
+  "version": "1",
+  "id": "c232ab00-9414-11ec-b3c8-9f6bdeced846",
+  "impresora": "caja",
+  "operaciones": [
+    {"tipo": "texto", "valor": "Hola"}
+  ]
+}

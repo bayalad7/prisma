@@ -1,0 +1,312 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prisma.local/schema/documento-v1.schema.json",
+  "title": "PRISMA — documento v1",
+  "description": "Documento que una aplicación envía a un puente PRISMA para imprimir un ticket. Especificación completa en docs/contrato-documento-v1.md. Algunas reglas (dígito verificador, reparto de columnas, tamaño del cuerpo, vigencia de la firma) solo puede comprobarlas el puente.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "id", "impresora", "operaciones"],
+  "properties": {
+    "version": {
+      "description": "Versión del contrato. Un puente v1 rechaza cualquier otro valor con VERSION_NO_SOPORTADA.",
+      "const": "1"
+    },
+    "id": {
+      "description": "UUID v4 en minúsculas generado por el cliente. El mismo id no se imprime dos veces en 10 minutos.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "impresora": {
+      "description": "Alias de la impresora configurado en el puente (ej. \"caja\", \"cocina\").",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]{0,31}$"
+    },
+    "copias": {
+      "description": "Número de veces que se imprimen todas las operaciones.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "default": 1
+    },
+    "referencia": {
+      "description": "Texto libre para la bitácora del puente (ej. número de pedido). No se imprime.",
+      "type": "string", "$ref": "#/$defs/textoLinea",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "operaciones": {
+      "description": "Operaciones del ticket, en orden. Cada una es independiente y trae su propio estilo.",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 500,
+      "items": { "$ref": "#/$defs/operacion" }
+    },
+    "cliente_id": {
+      "description": "Solo nivel 3: identificador del cliente que firma.",
+      "type": "string",
+      "pattern": "^cli_[A-Za-z0-9]{8,40}$"
+    },
+    "emitido": {
+      "description": "Solo nivel 3: momento de emisión, RFC 3339 con zona horaria.",
+      "$ref": "#/$defs/fechaHora"
+    },
+    "expira": {
+      "description": "Solo nivel 3: fin de vigencia, RFC 3339 con zona horaria. Máximo 120 s después de emitido.",
+      "$ref": "#/$defs/fechaHora"
+    },
+    "firma": {
+      "description": "Solo nivel 3: firma Ed25519 (base64 estándar, 64 bytes) sobre la forma canónica JCS (RFC 8785) del documento sin el campo firma.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9+/]{86}==$"
+    }
+  },
+  "dependentRequired": {
+    "cliente_id": ["emitido", "expira", "firma"],
+    "emitido": ["cliente_id", "expira", "firma"],
+    "expira": ["cliente_id", "emitido", "firma"],
+    "firma": ["cliente_id", "emitido", "expira"]
+  },
+  "$defs": {
+    "textoLinea": {
+      "description": "Texto UTF-8 sin caracteres de control (C0, DEL ni C1).",
+      "type": "string",
+      "pattern": "^[^\u0000-\u001f\u007f-\u009f]*$"
+    },
+    "textoMultilinea": {
+      "description": "Texto UTF-8 sin caracteres de control, salvo el salto de línea (\\n).",
+      "type": "string",
+      "pattern": "^[^\u0000-\t\u000b-\u001f\u007f-\u009f]*$"
+    },
+    "fechaHora": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?(Z|[+-][0-9]{2}:[0-9]{2})$"
+    },
+    "alineacion": {
+      "type": "string",
+      "enum": ["izquierda", "centro", "derecha"]
+    },
+    "operacion": {
+      "type": "object",
+      "required": ["tipo"],
+      "properties": {
+        "tipo": {
+          "description": "Tipo de operación. Un tipo desconocido se rechaza con OPERACION_DESCONOCIDA.",
+          "enum": ["texto", "separador", "fila", "par", "salto", "qr", "codigo_barras", "imagen", "cortar", "abrir_cajon", "raw"]
+        }
+      },
+      "allOf": [
+        { "if": { "required": ["tipo"], "properties": { "tipo": { "const": "texto" } } }, "then": { "$ref": "#/$defs/texto" } },
+        { "if": { "required": ["tipo"], "properties": { "tipo": { "const": "separador" } } }, "then": { "$ref": "#/$defs/separador" } },
+        { "if": { "required": ["tipo"], "properties": { "tipo": { "const": "fila" } } }, "then": { "$ref": "#/$defs/fila" } },
+        { "if": { "required": ["tipo"], "properties": { "tipo": { "const": "par" } } }, "then": { "$ref": "#/$defs/par" } },
+        { "if": { "required": ["tipo"], "properties": { "tipo": { "const": "salto" } } }, "then": { "$ref": "#/$defs/salto" } },
+        { "if": { "required": ["tipo"], "properties": { "tipo": { "const": "qr" } } }, "then": { "$ref": "#/$defs/qr" } },
+        { "if": { "required": ["tipo"], "properties": { "tipo": { "const": "codigo_barras" } } }, "then": { "$ref": "#/$defs/codigo_barras" } },
+        { "if": { "required": ["tipo"], "properties": { "tipo": { "const": "imagen" } } }, "then": { "$ref": "#/$defs/imagen" } },
+        { "if": { "required": ["tipo"], "properties": { "tipo": { "const": "cortar" } } }, "then": { "$ref": "#/$defs/cortar" } },
+        { "if": { "required": ["tipo"], "properties": { "tipo": { "const": "abrir_cajon" } } }, "then": { "$ref": "#/$defs/abrir_cajon" } },
+        { "if": { "required": ["tipo"], "properties": { "tipo": { "const": "raw" } } }, "then": { "$ref": "#/$defs/raw" } }
+      ]
+    },
+    "texto": {
+      "description": "Imprime texto. Si no cabe en una línea, se parte por palabras.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tipo", "valor"],
+      "properties": {
+        "tipo": { "const": "texto" },
+        "valor": {
+          "description": "Texto a imprimir. \\n fuerza un salto de línea; una cadena vacía imprime una línea en blanco.",
+          "type": "string", "$ref": "#/$defs/textoMultilinea",
+          "maxLength": 4096
+        },
+        "alineacion": { "$ref": "#/$defs/alineacion", "default": "izquierda" },
+        "negrita": { "type": "boolean", "default": false },
+        "subrayado": { "type": "boolean", "default": false },
+        "invertido": { "description": "Texto blanco sobre fondo negro.", "type": "boolean", "default": false },
+        "tamano": {
+          "description": "Multiplicadores [ancho, alto], cada uno de 1 a 8.",
+          "type": "array",
+          "prefixItems": [
+            { "type": "integer", "minimum": 1, "maximum": 8 },
+            { "type": "integer", "minimum": 1, "maximum": 8 }
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2,
+          "default": [1, 1]
+        },
+        "fuente": { "description": "A = normal, B = compacta.", "enum": ["A", "B"], "default": "A" }
+      }
+    },
+    "separador": {
+      "description": "Línea que ocupa el ancho total, repitiendo un carácter.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tipo"],
+      "properties": {
+        "tipo": { "const": "separador" },
+        "caracter": {
+          "description": "Exactamente un carácter imprimible.",
+          "type": "string", "$ref": "#/$defs/textoLinea",
+          "minLength": 1,
+          "maxLength": 1,
+          "default": "-"
+        }
+      }
+    },
+    "columna": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["texto"],
+      "properties": {
+        "texto": { "type": "string", "$ref": "#/$defs/textoLinea", "maxLength": 1024 },
+        "ancho": {
+          "description": "Porcentaje del ancho útil (1-100) o \"auto\" para repartir el sobrante.",
+          "anyOf": [
+            { "type": "integer", "minimum": 1, "maximum": 100 },
+            { "const": "auto" }
+          ],
+          "default": "auto"
+        },
+        "alineacion": { "$ref": "#/$defs/alineacion", "default": "izquierda" }
+      }
+    },
+    "fila": {
+      "description": "Varias columnas en el mismo renglón. El texto largo de una celda continúa en renglones adicionales.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tipo", "columnas"],
+      "properties": {
+        "tipo": { "const": "fila" },
+        "columnas": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": { "$ref": "#/$defs/columna" }
+        },
+        "negrita": { "type": "boolean", "default": false }
+      }
+    },
+    "par": {
+      "description": "Atajo de fila de 2 columnas: etiqueta a la izquierda y valor alineado a la derecha.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tipo", "izquierda", "derecha"],
+      "properties": {
+        "tipo": { "const": "par" },
+        "izquierda": { "type": "string", "$ref": "#/$defs/textoLinea", "maxLength": 1024 },
+        "derecha": { "type": "string", "$ref": "#/$defs/textoLinea", "maxLength": 1024 },
+        "negrita": { "type": "boolean", "default": false }
+      }
+    },
+    "salto": {
+      "description": "Avanza el papel una o más líneas en blanco.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tipo"],
+      "properties": {
+        "tipo": { "const": "salto" },
+        "lineas": { "type": "integer", "minimum": 1, "maximum": 10, "default": 1 }
+      }
+    },
+    "qr": {
+      "description": "Código QR (modelo 2).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tipo", "valor"],
+      "properties": {
+        "tipo": { "const": "qr" },
+        "valor": { "type": "string", "minLength": 1, "maxLength": 700 },
+        "tamano": { "description": "Tamaño del módulo en puntos.", "type": "integer", "minimum": 1, "maximum": 16, "default": 6 },
+        "correccion": { "description": "Nivel de corrección de errores.", "enum": ["L", "M", "Q", "H"], "default": "M" },
+        "alineacion": { "$ref": "#/$defs/alineacion", "default": "centro" }
+      }
+    },
+    "codigo_barras": {
+      "description": "Código de barras unidimensional.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tipo", "valor", "simbologia"],
+      "properties": {
+        "tipo": { "const": "codigo_barras" },
+        "valor": { "type": "string", "minLength": 1 },
+        "simbologia": { "enum": ["CODE128", "CODE39", "EAN13", "EAN8", "UPCA", "ITF"] },
+        "texto": { "description": "Posición del texto legible.", "enum": ["arriba", "abajo", "ninguno"], "default": "abajo" },
+        "alto": { "description": "Alto en puntos.", "type": "integer", "minimum": 1, "maximum": 255, "default": 80 },
+        "alineacion": { "$ref": "#/$defs/alineacion", "default": "centro" }
+      },
+      "allOf": [
+        { "if": { "properties": { "simbologia": { "const": "EAN13" } } }, "then": { "properties": { "valor": { "type": "string", "pattern": "^[0-9]{12,13}$" } } } },
+        { "if": { "properties": { "simbologia": { "const": "EAN8" } } }, "then": { "properties": { "valor": { "type": "string", "pattern": "^[0-9]{7,8}$" } } } },
+        { "if": { "properties": { "simbologia": { "const": "UPCA" } } }, "then": { "properties": { "valor": { "type": "string", "pattern": "^[0-9]{11,12}$" } } } },
+        { "if": { "properties": { "simbologia": { "const": "ITF" } } }, "then": { "properties": { "valor": { "type": "string", "pattern": "^([0-9]{2}){1,40}$" } } } },
+        { "if": { "properties": { "simbologia": { "const": "CODE39" } } }, "then": { "properties": { "valor": { "type": "string", "pattern": "^[0-9A-Z .$/+%-]{1,40}$" } } } },
+        { "if": { "properties": { "simbologia": { "const": "CODE128" } } }, "then": { "properties": { "valor": { "type": "string", "pattern": "^[ -~]{1,80}$" } } } }
+      ]
+    },
+    "imagen": {
+      "description": "Imagen PNG en línea (base64) o una imagen guardada en el puente (recurso). Exactamente una de las dos. El puente nunca descarga URLs.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tipo"],
+      "properties": {
+        "tipo": { "const": "imagen" },
+        "base64": {
+          "description": "PNG en base64 estándar, sin prefijo data:. Máximo 100 KB decodificado.",
+          "type": "string",
+          "maxLength": 136536,
+          "pattern": "^iVBORw0KGgo[A-Za-z0-9+/]*={0,2}$"
+        },
+        "recurso": {
+          "description": "Nombre de una imagen guardada en el panel del puente.",
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+        },
+        "alineacion": { "$ref": "#/$defs/alineacion", "default": "centro" },
+        "ancho_max": { "description": "Ancho máximo como porcentaje del área imprimible.", "type": "integer", "minimum": 1, "maximum": 100, "default": 100 }
+      },
+      "oneOf": [
+        { "required": ["base64"] },
+        { "required": ["recurso"] }
+      ]
+    },
+    "cortar": {
+      "description": "Avanza el papel hasta la cuchilla y corta.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tipo"],
+      "properties": {
+        "tipo": { "const": "cortar" },
+        "parcial": { "description": "true deja una pestaña sin cortar.", "type": "boolean", "default": false }
+      }
+    },
+    "abrir_cajon": {
+      "description": "OPERACIÓN SENSIBLE: envía el pulso para abrir el cajón de dinero. Deshabilitada por defecto para cada cliente.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tipo"],
+      "properties": {
+        "tipo": { "const": "abrir_cajon" },
+        "pin": { "enum": [2, 5], "default": 2 }
+      }
+    },
+    "raw": {
+      "description": "OPERACIÓN SENSIBLE: bytes que se envían sin modificar a la impresora. Deshabilitada por defecto para cada cliente.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tipo", "base64"],
+      "properties": {
+        "tipo": { "const": "raw" },
+        "base64": {
+          "description": "Bytes en base64 estándar. Máximo 64 KB decodificado.",
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 87384,
+          "pattern": "^[A-Za-z0-9+/]*={0,2}$"
+        }
+      }
+    }
+  }
+}

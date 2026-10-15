@@ -1,0 +1,20 @@
+{
+  "version": "1",
+  "id": "5eeff3d8-9a6c-4d8f-9769-1bd989c2f360",
+  "impresora": "cocina",
+  "referencia": "MESA-12-R3",
+  "operaciones": [
+    {"tipo": "texto", "valor": "COMANDA", "alineacion": "centro", "invertido": true, "negrita": true, "tamano": [2, 2]},
+    {"tipo": "texto", "valor": "MESA 12", "alineacion": "centro", "negrita": true, "tamano": [3, 3]},
+    {"tipo": "par", "izquierda": "Mesero: Lupita", "derecha": "13:58"},
+    {"tipo": "separador"},
+    {"tipo": "fila", "columnas": [{"texto": "2x", "ancho": 10, "alineacion": "derecha"}, {"texto": "Enchiladas suizas", "ancho": "auto"}]},
+    {"tipo": "fila", "columnas": [{"texto": "", "ancho": 10}, {"texto": "* Sin cebolla, salsa aparte", "ancho": "auto"}]},
+    {"tipo": "fila", "columnas": [{"texto": "1x", "ancho": 10, "alineacion": "derecha"}, {"texto": "Sopa de tortilla", "ancho": "auto"}]},
+    {"tipo": "fila", "columnas": [{"texto": "3x", "ancho": 10, "alineacion": "derecha"}, {"texto": "Agua de horchata grande", "ancho": "auto"}]},
+    {"tipo": "separador"},
+    {"tipo": "texto", "valor": "NOTA: cliente alérgico al cacahuate", "negrita": true, "subrayado": true},
+    {"tipo": "salto", "lineas": 3},
+    {"tipo": "cortar"}
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "version": "1",
+  "impresora": "caja",
+  "operaciones": [
+    {"tipo": "texto", "valor": "Hola"}
+  ]
+}
