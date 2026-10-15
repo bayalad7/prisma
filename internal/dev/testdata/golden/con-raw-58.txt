@@ -1,0 +1,61 @@
+== Vista ==
+┌────────────────────────────────┐
+│         CORTE DE CAJA          │
+│Ventas del día         $8,412.50│
+│     [ abre cajón · pin 2 ]     │
+│     [ abre cajón · pin 2 ]     │
+│                                │
+│                                │
+│                                │
+└✂ - - - corte total ────────────┘
+
+== Advertencias ==
+
+== Traza ==
+000000  1B 40                      inicializar impresora
+000002  1B 74 13                   página de códigos 19 (CP858)
+000005  1B 61 01                   alineación centro
+000008  1B 45 01                   negrita sí
+00000B  1B 2D 00                   subrayado 0
+00000E  1D 42 00                   invertido no
+000011  1D 21 00                   tamaño 1×1
+000014  1B 4D 00                   fuente A
+000017  43 4F 52 54 45 20 44 45 …  texto "CORTE DE CAJA"
+000024  0A                         salto de línea
+000025  1B 61 00                   alineación izquierda
+000028  1B 45 00                   negrita no
+00002B  1B 2D 00                   subrayado 0
+00002E  1D 42 00                   invertido no
+000031  1D 21 00                   tamaño 1×1
+000034  1B 4D 00                   fuente A
+000037  1B 61 00                   alineación izquierda
+00003A  1B 45 00                   negrita no
+00003D  1B 2D 00                   subrayado 0
+000040  1D 42 00                   invertido no
+000043  1D 21 00                   tamaño 1×1
+000046  1B 4D 00                   fuente A
+000049  56 65 6E 74 61 73 20 64 …  texto "Ventas del día         $8,412.50"
+000069  0A                         salto de línea
+00006A  1B 61 00                   alineación izquierda
+00006D  1B 45 00                   negrita no
+000070  1B 2D 00                   subrayado 0
+000073  1D 42 00                   invertido no
+000076  1D 21 00                   tamaño 1×1
+000079  1B 4D 00                   fuente A
+00007C  1B 70 00 19 FA             abrir cajón pin 2 (50 ms / 500 ms)
+000081  1B 74 13                   página de códigos 19 (CP858)
+000084  1B 70 00 19 FA             abrir cajón pin 2 (50 ms / 500 ms)
+000089  1B 61 00                   alineación izquierda
+00008C  1B 45 00                   negrita no
+00008F  1B 2D 00                   subrayado 0
+000092  1D 42 00                   invertido no
+000095  1D 21 00                   tamaño 1×1
+000098  1B 4D 00                   fuente A
+00009B  1B 64 03                   avanzar 3 línea(s)
+00009E  1B 61 00                   alineación izquierda
+0000A1  1B 45 00                   negrita no
+0000A4  1B 2D 00                   subrayado 0
+0000A7  1D 42 00                   invertido no
+0000AA  1D 21 00                   tamaño 1×1
+0000AD  1B 4D 00                   fuente A
+0000B0  1D 56 41 00                avanzar hasta la cuchilla (+0) y corte total

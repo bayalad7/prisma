@@ -1,0 +1,361 @@
+== Vista ==
+┌────────────────────────────────┐
+│                                │
+│             ▄▄▄▄▄▄             │
+│     C A F É   P R I S M A      │
+│       RFC: CPR201014AB1        │
+│  Régimen: 601 General de Ley   │
+│================================│
+│1 Capuchino grande        $68.00│
+│1 Pan de elote            $42.00│
+│================================│
+│TOTAL                    $110.00│
+│                                │
+│Facture su compra escaneando el │
+│            código:             │
+│       ████  ▄▄▀▀▄██▄████       │
+│       █▄█▄▀█▄▀▄▄▀██ ▄█▄█       │
+│       ▀▄▄ ▀▄█▀█▄▀▀▄█▀▀ █       │
+│       ███▄█ ██▀██▄ █▄          │
+│       ▀▀████▄█▀▀ ▀▀ ▄▀██       │
+│       ▀ ██  ▄▄█▄▀▀ █▄▀▄▄       │
+│       █▄▄▄▀█▄  █▀█▄▀▀█         │
+│       █▀█▀ ▄▀  █▀██▀██▀▀       │
+│       ▀▀▀▀▀▀▀▀▀▀ ▀▀▀ ▀▀▀       │
+│                                │
+│                                │
+│                                │
+└✂ · · · corte parcial ──────────┘
+┌────────────────────────────────┐
+│                                │
+│             ▄▄▄▄▄▄             │
+│     C A F É   P R I S M A      │
+│       RFC: CPR201014AB1        │
+│  Régimen: 601 General de Ley   │
+│================================│
+│1 Capuchino grande        $68.00│
+│1 Pan de elote            $42.00│
+│================================│
+│TOTAL                    $110.00│
+│                                │
+│Facture su compra escaneando el │
+│            código:             │
+│       ████  ▄▄▀▀▄██▄████       │
+│       █▄█▄▀█▄▀▄▄▀██ ▄█▄█       │
+│       ▀▄▄ ▀▄█▀█▄▀▀▄█▀▀ █       │
+│       ███▄█ ██▀██▄ █▄          │
+│       ▀▀████▄█▀▀ ▀▀ ▄▀██       │
+│       ▀ ██  ▄▄█▄▀▀ █▄▀▄▄       │
+│       █▄▄▄▀█▄  █▀█▄▀▀█         │
+│       █▀█▀ ▄▀  █▀██▀██▀▀       │
+│       ▀▀▀▀▀▀▀▀▀▀ ▀▀▀ ▀▀▀       │
+│                                │
+│                                │
+│                                │
+└✂ · · · corte parcial ──────────┘
+
+== Advertencias ==
+
+== Traza ==
+000000  1B 40                      inicializar impresora
+000002  1B 74 13                   página de códigos 19 (CP858)
+000005  1B 61 00                   alineación izquierda
+000008  1B 45 00                   negrita no
+00000B  1B 2D 00                   subrayado 0
+00000E  1D 42 00                   invertido no
+000011  1D 21 00                   tamaño 1×1
+000014  1B 4D 00                   fuente A
+000017  1D 76 30 00 1E 00 30 00 …  imagen 240×48 puntos (1440 bytes, sha256:250a7fc3)
+0005BF  1B 61 01                   alineación centro
+0005C2  1B 45 01                   negrita sí
+0005C5  1B 2D 00                   subrayado 0
+0005C8  1D 42 00                   invertido no
+0005CB  1D 21 10                   tamaño 2×1
+0005CE  1B 4D 00                   fuente A
+0005D1  43 41 46 90 20 50 52 49 …  texto "CAFÉ PRISMA"
+0005DC  0A                         salto de línea
+0005DD  1B 61 00                   alineación izquierda
+0005E0  1B 45 00                   negrita no
+0005E3  1B 2D 00                   subrayado 0
+0005E6  1D 42 00                   invertido no
+0005E9  1D 21 00                   tamaño 1×1
+0005EC  1B 4D 00                   fuente A
+0005EF  1B 61 01                   alineación centro
+0005F2  1B 45 00                   negrita no
+0005F5  1B 2D 00                   subrayado 0
+0005F8  1D 42 00                   invertido no
+0005FB  1D 21 00                   tamaño 1×1
+0005FE  1B 4D 01                   fuente B
+000601  52 46 43 3A 20 43 50 52 …  texto "RFC: CPR201014AB1"
+000612  0A                         salto de línea
+000613  52 82 67 69 6D 65 6E 3A …  texto "Régimen: 601 General de Ley"
+00062E  0A                         salto de línea
+00062F  1B 61 00                   alineación izquierda
+000632  1B 45 00                   negrita no
+000635  1B 2D 00                   subrayado 0
+000638  1D 42 00                   invertido no
+00063B  1D 21 00                   tamaño 1×1
+00063E  1B 4D 00                   fuente A
+000641  1B 61 00                   alineación izquierda
+000644  1B 45 00                   negrita no
+000647  1B 2D 00                   subrayado 0
+00064A  1D 42 00                   invertido no
+00064D  1D 21 00                   tamaño 1×1
+000650  1B 4D 00                   fuente A
+000653  3D 3D 3D 3D 3D 3D 3D 3D …  texto "================================"
+000673  0A                         salto de línea
+000674  1B 61 00                   alineación izquierda
+000677  1B 45 00                   negrita no
+00067A  1B 2D 00                   subrayado 0
+00067D  1D 42 00                   invertido no
+000680  1D 21 00                   tamaño 1×1
+000683  1B 4D 00                   fuente A
+000686  31 20 43 61 70 75 63 68 …  texto "1 Capuchino grande        $68.00"
+0006A6  0A                         salto de línea
+0006A7  1B 61 00                   alineación izquierda
+0006AA  1B 45 00                   negrita no
+0006AD  1B 2D 00                   subrayado 0
+0006B0  1D 42 00                   invertido no
+0006B3  1D 21 00                   tamaño 1×1
+0006B6  1B 4D 00                   fuente A
+0006B9  1B 61 00                   alineación izquierda
+0006BC  1B 45 00                   negrita no
+0006BF  1B 2D 00                   subrayado 0
+0006C2  1D 42 00                   invertido no
+0006C5  1D 21 00                   tamaño 1×1
+0006C8  1B 4D 00                   fuente A
+0006CB  31 20 50 61 6E 20 64 65 …  texto "1 Pan de elote            $42.00"
+0006EB  0A                         salto de línea
+0006EC  1B 61 00                   alineación izquierda
+0006EF  1B 45 00                   negrita no
+0006F2  1B 2D 00                   subrayado 0
+0006F5  1D 42 00                   invertido no
+0006F8  1D 21 00                   tamaño 1×1
+0006FB  1B 4D 00                   fuente A
+0006FE  1B 61 00                   alineación izquierda
+000701  1B 45 00                   negrita no
+000704  1B 2D 00                   subrayado 0
+000707  1D 42 00                   invertido no
+00070A  1D 21 00                   tamaño 1×1
+00070D  1B 4D 00                   fuente A
+000710  3D 3D 3D 3D 3D 3D 3D 3D …  texto "================================"
+000730  0A                         salto de línea
+000731  1B 61 00                   alineación izquierda
+000734  1B 45 01                   negrita sí
+000737  1B 2D 00                   subrayado 0
+00073A  1D 42 00                   invertido no
+00073D  1D 21 00                   tamaño 1×1
+000740  1B 4D 00                   fuente A
+000743  54 4F 54 41 4C 20 20 20 …  texto "TOTAL                    $110.00"
+000763  0A                         salto de línea
+000764  1B 61 00                   alineación izquierda
+000767  1B 45 00                   negrita no
+00076A  1B 2D 00                   subrayado 0
+00076D  1D 42 00                   invertido no
+000770  1D 21 00                   tamaño 1×1
+000773  1B 4D 00                   fuente A
+000776  1B 61 00                   alineación izquierda
+000779  1B 45 00                   negrita no
+00077C  1B 2D 00                   subrayado 0
+00077F  1D 42 00                   invertido no
+000782  1D 21 00                   tamaño 1×1
+000785  1B 4D 00                   fuente A
+000788  1B 64 01                   avanzar 1 línea(s)
+00078B  1B 61 01                   alineación centro
+00078E  1B 45 00                   negrita no
+000791  1B 2D 00                   subrayado 0
+000794  1D 42 00                   invertido no
+000797  1D 21 00                   tamaño 1×1
+00079A  1B 4D 00                   fuente A
+00079D  46 61 63 74 75 72 65 20 …  texto "Facture su compra escaneando el"
+0007BC  0A                         salto de línea
+0007BD  63 A2 64 69 67 6F 3A       texto "código:"
+0007C4  0A                         salto de línea
+0007C5  1B 61 00                   alineación izquierda
+0007C8  1B 45 00                   negrita no
+0007CB  1B 2D 00                   subrayado 0
+0007CE  1D 42 00                   invertido no
+0007D1  1D 21 00                   tamaño 1×1
+0007D4  1B 4D 00                   fuente A
+0007D7  1B 61 01                   alineación centro
+0007DA  1B 45 00                   negrita no
+0007DD  1B 2D 00                   subrayado 0
+0007E0  1D 42 00                   invertido no
+0007E3  1D 21 00                   tamaño 1×1
+0007E6  1B 4D 00                   fuente A
+0007E9  1D 28 6B 04 00 31 41 32 …  QR: modelo 2
+0007F2  1D 28 6B 03 00 31 43 06    QR: módulo de 6 puntos
+0007FA  1D 28 6B 03 00 31 45 31    QR: corrección M
+000802  1D 28 6B 35 00 31 50 30 …  QR: almacenar 50 bytes "https://facturas.example.com/t/FAC-A-000981?c=7KQ2"
+00083C  1D 28 6B 03 00 31 51 30    QR: imprimir
+000844  1B 61 00                   alineación izquierda
+000847  1B 45 00                   negrita no
+00084A  1B 2D 00                   subrayado 0
+00084D  1D 42 00                   invertido no
+000850  1D 21 00                   tamaño 1×1
+000853  1B 4D 00                   fuente A
+000856  1B 61 00                   alineación izquierda
+000859  1B 45 00                   negrita no
+00085C  1B 2D 00                   subrayado 0
+00085F  1D 42 00                   invertido no
+000862  1D 21 00                   tamaño 1×1
+000865  1B 4D 00                   fuente A
+000868  1B 64 03                   avanzar 3 línea(s)
+00086B  1B 61 00                   alineación izquierda
+00086E  1B 45 00                   negrita no
+000871  1B 2D 00                   subrayado 0
+000874  1D 42 00                   invertido no
+000877  1D 21 00                   tamaño 1×1
+00087A  1B 4D 00                   fuente A
+00087D  1D 56 42 00                avanzar hasta la cuchilla (+0) y corte parcial
+000881  1B 40                      inicializar impresora
+000883  1B 74 13                   página de códigos 19 (CP858)
+000886  1B 61 00                   alineación izquierda
+000889  1B 45 00                   negrita no
+00088C  1B 2D 00                   subrayado 0
+00088F  1D 42 00                   invertido no
+000892  1D 21 00                   tamaño 1×1
+000895  1B 4D 00                   fuente A
+000898  1D 76 30 00 1E 00 30 00 …  imagen 240×48 puntos (1440 bytes, sha256:250a7fc3)
+000E40  1B 61 01                   alineación centro
+000E43  1B 45 01                   negrita sí
+000E46  1B 2D 00                   subrayado 0
+000E49  1D 42 00                   invertido no
+000E4C  1D 21 10                   tamaño 2×1
+000E4F  1B 4D 00                   fuente A
+000E52  43 41 46 90 20 50 52 49 …  texto "CAFÉ PRISMA"
+000E5D  0A                         salto de línea
+000E5E  1B 61 00                   alineación izquierda
+000E61  1B 45 00                   negrita no
+000E64  1B 2D 00                   subrayado 0
+000E67  1D 42 00                   invertido no
+000E6A  1D 21 00                   tamaño 1×1
+000E6D  1B 4D 00                   fuente A
+000E70  1B 61 01                   alineación centro
+000E73  1B 45 00                   negrita no
+000E76  1B 2D 00                   subrayado 0
+000E79  1D 42 00                   invertido no
+000E7C  1D 21 00                   tamaño 1×1
+000E7F  1B 4D 01                   fuente B
+000E82  52 46 43 3A 20 43 50 52 …  texto "RFC: CPR201014AB1"
+000E93  0A                         salto de línea
+000E94  52 82 67 69 6D 65 6E 3A …  texto "Régimen: 601 General de Ley"
+000EAF  0A                         salto de línea
+000EB0  1B 61 00                   alineación izquierda
+000EB3  1B 45 00                   negrita no
+000EB6  1B 2D 00                   subrayado 0
+000EB9  1D 42 00                   invertido no
+000EBC  1D 21 00                   tamaño 1×1
+000EBF  1B 4D 00                   fuente A
+000EC2  1B 61 00                   alineación izquierda
+000EC5  1B 45 00                   negrita no
+000EC8  1B 2D 00                   subrayado 0
+000ECB  1D 42 00                   invertido no
+000ECE  1D 21 00                   tamaño 1×1
+000ED1  1B 4D 00                   fuente A
+000ED4  3D 3D 3D 3D 3D 3D 3D 3D …  texto "================================"
+000EF4  0A                         salto de línea
+000EF5  1B 61 00                   alineación izquierda
+000EF8  1B 45 00                   negrita no
+000EFB  1B 2D 00                   subrayado 0
+000EFE  1D 42 00                   invertido no
+000F01  1D 21 00                   tamaño 1×1
+000F04  1B 4D 00                   fuente A
+000F07  31 20 43 61 70 75 63 68 …  texto "1 Capuchino grande        $68.00"
+000F27  0A                         salto de línea
+000F28  1B 61 00                   alineación izquierda
+000F2B  1B 45 00                   negrita no
+000F2E  1B 2D 00                   subrayado 0
+000F31  1D 42 00                   invertido no
+000F34  1D 21 00                   tamaño 1×1
+000F37  1B 4D 00                   fuente A
+000F3A  1B 61 00                   alineación izquierda
+000F3D  1B 45 00                   negrita no
+000F40  1B 2D 00                   subrayado 0
+000F43  1D 42 00                   invertido no
+000F46  1D 21 00                   tamaño 1×1
+000F49  1B 4D 00                   fuente A
+000F4C  31 20 50 61 6E 20 64 65 …  texto "1 Pan de elote            $42.00"
+000F6C  0A                         salto de línea
+000F6D  1B 61 00                   alineación izquierda
+000F70  1B 45 00                   negrita no
+000F73  1B 2D 00                   subrayado 0
+000F76  1D 42 00                   invertido no
+000F79  1D 21 00                   tamaño 1×1
+000F7C  1B 4D 00                   fuente A
+000F7F  1B 61 00                   alineación izquierda
+000F82  1B 45 00                   negrita no
+000F85  1B 2D 00                   subrayado 0
+000F88  1D 42 00                   invertido no
+000F8B  1D 21 00                   tamaño 1×1
+000F8E  1B 4D 00                   fuente A
+000F91  3D 3D 3D 3D 3D 3D 3D 3D …  texto "================================"
+000FB1  0A                         salto de línea
+000FB2  1B 61 00                   alineación izquierda
+000FB5  1B 45 01                   negrita sí
+000FB8  1B 2D 00                   subrayado 0
+000FBB  1D 42 00                   invertido no
+000FBE  1D 21 00                   tamaño 1×1
+000FC1  1B 4D 00                   fuente A
+000FC4  54 4F 54 41 4C 20 20 20 …  texto "TOTAL                    $110.00"
+000FE4  0A                         salto de línea
+000FE5  1B 61 00                   alineación izquierda
+000FE8  1B 45 00                   negrita no
+000FEB  1B 2D 00                   subrayado 0
+000FEE  1D 42 00                   invertido no
+000FF1  1D 21 00                   tamaño 1×1
+000FF4  1B 4D 00                   fuente A
+000FF7  1B 61 00                   alineación izquierda
+000FFA  1B 45 00                   negrita no
+000FFD  1B 2D 00                   subrayado 0
+001000  1D 42 00                   invertido no
+001003  1D 21 00                   tamaño 1×1
+001006  1B 4D 00                   fuente A
+001009  1B 64 01                   avanzar 1 línea(s)
+00100C  1B 61 01                   alineación centro
+00100F  1B 45 00                   negrita no
+001012  1B 2D 00                   subrayado 0
+001015  1D 42 00                   invertido no
+001018  1D 21 00                   tamaño 1×1
+00101B  1B 4D 00                   fuente A
+00101E  46 61 63 74 75 72 65 20 …  texto "Facture su compra escaneando el"
+00103D  0A                         salto de línea
+00103E  63 A2 64 69 67 6F 3A       texto "código:"
+001045  0A                         salto de línea
+001046  1B 61 00                   alineación izquierda
+001049  1B 45 00                   negrita no
+00104C  1B 2D 00                   subrayado 0
+00104F  1D 42 00                   invertido no
+001052  1D 21 00                   tamaño 1×1
+001055  1B 4D 00                   fuente A
+001058  1B 61 01                   alineación centro
+00105B  1B 45 00                   negrita no
+00105E  1B 2D 00                   subrayado 0
+001061  1D 42 00                   invertido no
+001064  1D 21 00                   tamaño 1×1
+001067  1B 4D 00                   fuente A
+00106A  1D 28 6B 04 00 31 41 32 …  QR: modelo 2
+001073  1D 28 6B 03 00 31 43 06    QR: módulo de 6 puntos
+00107B  1D 28 6B 03 00 31 45 31    QR: corrección M
+001083  1D 28 6B 35 00 31 50 30 …  QR: almacenar 50 bytes "https://facturas.example.com/t/FAC-A-000981?c=7KQ2"
+0010BD  1D 28 6B 03 00 31 51 30    QR: imprimir
+0010C5  1B 61 00                   alineación izquierda
+0010C8  1B 45 00                   negrita no
+0010CB  1B 2D 00                   subrayado 0
+0010CE  1D 42 00                   invertido no
+0010D1  1D 21 00                   tamaño 1×1
+0010D4  1B 4D 00                   fuente A
+0010D7  1B 61 00                   alineación izquierda
+0010DA  1B 45 00                   negrita no
+0010DD  1B 2D 00                   subrayado 0
+0010E0  1D 42 00                   invertido no
+0010E3  1D 21 00                   tamaño 1×1
+0010E6  1B 4D 00                   fuente A
+0010E9  1B 64 03                   avanzar 3 línea(s)
+0010EC  1B 61 00                   alineación izquierda
+0010EF  1B 45 00                   negrita no
+0010F2  1B 2D 00                   subrayado 0
+0010F5  1D 42 00                   invertido no
+0010F8  1D 21 00                   tamaño 1×1
+0010FB  1B 4D 00                   fuente A
+0010FE  1D 56 42 00                avanzar hasta la cuchilla (+0) y corte parcial

@@ -105,6 +105,37 @@ func TestEjecutarCreaLaBaseDeDatos(t *testing.T) {
 	}
 }
 
+func TestComandosDev(t *testing.T) {
+	const doc = "../../ejemplos/validos/venta-simple.json"
+	salida, err := correr(t, "dev", "previsualizar", doc, "--ancho", "58", "--sin-color")
+	if err != nil || !strings.Contains(salida, "Leche entera 1 L") || !strings.Contains(salida, "corte total") || strings.Contains(salida, "\x1b[") {
+		t.Fatalf("previsualizar: %v\n%s", err, salida)
+	}
+
+	dir := t.TempDir()
+	html := filepath.Join(dir, "vista.html")
+	if _, err := correr(t, "dev", "previsualizar", doc, "--html", html); err != nil {
+		t.Fatal(err)
+	}
+	if contenido, _ := os.ReadFile(html); !strings.HasPrefix(string(contenido), "<!doctype html>") {
+		t.Fatal("el HTML no se generó")
+	}
+
+	bin := filepath.Join(dir, "ticket.bin")
+	if _, err := correr(t, "dev", "renderizar", doc, "-o", bin); err != nil {
+		t.Fatal(err)
+	}
+	salida, err = correr(t, "dev", "decodificar", bin)
+	if err != nil || !strings.Contains(salida, "inicializar impresora") || !strings.Contains(salida, `texto "ABARROTES LA ESPERANZA"`) {
+		t.Fatalf("decodificar: %v\n%s", err, salida)
+	}
+
+	if _, err := correr(t, "dev", "previsualizar", "../../ejemplos/invalidos/version-no-soportada.json"); err == nil ||
+		!strings.Contains(err.Error(), "VERSION_NO_SOPORTADA") {
+		t.Fatalf("un documento inválido debe mostrar su código: %v", err)
+	}
+}
+
 func TestRestablecerContrasena(t *testing.T) {
 	ruta, dirDatos := configDePrueba(t)
 	salida, err := correr(t, "admin", "restablecer-contrasena", "--config", ruta)

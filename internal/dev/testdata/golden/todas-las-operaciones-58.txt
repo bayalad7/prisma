@@ -1,0 +1,306 @@
+== Vista ==
+┌────────────────────────────────┐
+│      ▀█  █  █  ██ ██ ██        │
+│       ▄▀▀▄▀▀▄▀▀▄▄▀▄▄▀▄▄▀▀      │
+│      ▀▀  ▀  ▀  ▀▀ ▀▀ ▀▀        │
+│T o d a s   l a s               │
+│                                │
+│o p e r a c i o n e s           │
+│                                │
+│      Fuente B, centrada,       │
+│       con salto de línea       │
+│          Invertido a la derecha│
+│********************************│
+│Izquierda    Centro      Derecha│
+│Una sola columna con el ancho   │
+│por defecto                     │
+│Etiqueta                   Valor│
+│                                │
+│█▀█ ▀▀█                         │
+│▄▄█ ▀█▀                         │
+│█▀▀▄▄▀█                         │
+│▀▀ ▀ ▀▀                         │
+│    █ ██████  ███     █  ███    │
+│    █ ██████  ███     █  ███    │
+│    █ ██████  ███     █  ███    │
+│    ▀ ▀▀▀▀▀▀  ▀▀▀     ▀  ▀▀▀    │
+│         4006381333931          │
+│            96385074            │
+│       █ ██████████   █ █       │
+│       █ ██████████   █ █       │
+│       ▀ ▀▀▀▀▀▀▀▀▀▀   ▀ ▀       │
+│    █ ████ █  █████ ███ ████    │
+│    █ ████ █  █████ ███ ████    │
+│    ▀ ▀▀▀▀ ▀  ▀▀▀▀▀ ▀▀▀ ▀▀▀▀    │
+│███ ██ █ ██ ██ █ █ ████         │
+│███ ██ █ ██ ██ █ █ ████         │
+│▀▀▀ ▀▀ ▀ ▀▀ ▀▀ ▀ ▀ ▀▀▀▀         │
+│00012345678905                  │
+│  ████ ███ ███ █ █ █ ███ █ █ ██ │
+│  ████ ███ ███ █ █ █ ███ █ █ ██ │
+│  ████ ███ ███ █ █ █ ███ █ █ ██ │
+│  ▀▀▀▀ ▀▀▀ ▀▀▀ ▀ ▀ ▀ ▀▀▀ ▀ ▀ ▀▀ │
+│           PRISMA-39            │
+│    █ ███  ██ █ █ ████████  ████│
+│    █ ███  ██ █ █ ████████  ████│
+│    █ ███  ██ █ █ ████████  ████│
+│    ▀ ▀▀▀  ▀▀ ▀ ▀ ▀▀▀▀▀▀▀▀  ▀▀▀▀│
+│                    Pedido#812/a│
+│                                │
+│                         ▄▄▄▄▄▄ │
+│     [ abre cajón · pin 5 ]     │
+└✂ - - - corte total ────────────┘
+
+== Advertencias ==
+
+== Traza ==
+000000  1B 40                      inicializar impresora
+000002  1B 74 13                   página de códigos 19 (CP858)
+000005  1B 61 00                   alineación izquierda
+000008  1B 45 00                   negrita no
+00000B  1B 2D 00                   subrayado 0
+00000E  1D 42 00                   invertido no
+000011  1D 21 00                   tamaño 1×1
+000014  1B 4D 00                   fuente A
+000017  1D 76 30 00 27 00 3A 00 …  imagen 312×58 puntos (2262 bytes, sha256:1b73e90a)
+0008F5  1B 61 00                   alineación izquierda
+0008F8  1B 45 01                   negrita sí
+0008FB  1B 2D 01                   subrayado 1
+0008FE  1D 42 00                   invertido no
+000901  1D 21 11                   tamaño 2×2
+000904  1B 4D 00                   fuente A
+000907  54 6F 64 61 73 20 6C 61 …  texto "Todas las"
+000910  0A                         salto de línea
+000911  6F 70 65 72 61 63 69 6F …  texto "operaciones"
+00091C  0A                         salto de línea
+00091D  1B 61 00                   alineación izquierda
+000920  1B 45 00                   negrita no
+000923  1B 2D 00                   subrayado 0
+000926  1D 42 00                   invertido no
+000929  1D 21 00                   tamaño 1×1
+00092C  1B 4D 00                   fuente A
+00092F  1B 61 01                   alineación centro
+000932  1B 45 00                   negrita no
+000935  1B 2D 00                   subrayado 0
+000938  1D 42 00                   invertido no
+00093B  1D 21 00                   tamaño 1×1
+00093E  1B 4D 01                   fuente B
+000941  46 75 65 6E 74 65 20 42 …  texto "Fuente B, centrada,"
+000954  0A                         salto de línea
+000955  63 6F 6E 20 73 61 6C 74 …  texto "con salto de línea"
+000967  0A                         salto de línea
+000968  1B 61 00                   alineación izquierda
+00096B  1B 45 00                   negrita no
+00096E  1B 2D 00                   subrayado 0
+000971  1D 42 00                   invertido no
+000974  1D 21 00                   tamaño 1×1
+000977  1B 4D 00                   fuente A
+00097A  1B 61 02                   alineación derecha
+00097D  1B 45 00                   negrita no
+000980  1B 2D 00                   subrayado 0
+000983  1D 42 01                   invertido sí
+000986  1D 21 00                   tamaño 1×1
+000989  1B 4D 00                   fuente A
+00098C  49 6E 76 65 72 74 69 64 …  texto "Invertido a la derecha"
+0009A2  0A                         salto de línea
+0009A3  1B 61 00                   alineación izquierda
+0009A6  1B 45 00                   negrita no
+0009A9  1B 2D 00                   subrayado 0
+0009AC  1D 42 00                   invertido no
+0009AF  1D 21 00                   tamaño 1×1
+0009B2  1B 4D 00                   fuente A
+0009B5  1B 61 00                   alineación izquierda
+0009B8  1B 45 00                   negrita no
+0009BB  1B 2D 00                   subrayado 0
+0009BE  1D 42 00                   invertido no
+0009C1  1D 21 00                   tamaño 1×1
+0009C4  1B 4D 00                   fuente A
+0009C7  2A 2A 2A 2A 2A 2A 2A 2A …  texto "********************************"
+0009E7  0A                         salto de línea
+0009E8  1B 61 00                   alineación izquierda
+0009EB  1B 45 00                   negrita no
+0009EE  1B 2D 00                   subrayado 0
+0009F1  1D 42 00                   invertido no
+0009F4  1D 21 00                   tamaño 1×1
+0009F7  1B 4D 00                   fuente A
+0009FA  49 7A 71 75 69 65 72 64 …  texto "Izquierda    Centro      Derecha"
+000A1A  0A                         salto de línea
+000A1B  1B 61 00                   alineación izquierda
+000A1E  1B 45 00                   negrita no
+000A21  1B 2D 00                   subrayado 0
+000A24  1D 42 00                   invertido no
+000A27  1D 21 00                   tamaño 1×1
+000A2A  1B 4D 00                   fuente A
+000A2D  1B 61 00                   alineación izquierda
+000A30  1B 45 00                   negrita no
+000A33  1B 2D 00                   subrayado 0
+000A36  1D 42 00                   invertido no
+000A39  1D 21 00                   tamaño 1×1
+000A3C  1B 4D 00                   fuente A
+000A3F  55 6E 61 20 73 6F 6C 61 …  texto "Una sola columna con el ancho   "
+000A5F  0A                         salto de línea
+000A60  70 6F 72 20 64 65 66 65 …  texto "por defecto                     "
+000A80  0A                         salto de línea
+000A81  1B 61 00                   alineación izquierda
+000A84  1B 45 00                   negrita no
+000A87  1B 2D 00                   subrayado 0
+000A8A  1D 42 00                   invertido no
+000A8D  1D 21 00                   tamaño 1×1
+000A90  1B 4D 00                   fuente A
+000A93  1B 61 00                   alineación izquierda
+000A96  1B 45 01                   negrita sí
+000A99  1B 2D 00                   subrayado 0
+000A9C  1D 42 00                   invertido no
+000A9F  1D 21 00                   tamaño 1×1
+000AA2  1B 4D 00                   fuente A
+000AA5  45 74 69 71 75 65 74 61 …  texto "Etiqueta                   Valor"
+000AC5  0A                         salto de línea
+000AC6  1B 61 00                   alineación izquierda
+000AC9  1B 45 00                   negrita no
+000ACC  1B 2D 00                   subrayado 0
+000ACF  1D 42 00                   invertido no
+000AD2  1D 21 00                   tamaño 1×1
+000AD5  1B 4D 00                   fuente A
+000AD8  1B 61 00                   alineación izquierda
+000ADB  1B 45 00                   negrita no
+000ADE  1B 2D 00                   subrayado 0
+000AE1  1D 42 00                   invertido no
+000AE4  1D 21 00                   tamaño 1×1
+000AE7  1B 4D 00                   fuente A
+000AEA  1B 64 01                   avanzar 1 línea(s)
+000AED  1B 61 00                   alineación izquierda
+000AF0  1B 45 00                   negrita no
+000AF3  1B 2D 00                   subrayado 0
+000AF6  1D 42 00                   invertido no
+000AF9  1D 21 00                   tamaño 1×1
+000AFC  1B 4D 00                   fuente A
+000AFF  1D 28 6B 04 00 31 41 32 …  QR: modelo 2
+000B08  1D 28 6B 03 00 31 43 04    QR: módulo de 4 puntos
+000B10  1D 28 6B 03 00 31 45 33    QR: corrección H
+000B18  1D 28 6B 09 00 31 50 30 …  QR: almacenar 6 bytes "PRISMA"
+000B26  1D 28 6B 03 00 31 51 30    QR: imprimir
+000B2E  1B 61 00                   alineación izquierda
+000B31  1B 45 00                   negrita no
+000B34  1B 2D 00                   subrayado 0
+000B37  1D 42 00                   invertido no
+000B3A  1D 21 00                   tamaño 1×1
+000B3D  1B 4D 00                   fuente A
+000B40  1B 61 01                   alineación centro
+000B43  1B 45 00                   negrita no
+000B46  1B 2D 00                   subrayado 0
+000B49  1D 42 00                   invertido no
+000B4C  1D 21 00                   tamaño 1×1
+000B4F  1B 4D 00                   fuente A
+000B52  1D 48 02                   texto legible abajo
+000B55  1D 66 00                   fuente del texto legible A
+000B58  1D 68 50                   alto del código de barras 80 puntos
+000B5B  1D 77 03                   ancho de módulo 3 puntos
+000B5E  1D 6B 43 0D 34 30 30 36 …  código de barras EAN13 "4006381333931"
+000B6F  1B 61 00                   alineación izquierda
+000B72  1B 45 00                   negrita no
+000B75  1B 2D 00                   subrayado 0
+000B78  1D 42 00                   invertido no
+000B7B  1D 21 00                   tamaño 1×1
+000B7E  1B 4D 00                   fuente A
+000B81  1B 61 01                   alineación centro
+000B84  1B 45 00                   negrita no
+000B87  1B 2D 00                   subrayado 0
+000B8A  1D 42 00                   invertido no
+000B8D  1D 21 00                   tamaño 1×1
+000B90  1B 4D 00                   fuente A
+000B93  1D 48 01                   texto legible arriba
+000B96  1D 66 00                   fuente del texto legible A
+000B99  1D 68 3C                   alto del código de barras 60 puntos
+000B9C  1D 77 03                   ancho de módulo 3 puntos
+000B9F  1D 6B 44 08 39 36 33 38 …  código de barras EAN8 "96385074"
+000BAB  1B 61 00                   alineación izquierda
+000BAE  1B 45 00                   negrita no
+000BB1  1B 2D 00                   subrayado 0
+000BB4  1D 42 00                   invertido no
+000BB7  1D 21 00                   tamaño 1×1
+000BBA  1B 4D 00                   fuente A
+000BBD  1B 61 01                   alineación centro
+000BC0  1B 45 00                   negrita no
+000BC3  1B 2D 00                   subrayado 0
+000BC6  1D 42 00                   invertido no
+000BC9  1D 21 00                   tamaño 1×1
+000BCC  1B 4D 00                   fuente A
+000BCF  1D 48 00                   texto legible ninguno
+000BD2  1D 66 00                   fuente del texto legible A
+000BD5  1D 68 3C                   alto del código de barras 60 puntos
+000BD8  1D 77 03                   ancho de módulo 3 puntos
+000BDB  1D 6B 41 0C 30 33 36 30 …  código de barras UPCA "036000291452"
+000BEB  1B 61 00                   alineación izquierda
+000BEE  1B 45 00                   negrita no
+000BF1  1B 2D 00                   subrayado 0
+000BF4  1D 42 00                   invertido no
+000BF7  1D 21 00                   tamaño 1×1
+000BFA  1B 4D 00                   fuente A
+000BFD  1B 61 00                   alineación izquierda
+000C00  1B 45 00                   negrita no
+000C03  1B 2D 00                   subrayado 0
+000C06  1D 42 00                   invertido no
+000C09  1D 21 00                   tamaño 1×1
+000C0C  1B 4D 00                   fuente A
+000C0F  1D 48 02                   texto legible abajo
+000C12  1D 66 00                   fuente del texto legible A
+000C15  1D 68 32                   alto del código de barras 50 puntos
+000C18  1D 77 02                   ancho de módulo 2 puntos
+000C1B  1D 6B 46 0E 30 30 30 31 …  código de barras ITF "00012345678905"
+000C2D  1B 61 00                   alineación izquierda
+000C30  1B 45 00                   negrita no
+000C33  1B 2D 00                   subrayado 0
+000C36  1D 42 00                   invertido no
+000C39  1D 21 00                   tamaño 1×1
+000C3C  1B 4D 00                   fuente A
+000C3F  1B 61 01                   alineación centro
+000C42  1B 45 00                   negrita no
+000C45  1B 2D 00                   subrayado 0
+000C48  1D 42 00                   invertido no
+000C4B  1D 21 00                   tamaño 1×1
+000C4E  1B 4D 00                   fuente A
+000C51  1D 48 02                   texto legible abajo
+000C54  1D 66 00                   fuente del texto legible A
+000C57  1D 68 50                   alto del código de barras 80 puntos
+000C5A  1D 77 02                   ancho de módulo 2 puntos
+000C5D  1D 6B 45 09 50 52 49 53 …  código de barras CODE39 "PRISMA-39"
+000C6A  1B 61 00                   alineación izquierda
+000C6D  1B 45 00                   negrita no
+000C70  1B 2D 00                   subrayado 0
+000C73  1D 42 00                   invertido no
+000C76  1D 21 00                   tamaño 1×1
+000C79  1B 4D 00                   fuente A
+000C7C  1B 61 02                   alineación derecha
+000C7F  1B 45 00                   negrita no
+000C82  1B 2D 00                   subrayado 0
+000C85  1D 42 00                   invertido no
+000C88  1D 21 00                   tamaño 1×1
+000C8B  1B 4D 00                   fuente A
+000C8E  1D 48 02                   texto legible abajo
+000C91  1D 66 00                   fuente del texto legible A
+000C94  1D 68 50                   alto del código de barras 80 puntos
+000C97  1D 77 02                   ancho de módulo 2 puntos
+000C9A  1D 6B 49 0E 7B 42 50 65 …  código de barras CODE128 "{BPedido#812/a"
+000CAC  1B 61 00                   alineación izquierda
+000CAF  1B 45 00                   negrita no
+000CB2  1B 2D 00                   subrayado 0
+000CB5  1D 42 00                   invertido no
+000CB8  1D 21 00                   tamaño 1×1
+000CBB  1B 4D 00                   fuente A
+000CBE  1B 61 00                   alineación izquierda
+000CC1  1B 45 00                   negrita no
+000CC4  1B 2D 00                   subrayado 0
+000CC7  1D 42 00                   invertido no
+000CCA  1D 21 00                   tamaño 1×1
+000CCD  1B 4D 00                   fuente A
+000CD0  1D 76 30 00 30 00 30 00 …  imagen 384×48 puntos (2304 bytes, sha256:5d74b30c)
+0015D8  1B 70 01 19 FA             abrir cajón pin 5 (50 ms / 500 ms)
+0015DD  1B 40                      inicializar impresora
+0015DF  1B 74 13                   página de códigos 19 (CP858)
+0015E2  1B 61 00                   alineación izquierda
+0015E5  1B 45 00                   negrita no
+0015E8  1B 2D 00                   subrayado 0
+0015EB  1D 42 00                   invertido no
+0015EE  1D 21 00                   tamaño 1×1
+0015F1  1B 4D 00                   fuente A
+0015F4  1D 56 41 00                avanzar hasta la cuchilla (+0) y corte total

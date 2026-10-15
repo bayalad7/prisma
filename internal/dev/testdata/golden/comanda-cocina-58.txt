@@ -1,0 +1,170 @@
+== Vista ==
+┌────────────────────────────────┐
+│         C O M A N D A          │
+│                                │
+│     M  E  S  A     1  2        │
+│                                │
+│                                │
+│Mesero: Lupita             13:58│
+│--------------------------------│
+│ 2x Enchiladas suizas           │
+│    * Sin cebolla, salsa aparte │
+│ 1x Sopa de tortilla            │
+│ 3x Agua de horchata grande     │
+│--------------------------------│
+│NOTA: cliente alérgico al       │
+│cacahuate                       │
+│                                │
+│                                │
+│                                │
+└✂ - - - corte total ────────────┘
+
+== Advertencias ==
+
+== Traza ==
+000000  1B 40                      inicializar impresora
+000002  1B 74 13                   página de códigos 19 (CP858)
+000005  1B 61 01                   alineación centro
+000008  1B 45 01                   negrita sí
+00000B  1B 2D 00                   subrayado 0
+00000E  1D 42 01                   invertido sí
+000011  1D 21 11                   tamaño 2×2
+000014  1B 4D 00                   fuente A
+000017  43 4F 4D 41 4E 44 41       texto "COMANDA"
+00001E  0A                         salto de línea
+00001F  1B 61 00                   alineación izquierda
+000022  1B 45 00                   negrita no
+000025  1B 2D 00                   subrayado 0
+000028  1D 42 00                   invertido no
+00002B  1D 21 00                   tamaño 1×1
+00002E  1B 4D 00                   fuente A
+000031  1B 61 01                   alineación centro
+000034  1B 45 01                   negrita sí
+000037  1B 2D 00                   subrayado 0
+00003A  1D 42 00                   invertido no
+00003D  1D 21 22                   tamaño 3×3
+000040  1B 4D 00                   fuente A
+000043  4D 45 53 41 20 31 32       texto "MESA 12"
+00004A  0A                         salto de línea
+00004B  1B 61 00                   alineación izquierda
+00004E  1B 45 00                   negrita no
+000051  1B 2D 00                   subrayado 0
+000054  1D 42 00                   invertido no
+000057  1D 21 00                   tamaño 1×1
+00005A  1B 4D 00                   fuente A
+00005D  1B 61 00                   alineación izquierda
+000060  1B 45 00                   negrita no
+000063  1B 2D 00                   subrayado 0
+000066  1D 42 00                   invertido no
+000069  1D 21 00                   tamaño 1×1
+00006C  1B 4D 00                   fuente A
+00006F  4D 65 73 65 72 6F 3A 20 …  texto "Mesero: Lupita             13:58"
+00008F  0A                         salto de línea
+000090  1B 61 00                   alineación izquierda
+000093  1B 45 00                   negrita no
+000096  1B 2D 00                   subrayado 0
+000099  1D 42 00                   invertido no
+00009C  1D 21 00                   tamaño 1×1
+00009F  1B 4D 00                   fuente A
+0000A2  1B 61 00                   alineación izquierda
+0000A5  1B 45 00                   negrita no
+0000A8  1B 2D 00                   subrayado 0
+0000AB  1D 42 00                   invertido no
+0000AE  1D 21 00                   tamaño 1×1
+0000B1  1B 4D 00                   fuente A
+0000B4  2D 2D 2D 2D 2D 2D 2D 2D …  texto "--------------------------------"
+0000D4  0A                         salto de línea
+0000D5  1B 61 00                   alineación izquierda
+0000D8  1B 45 00                   negrita no
+0000DB  1B 2D 00                   subrayado 0
+0000DE  1D 42 00                   invertido no
+0000E1  1D 21 00                   tamaño 1×1
+0000E4  1B 4D 00                   fuente A
+0000E7  20 32 78 20 45 6E 63 68 …  texto " 2x Enchiladas suizas           "
+000107  0A                         salto de línea
+000108  1B 61 00                   alineación izquierda
+00010B  1B 45 00                   negrita no
+00010E  1B 2D 00                   subrayado 0
+000111  1D 42 00                   invertido no
+000114  1D 21 00                   tamaño 1×1
+000117  1B 4D 00                   fuente A
+00011A  1B 61 00                   alineación izquierda
+00011D  1B 45 00                   negrita no
+000120  1B 2D 00                   subrayado 0
+000123  1D 42 00                   invertido no
+000126  1D 21 00                   tamaño 1×1
+000129  1B 4D 00                   fuente A
+00012C  20 20 20 20 2A 20 53 69 …  texto "    * Sin cebolla, salsa aparte "
+00014C  0A                         salto de línea
+00014D  1B 61 00                   alineación izquierda
+000150  1B 45 00                   negrita no
+000153  1B 2D 00                   subrayado 0
+000156  1D 42 00                   invertido no
+000159  1D 21 00                   tamaño 1×1
+00015C  1B 4D 00                   fuente A
+00015F  1B 61 00                   alineación izquierda
+000162  1B 45 00                   negrita no
+000165  1B 2D 00                   subrayado 0
+000168  1D 42 00                   invertido no
+00016B  1D 21 00                   tamaño 1×1
+00016E  1B 4D 00                   fuente A
+000171  20 31 78 20 53 6F 70 61 …  texto " 1x Sopa de tortilla            "
+000191  0A                         salto de línea
+000192  1B 61 00                   alineación izquierda
+000195  1B 45 00                   negrita no
+000198  1B 2D 00                   subrayado 0
+00019B  1D 42 00                   invertido no
+00019E  1D 21 00                   tamaño 1×1
+0001A1  1B 4D 00                   fuente A
+0001A4  1B 61 00                   alineación izquierda
+0001A7  1B 45 00                   negrita no
+0001AA  1B 2D 00                   subrayado 0
+0001AD  1D 42 00                   invertido no
+0001B0  1D 21 00                   tamaño 1×1
+0001B3  1B 4D 00                   fuente A
+0001B6  20 33 78 20 41 67 75 61 …  texto " 3x Agua de horchata grande     "
+0001D6  0A                         salto de línea
+0001D7  1B 61 00                   alineación izquierda
+0001DA  1B 45 00                   negrita no
+0001DD  1B 2D 00                   subrayado 0
+0001E0  1D 42 00                   invertido no
+0001E3  1D 21 00                   tamaño 1×1
+0001E6  1B 4D 00                   fuente A
+0001E9  1B 61 00                   alineación izquierda
+0001EC  1B 45 00                   negrita no
+0001EF  1B 2D 00                   subrayado 0
+0001F2  1D 42 00                   invertido no
+0001F5  1D 21 00                   tamaño 1×1
+0001F8  1B 4D 00                   fuente A
+0001FB  2D 2D 2D 2D 2D 2D 2D 2D …  texto "--------------------------------"
+00021B  0A                         salto de línea
+00021C  1B 61 00                   alineación izquierda
+00021F  1B 45 01                   negrita sí
+000222  1B 2D 01                   subrayado 1
+000225  1D 42 00                   invertido no
+000228  1D 21 00                   tamaño 1×1
+00022B  1B 4D 00                   fuente A
+00022E  4E 4F 54 41 3A 20 63 6C …  texto "NOTA: cliente alérgico al"
+000247  0A                         salto de línea
+000248  63 61 63 61 68 75 61 74 …  texto "cacahuate"
+000251  0A                         salto de línea
+000252  1B 61 00                   alineación izquierda
+000255  1B 45 00                   negrita no
+000258  1B 2D 00                   subrayado 0
+00025B  1D 42 00                   invertido no
+00025E  1D 21 00                   tamaño 1×1
+000261  1B 4D 00                   fuente A
+000264  1B 61 00                   alineación izquierda
+000267  1B 45 00                   negrita no
+00026A  1B 2D 00                   subrayado 0
+00026D  1D 42 00                   invertido no
+000270  1D 21 00                   tamaño 1×1
+000273  1B 4D 00                   fuente A
+000276  1B 64 03                   avanzar 3 línea(s)
+000279  1B 61 00                   alineación izquierda
+00027C  1B 45 00                   negrita no
+00027F  1B 2D 00                   subrayado 0
+000282  1D 42 00                   invertido no
+000285  1D 21 00                   tamaño 1×1
+000288  1B 4D 00                   fuente A
+00028B  1D 56 41 00                avanzar hasta la cuchilla (+0) y corte total

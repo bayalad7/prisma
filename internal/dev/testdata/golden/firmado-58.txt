@@ -1,0 +1,46 @@
+== Vista ==
+┌────────────────────────────────┐
+│Pedido en línea #812            │
+│TOTAL                    $249.00│
+└✂ - - - corte total ────────────┘
+
+== Advertencias ==
+
+== Traza ==
+000000  1B 40                      inicializar impresora
+000002  1B 74 13                   página de códigos 19 (CP858)
+000005  1B 61 00                   alineación izquierda
+000008  1B 45 01                   negrita sí
+00000B  1B 2D 00                   subrayado 0
+00000E  1D 42 00                   invertido no
+000011  1D 21 00                   tamaño 1×1
+000014  1B 4D 00                   fuente A
+000017  50 65 64 69 64 6F 20 65 …  texto "Pedido en línea #812"
+00002B  0A                         salto de línea
+00002C  1B 61 00                   alineación izquierda
+00002F  1B 45 00                   negrita no
+000032  1B 2D 00                   subrayado 0
+000035  1D 42 00                   invertido no
+000038  1D 21 00                   tamaño 1×1
+00003B  1B 4D 00                   fuente A
+00003E  1B 61 00                   alineación izquierda
+000041  1B 45 00                   negrita no
+000044  1B 2D 00                   subrayado 0
+000047  1D 42 00                   invertido no
+00004A  1D 21 00                   tamaño 1×1
+00004D  1B 4D 00                   fuente A
+000050  54 4F 54 41 4C 20 20 20 …  texto "TOTAL                    $249.00"
+000070  0A                         salto de línea
+000071  1B 61 00                   alineación izquierda
+000074  1B 45 00                   negrita no
+000077  1B 2D 00                   subrayado 0
+00007A  1D 42 00                   invertido no
+00007D  1D 21 00                   tamaño 1×1
+000080  1B 4D 00                   fuente A
+000083  1B 61 00                   alineación izquierda
+000086  1B 45 00                   negrita no
+000089  1B 2D 00                   subrayado 0
+00008C  1D 42 00                   invertido no
+00008F  1D 21 00                   tamaño 1×1
+000092  1B 4D 00                   fuente A
+000095  1D 56 41 00                avanzar hasta la cuchilla (+0) y corte total

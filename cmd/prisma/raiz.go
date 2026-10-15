@@ -62,6 +62,7 @@ func nuevoComandoRaiz() *cobra.Command {
 		nuevoComandoConfig(op),
 		nuevoComandoEjecutar(op),
 		nuevoComandoAdmin(op),
+		nuevoComandoDev(),
 	)
 	return raiz
 }
