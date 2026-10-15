@@ -1,0 +1,154 @@
+package almacen
+
+import (
+	"context"
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"time"
+)
+
+// Estados de un trabajo.
+const (
+	TrabajoEncolado    = "encolado"
+	TrabajoImprimiendo = "imprimiendo"
+	TrabajoCompletado  = "completado"
+	TrabajoFallido     = "fallido"
+)
+
+// CodigoPuenteReiniciado marca los trabajos que quedaron a medias cuando el puente se detuvo.
+const CodigoPuenteReiniciado = "PUENTE_REINICIADO"
+
+// Trabajo es un documento aceptado para una impresora. No guarda el contenido del ticket.
+type Trabajo struct {
+	ID             string
+	DocumentoID    string
+	ClienteID      string
+	ImpresoraAlias string
+	Referencia     string
+	Estado         string
+	CodigoError    string
+	Advertencias   []string
+	Duracion       time.Duration // 0 mientras no termina
+	Creado         time.Time
+	Finalizado     time.Time // cero mientras no termina
+}
+
+type RepoTrabajos struct{ a *Almacen }
+
+const columnasTrabajo = `id, documento_id, cliente_id, impresora_alias, referencia, estado, codigo_error,
+	advertencias, duracion_ms, creado, finalizado`
+
+// Crear registra un trabajo nuevo en estado encolado.
+func (r *RepoTrabajos) Crear(ctx context.Context, t *Trabajo) error {
+	adv, err := codificarLista(t.Advertencias)
+	if err != nil {
+		return err
+	}
+	ahora := r.a.ahora()
+	t.Estado = TrabajoEncolado
+	_, err = r.a.db.ExecContext(ctx, `INSERT INTO trabajos (id, documento_id, cliente_id, impresora_alias, referencia,
+		estado, advertencias, creado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		t.ID, t.DocumentoID, t.ClienteID, t.ImpresoraAlias, textoNulo(t.Referencia), t.Estado, adv, ms(ahora))
+	if err != nil {
+		return traducirError(err, "trabajo "+t.ID)
+	}
+	t.Creado = desdeMs(ms(ahora))
+	return nil
+}
+
+// MarcarImprimiendo pasa un trabajo encolado a imprimiendo.
+func (r *RepoTrabajos) MarcarImprimiendo(ctx context.Context, id string) error {
+	res, err := r.a.db.ExecContext(ctx, `UPDATE trabajos SET estado = 'imprimiendo' WHERE id = ? AND estado = 'encolado'`, id)
+	return exigirUnaFila(res, err, "trabajo encolado "+id)
+}
+
+// Finalizar cierra el trabajo como completado o fallido, con su código de error y advertencias.
+func (r *RepoTrabajos) Finalizar(ctx context.Context, id, estado, codigoError string, advertencias []string, duracion time.Duration) error {
+	if estado != TrabajoCompletado && estado != TrabajoFallido {
+		return fmt.Errorf("trabajo %s: %w (estado final %q)", id, ErrInvalido, estado)
+	}
+	adv, err := codificarLista(advertencias)
+	if err != nil {
+		return err
+	}
+	res, err := r.a.db.ExecContext(ctx, `UPDATE trabajos SET estado = ?, codigo_error = ?, advertencias = ?,
+		duracion_ms = ?, finalizado = ? WHERE id = ? AND estado IN ('encolado', 'imprimiendo')`,
+		estado, textoNulo(codigoError), adv, duracion.Milliseconds(), ms(r.a.ahora()), id)
+	return exigirUnaFila(res, err, "trabajo pendiente "+id)
+}
+
+// MarcarInterrumpidos cierra como fallidos los trabajos que quedaron pendientes al detenerse el puente.
+func (r *RepoTrabajos) MarcarInterrumpidos(ctx context.Context) (int64, error) {
+	res, err := r.a.db.ExecContext(ctx, `UPDATE trabajos SET estado = 'fallido', codigo_error = ?, finalizado = ?
+		WHERE estado IN ('encolado', 'imprimiendo')`, CodigoPuenteReiniciado, ms(r.a.ahora()))
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
+}
+
+func (r *RepoTrabajos) Obtener(ctx context.Context, id string) (*Trabajo, error) {
+	t, err := escanearTrabajo(r.a.db.QueryRowContext(ctx, `SELECT `+columnasTrabajo+` FROM trabajos WHERE id = ?`, id))
+	return t, traducirError(err, "trabajo "+id)
+}
+
+// FiltroTrabajos limita el listado. Los campos vacíos no filtran.
+type FiltroTrabajos struct {
+	ClienteID      string
+	ImpresoraAlias string
+	Estado         string
+	Limite         int // 0 = 100
+}
+
+// Listar devuelve los trabajos más recientes primero.
+func (r *RepoTrabajos) Listar(ctx context.Context, f FiltroTrabajos) ([]Trabajo, error) {
+	if f.Limite <= 0 {
+		f.Limite = 100
+	}
+	filas, err := r.a.db.QueryContext(ctx, `SELECT `+columnasTrabajo+` FROM trabajos
+		WHERE (?1 = '' OR cliente_id = ?1) AND (?2 = '' OR impresora_alias = ?2) AND (?3 = '' OR estado = ?3)
+		ORDER BY creado DESC, id LIMIT ?4`, f.ClienteID, f.ImpresoraAlias, f.Estado, f.Limite)
+	if err != nil {
+		return nil, err
+	}
+	defer filas.Close()
+	var lista []Trabajo
+	for filas.Next() {
+		t, err := escanearTrabajo(filas)
+		if err != nil {
+			return nil, err
+		}
+		lista = append(lista, *t)
+	}
+	return lista, filas.Err()
+}
+
+// Purgar borra los trabajos terminados creados antes de la fecha indicada.
+func (r *RepoTrabajos) Purgar(ctx context.Context, antesDe time.Time) (int64, error) {
+	res, err := r.a.db.ExecContext(ctx, `DELETE FROM trabajos WHERE creado < ? AND estado IN ('completado', 'fallido')`, ms(antesDe))
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
+}
+
+func escanearTrabajo(f filaEscaneable) (*Trabajo, error) {
+	var t Trabajo
+	var referencia, codigo sql.NullString
+	var adv string
+	var duracion, finalizado sql.NullInt64
+	var creado int64
+	err := f.Scan(&t.ID, &t.DocumentoID, &t.ClienteID, &t.ImpresoraAlias, &referencia, &t.Estado, &codigo, &adv,
+		&duracion, &creado, &finalizado)
+	if err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal([]byte(adv), &t.Advertencias); err != nil {
+		return nil, fmt.Errorf("advertencias del trabajo %s: %w", t.ID, err)
+	}
+	t.Referencia, t.CodigoError = referencia.String, codigo.String
+	t.Duracion = time.Duration(duracion.Int64) * time.Millisecond
+	t.Creado, t.Finalizado = desdeMs(creado), desdeMsNulo(finalizado)
+	return &t, nil
+}

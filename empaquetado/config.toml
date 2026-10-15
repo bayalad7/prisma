@@ -1,0 +1,26 @@
+# PRISMA — configuración de arranque.
+# Solo contiene lo necesario para arrancar. Impresoras, clientes y demás ajustes
+# se administran desde el panel web (https://<este-equipo>:8443/admin).
+# Comprueba los cambios con: prisma config validar
+
+[servidor]
+# Dirección en la que escucha el puente. "0.0.0.0" = toda la red local; "127.0.0.1" = solo este equipo.
+escuchar = "0.0.0.0"
+puerto = 8443
+
+# autofirmado          el puente genera y guarda su propio certificado (recomendado para empezar).
+# archivos             usa el certificado y la llave PEM indicados abajo.
+# solo_localhost_http  HTTP sin cifrar; solo se permite con escuchar = "127.0.0.1".
+modo_tls = "autofirmado"
+
+# Solo con modo_tls = "archivos". Las rutas relativas se resuelven desde la carpeta de este archivo.
+certificado = ""
+llave = ""
+
+[datos]
+# Carpeta de la base de datos. Vacío = ruta por defecto del sistema (ver: prisma config ruta).
+ruta = ""
+
+[dev]
+# Herramientas de desarrollo (impresora virtual, etc.). Nunca lo actives en un negocio.
+modo_desarrollo = false
