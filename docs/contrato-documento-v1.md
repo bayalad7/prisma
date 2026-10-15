@@ -76,8 +76,11 @@ Reglas generales:
 ### Codificación
 
 - Todo el texto viaja en UTF-8. El puente lo normaliza a NFC y lo convierte a la página de códigos del perfil de la impresora.
-- Un carácter que no existe en esa página se imprime como `?`.
-- Tú no tienes que conocer la página de códigos.
+- Un carácter que no existe en esa página **nunca provoca un error**. Se sustituye y el trabajo lleva la advertencia `CARACTER_SUSTITUIDO`:
+  1. Los signos tipográficos pasan a su equivalente ASCII: `“ ”` → `"`, `‘ ’` → `'`, `– —` → `-`, `…` → `.`.
+  2. Las letras con acento se imprimen sin él (`Á` → `A` en CP437).
+  3. Lo demás se imprime como `?`.
+- Tú no tienes que conocer la página de códigos. El puente soporta CP437, CP850, CP858 y WPC1252.
 
 ### Caracteres de control prohibidos
 
@@ -240,7 +243,7 @@ Imprime un código QR (modelo 2).
 | `correccion` | `L` \| `M` \| `Q` \| `H` | `M` | Nivel de corrección de errores. |
 | `alineacion` | `izquierda` \| `centro` \| `derecha` | `centro` | |
 
-Si el código resultante es más ancho que el papel, el puente reduce `tamano` hasta que quepa. Si ni con tamaño 1 cabe, rechaza el documento con `OPERACION_NO_SOPORTADA`.
+Si el código resultante es más ancho que el papel, el puente reduce `tamano` hasta que quepa y anota la advertencia `QR_REDUCIDO`. Si ni con tamaño 1 cabe, rechaza el documento con `OPERACION_NO_SOPORTADA`.
 
 ```json
 {"tipo": "qr", "valor": "https://facturas.example.com/t/FAC-A-000981", "tamano": 6, "correccion": "M"}
@@ -271,6 +274,8 @@ Valores aceptados por simbología:
 
 Si un dígito verificador no coincide, el puente rechaza el documento con `CODIGO_BARRAS_INVALIDO`.
 
+El puente imprime cada módulo (la barra más delgada) con 3 puntos de ancho, o con 2 si con 3 no cabe en el papel. Si ni con 2 cabe, responde `OPERACION_NO_SOPORTADA`. Esto puede pasar, por ejemplo, con un `CODE128` largo en papel de 58 mm.
+
 ```json
 {"tipo": "codigo_barras", "valor": "4006381333931", "simbologia": "EAN13", "alto": 80}
 ```
@@ -288,7 +293,7 @@ Imprime una imagen. El documento DEBE traer **exactamente uno** de los campos `b
 
 El puente procesa la imagen así:
 
-1. Decodifica el PNG. Si no es un PNG válido, responde `IMAGEN_INVALIDA`.
+1. Decodifica el PNG. Si no es un PNG válido o mide más de 4096 píxeles por lado, responde `IMAGEN_INVALIDA`.
 2. Trata los píxeles transparentes como blancos.
 3. Reduce la imagen, conservando la proporción, hasta que su ancho no supere `ancho_max` del área imprimible. **Nunca la agranda.**
 4. La convierte a 1 bit con difusión de error Floyd–Steinberg.
@@ -354,7 +359,7 @@ Si un cliente envía una operación sensible que no tiene permitida, el puente r
 | Texto de una celda (`fila`, `par`) | 1024 caracteres | el esquema |
 | Columnas por `fila` | 8 | el esquema |
 | `qr.valor` | 700 caracteres | el esquema |
-| `imagen.base64` | 100 KB decodificado | el esquema (longitud) y el puente (contenido) |
+| `imagen.base64` | 100 KB decodificado, 4096 px por lado | el esquema (longitud) y el puente (contenido) |
 | `raw.base64` | 64 KB decodificado | el esquema y el puente |
 | Vigencia de la firma | `expira` − `emitido` ≤ 120 s | el puente |
 | Ventana de idempotencia | 10 min | el puente |
@@ -370,10 +375,9 @@ El perfil de cada impresora declara qué puede hacer. Cuando una operación no s
 | `cortar` | Avanza 4 líneas y anota una advertencia en el resultado del trabajo. |
 | `qr`, `codigo_barras` | Dibuja el código como imagen (raster). Requiere que la impresora soporte imágenes. |
 | `imagen` (o un código que haya que dibujar) sin soporte de imágenes | Rechaza el documento con `OPERACION_NO_SOPORTADA`. |
-| `abrir_cajon` sin cajón | Rechaza el documento con `OPERACION_NO_SOPORTADA`. |
-| `texto` con `invertido`, `subrayado` o `fuente: "B"` | Imprime el texto sin ese estilo y anota una advertencia. |
+| `abrir_cajon` sin cajón | Omite el pulso, imprime el resto y anota la advertencia `SIN_CAJON`. |
 
-Todas estas comprobaciones se hacen al aceptar el documento, de modo que **nunca se imprime un ticket a medias** por falta de una capacidad.
+Los rechazos se deciden al aceptar el documento, de modo que **nunca se imprime un ticket a medias** por falta de una capacidad. `cortar` y `abrir_cajon` no rechazan el documento: el ticket se imprime igual y la advertencia queda en el trabajo (`SIN_CUCHILLA`, `SIN_CAJON`).
 
 ## 7. Firma (nivel 3)
 
@@ -468,10 +472,15 @@ El puente valida en este orden y se detiene en el primer paso que falla:
 2. **JSON válido** (I-JSON, sin claves duplicadas): `JSON_INVALIDO`.
 3. **`version`:** `VERSION_NO_SOPORTADA`. Se comprueba antes que el resto, para que un documento de otra versión reciba este código y no un error genérico.
 4. **Esquema:** `OPERACION_DESCONOCIDA`, `DEMASIADAS_OPERACIONES` o `DOCUMENTO_INVALIDO`.
-5. **Firma**, en el nivel 3: `FIRMA_REQUERIDA`, `FIRMA_INVALIDA` o `FIRMA_EXPIRADA`.
-6. **Permisos del cliente** sobre la impresora y las operaciones (ver la especificación de la API).
-7. **Perfil de la impresora:** `FILA_NO_CABE`, `CODIGO_BARRAS_INVALIDO`, `IMAGEN_INVALIDA`, `RECURSO_NO_ENCONTRADO` u `OPERACION_NO_SOPORTADA`.
-8. **Idempotencia:** `ID_REUTILIZADO`, o la respuesta de duplicado.
+5. **Reglas del documento que no dependen de la impresora:**
+   - `CODIGO_BARRAS_INVALIDO`: dígito verificador incorrecto.
+   - `IMAGEN_INVALIDA`: un PNG en línea dañado o demasiado grande.
+   - `FILA_NO_CABE`: porcentajes que suman más de 100.
+   - `FIRMA_INVALIDA`: la vigencia de la firma no está entre 0 y 120 s.
+6. **Firma**, en el nivel 3: `FIRMA_REQUERIDA`, `FIRMA_INVALIDA` o `FIRMA_EXPIRADA`.
+7. **Permisos del cliente** sobre la impresora y las operaciones (ver la especificación de la API).
+8. **Perfil de la impresora:** `FILA_NO_CABE`, `IMAGEN_INVALIDA`, `RECURSO_NO_ENCONTRADO` u `OPERACION_NO_SOPORTADA`.
+9. **Idempotencia:** `ID_REUTILIZADO`, o la respuesta de duplicado.
 
 ### Forma del error
 

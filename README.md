@@ -18,7 +18,7 @@ PRISMA es un servicio que se instala en una PC, Raspberry Pi o Mac dentro de la 
 }
 ```
 
-> **Estado: en desarrollo.** Ya funcionan el contrato del documento, la configuración, la base de datos y la CLI. Todavía faltan el servidor HTTPS, el renderizador ESC/POS, los conectores, el panel de administración y el SDK. Consulta la [hoja de ruta](#hoja-de-ruta).
+> **Estado: en desarrollo.** Ya funcionan el contrato del documento con su validación, el renderizador ESC/POS con su previsualización, la configuración, la base de datos y la CLI. Todavía faltan el servidor HTTPS, los conectores, el panel de administración y el SDK. Consulta la [hoja de ruta](#hoja-de-ruta).
 
 ## Principios
 
@@ -85,6 +85,21 @@ prisma ejecutar [--config ruta]        # ejecuta el puente en primer plano
 prisma admin restablecer-contrasena    # genera una contraseña nueva para el panel
 ```
 
+### Herramientas de desarrollo
+
+Todas usan una impresora virtual de 58 u 80 mm con página de códigos CP858.
+
+```sh
+prisma dev previsualizar documento.json [--ancho 58|80]   # simula el ticket en la terminal
+prisma dev previsualizar documento.json --html vista.html # o en una página HTML
+prisma dev renderizar documento.json -o ticket.bin        # genera los bytes ESC/POS
+prisma dev decodificar ticket.bin                         # traza legible de los comandos
+```
+
+Si el documento usa imágenes guardadas (`"recurso"`), indica con `--recursos carpeta` dónde están los archivos `<nombre>.png`.
+
+Las pruebas golden de `internal/dev` comparan la traza y la vista de cada ejemplo válido a 58 y 80 mm. Si un cambio en el renderizador es intencional, regéneralas con `go test ./internal/dev -actualizar` y revisa la diferencia antes de commitear.
+
 ### Configuración
 
 `config.toml` solo contiene lo necesario para arrancar. Impresoras, clientes y ajustes se administran desde el panel y se guardan en la base de datos. En [empaquetado/config.toml](empaquetado/config.toml) hay un ejemplo comentado.
@@ -121,10 +136,13 @@ cmd/prisma/           CLI y punto de entrada
 internal/config/      carga y validación de config.toml
 internal/rutas/       rutas por sistema operativo
 internal/almacen/     SQLite: esquema, migraciones y repositorios
-internal/seguridad/   orígenes, contraseñas y (próximamente) llaves y firmas
+internal/contrato/    tipos del documento v1 y validación (esquema + reglas)
+internal/escpos/      renderizador a ESC/POS, páginas de códigos, QR, códigos de barras e imágenes
+internal/dev/         decodificador ESC/POS, impresora virtual y previsualización
+internal/seguridad/   orígenes, contraseñas y firmas Ed25519 (JCS)
 internal/version/     versión del binario
+schema/               JSON Schema publicados (embebidos en el binario)
 docs/                 especificaciones
-schema/               JSON Schema publicados
 ejemplos/             documentos de ejemplo válidos e inválidos
 empaquetado/          archivos para instalación
 ```
@@ -142,8 +160,8 @@ Para contribuir, crea tu rama a partir de `develop` y abre el pull request hacia
 
 - [x] Contrato «documento v1», esquema y ejemplos
 - [x] Configuración, base de datos con migraciones y CLI básica
-- [ ] Validación del documento y firma Ed25519 (JCS)
-- [ ] Renderizador ESC/POS y páginas de códigos
+- [x] Validación del documento y firma Ed25519 (JCS)
+- [x] Renderizador ESC/POS, páginas de códigos y previsualización
 - [ ] Conectores de red, USB, Bluetooth y archivo
 - [ ] Cola por impresora
 - [ ] Servidor HTTPS y API pública `/v1`
