@@ -4,8 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"strconv"
+	"syscall"
 
 	"github.com/spf13/cobra"
 
@@ -19,7 +23,50 @@ func nuevoComandoDev() *cobra.Command {
 		Use:   "dev",
 		Short: "Herramientas de desarrollo (decodificar y previsualizar tickets)",
 	}
-	cmd.AddCommand(nuevoComandoDecodificar(), nuevoComandoPrevisualizar(), nuevoComandoRenderizar())
+	cmd.AddCommand(nuevoComandoDecodificar(), nuevoComandoPrevisualizar(), nuevoComandoRenderizar(), nuevoComandoImpresoraVirtual())
+	return cmd
+}
+
+func nuevoComandoImpresoraVirtual() *cobra.Command {
+	var puerto, ancho int
+	var escuchar, directorio string
+	var sinTraza, sinColor bool
+	cmd := &cobra.Command{
+		Use:   "impresora-virtual [--puerto 9100] [--ancho 80]",
+		Short: "Simula una impresora de red: guarda cada trabajo y muestra su traza y previsualización",
+		Long: "Escucha por TCP como una impresora de red. Configúrala en el puente con\n" +
+			"  prisma impresoras agregar --alias virtual --tipo red --destino 127.0.0.1:9100\n" +
+			"para desarrollar sin hardware. Ctrl+C la detiene.",
+		Args: cobra.NoArgs,
+		RunE: func(c *cobra.Command, _ []string) error {
+			perfil, err := dev.PerfilPrueba(ancho)
+			if err != nil {
+				return err
+			}
+			if directorio == "" {
+				directorio = filepath.Join(os.TempDir(), "prisma-impresora-virtual")
+			}
+			ln, err := net.Listen("tcp", net.JoinHostPort(escuchar, strconv.Itoa(puerto)))
+			if err != nil {
+				return fmt.Errorf("no se pudo escuchar en %s:%d (¿otro programa usa el puerto?): %w", escuchar, puerto, err)
+			}
+			w := c.OutOrStdout()
+			fmt.Fprintf(w, "Impresora virtual de %d mm escuchando en %s. Trabajos en %s. Ctrl+C para salir.\n",
+				ancho, ln.Addr(), directorio)
+			ctx, detener := signal.NotifyContext(c.Context(), os.Interrupt, syscall.SIGTERM)
+			defer detener()
+			v := &dev.ImpresoraVirtual{Perfil: perfil, Directorio: directorio, Salida: w, SinTraza: sinTraza,
+				Color: !sinColor && os.Getenv("NO_COLOR") == ""}
+			return v.Servir(ctx, ln)
+		},
+	}
+	f := cmd.Flags()
+	f.IntVar(&puerto, "puerto", 9100, "puerto TCP")
+	f.StringVar(&escuchar, "escuchar", "127.0.0.1", "dirección en la que escucha (0.0.0.0 para recibir desde otros equipos)")
+	f.IntVar(&ancho, "ancho", 80, "ancho del papel en mm (58 u 80)")
+	f.StringVar(&directorio, "salida", "", "carpeta donde guardar los .bin (por defecto, una carpeta temporal)")
+	f.BoolVar(&sinTraza, "sin-traza", false, "muestra solo la previsualización")
+	f.BoolVar(&sinColor, "sin-color", false, "no usa secuencias de color ANSI")
 	return cmd
 }
 
