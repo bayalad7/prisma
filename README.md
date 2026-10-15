@@ -18,7 +18,7 @@ PRISMA es un servicio que se instala en una PC, Raspberry Pi o Mac dentro de la 
 }
 ```
 
-> **Estado: en desarrollo.** Ya funcionan el contrato del documento con su validación, el renderizador ESC/POS con su previsualización, la configuración, la base de datos y la CLI. Todavía faltan el servidor HTTPS, los conectores, el panel de administración y el SDK. Consulta la [hoja de ruta](#hoja-de-ruta).
+> **Estado: en desarrollo.** Ya funcionan el contrato del documento con su validación, el renderizador ESC/POS con su previsualización, los conectores (red, USB, Bluetooth y archivo), la cola por impresora, la configuración, la base de datos y la CLI. Todavía faltan el servidor HTTPS, el panel de administración y el SDK. Consulta la [hoja de ruta](#hoja-de-ruta).
 
 ## Principios
 
@@ -75,6 +75,21 @@ make build-todo
 make lint
 ```
 
+## Documentación
+
+| Guía | Contenido |
+|---|---|
+| [Primeros pasos](docs/primeros-pasos.md) | Compilar e imprimir en una impresora virtual en 5 minutos. |
+| [Instalación](docs/instalacion.md) | Producción en Windows, Linux, Raspberry Pi y macOS: servicio, respaldo y actualización. |
+| [Conectores](docs/conectores.md) | Impresoras de red, USB y Bluetooth en cada sistema. |
+| [CLI](docs/cli.md) · [Configuración](docs/configuracion.md) | Referencia de comandos y de `config.toml`. |
+| [Arquitectura](docs/arquitectura.md) | Cómo viaja un documento hasta la impresora. |
+| [Desarrollo](docs/desarrollo.md) | Pruebas, golden, convenciones y ramas. |
+| [Solución de problemas](docs/solucion-de-problemas.md) | Errores frecuentes, acentos y columnas. |
+| [Contrato documento v1](docs/contrato-documento-v1.md) | El JSON que envían las aplicaciones. |
+
+El índice completo está en [docs/README.md](docs/README.md).
+
 ## Uso
 
 ```sh
@@ -85,11 +100,25 @@ prisma ejecutar [--config ruta]        # ejecuta el puente en primer plano
 prisma admin restablecer-contrasena    # genera una contraseña nueva para el panel
 ```
 
-### Herramientas de desarrollo
-
-Todas usan una impresora virtual de 58 u 80 mm con página de códigos CP858.
+### Impresoras
 
 ```sh
+prisma impresoras detectar [--red] [--json]   # impresoras, colas y puertos de este equipo (y de la red)
+prisma impresoras agregar --alias caja --tipo red --destino 192.168.1.50 [--ancho 58|80] [--cajon]
+prisma impresoras listar
+prisma impresoras probar caja                 # comprueba la conexión sin imprimir
+prisma impresoras eliminar caja
+prisma imprimir --impresora caja documento.json   # solo con [dev] modo_desarrollo = true
+```
+
+Cómo obtener el destino de cada impresora (IP fija, nombre USB, cola de CUPS, puerto Bluetooth) y qué permisos necesita el servicio en cada sistema: [docs/conectores.md](docs/conectores.md).
+
+### Herramientas de desarrollo
+
+Todas usan un perfil de prueba de 58 u 80 mm con página de códigos CP858.
+
+```sh
+prisma dev impresora-virtual [--puerto 9100] [--ancho 80]  # impresora de red simulada: traza + vista de cada trabajo
 prisma dev previsualizar documento.json [--ancho 58|80]   # simula el ticket en la terminal
 prisma dev previsualizar documento.json --html vista.html # o en una página HTML
 prisma dev renderizar documento.json -o ticket.bin        # genera los bytes ESC/POS
@@ -138,6 +167,8 @@ internal/rutas/       rutas por sistema operativo
 internal/almacen/     SQLite: esquema, migraciones y repositorios
 internal/contrato/    tipos del documento v1 y validación (esquema + reglas)
 internal/escpos/      renderizador a ESC/POS, páginas de códigos, QR, códigos de barras e imágenes
+internal/conector/    red, USB (winspool / dispositivo / CUPS), Bluetooth (puerto serie), archivo y detección
+internal/cola/        cola FIFO por impresora y estado (en línea / fuera de línea / ocupada)
 internal/dev/         decodificador ESC/POS, impresora virtual y previsualización
 internal/seguridad/   orígenes, contraseñas y firmas Ed25519 (JCS)
 internal/version/     versión del binario
@@ -162,8 +193,8 @@ Para contribuir, crea tu rama a partir de `develop` y abre el pull request hacia
 - [x] Configuración, base de datos con migraciones y CLI básica
 - [x] Validación del documento y firma Ed25519 (JCS)
 - [x] Renderizador ESC/POS, páginas de códigos y previsualización
-- [ ] Conectores de red, USB, Bluetooth y archivo
-- [ ] Cola por impresora
+- [x] Conectores de red, USB, Bluetooth y archivo
+- [x] Cola por impresora
 - [ ] Servidor HTTPS y API pública `/v1`
 - [ ] Panel de administración
 - [ ] SDK JavaScript

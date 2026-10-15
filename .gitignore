@@ -2,3 +2,5 @@ dist/
 *.db
 *.db-wal
 *.db-shm
+config.dev.toml
+datos-dev/
