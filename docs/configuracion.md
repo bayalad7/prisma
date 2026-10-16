@@ -4,8 +4,8 @@ PRISMA tiene dos niveles de configuración:
 
 | Dónde | Qué contiene | Cómo se cambia |
 |---|---|---|
-| `config.toml` | Solo lo necesario para **arrancar**: red, TLS, ruta de datos y modo desarrollo. | Editando el archivo y reiniciando. |
-| Base de datos (`prisma.db`) | Todo lo demás: impresoras, clientes, orígenes, permisos, recursos, retención y contraseña del panel. | ⏳ Desde el panel. Hoy, con la CLI (`prisma impresoras …`, `prisma admin …`). |
+| `config.toml` | Solo lo necesario para **arrancar**: red, TLS, límites de peticiones, ruta de datos y modo desarrollo. | Editando el archivo y reiniciando. |
+| Base de datos (`prisma.db`) | Todo lo demás: impresoras, clientes, orígenes, permisos, recursos, retención y contraseña del panel. | ⏳ Desde el panel. Hoy, con la CLI (`prisma impresoras …`, `prisma clientes …`, `prisma admin …`). |
 
 ## `config.toml`
 
@@ -27,13 +27,17 @@ llave = ""
 [datos]
 ruta = ""
 
+[limites]
+peticiones_ip_por_minuto = 120
+peticiones_cliente_por_minuto = 60
+
 [dev]
 modo_desarrollo = false
 ```
 
-### `[servidor]` ⏳
+### `[servidor]`
 
-Estas claves ya se validan, pero se usarán cuando exista el servidor HTTPS.
+Dónde y cómo escucha la API pública ([api-v1.md](api-v1.md)).
 
 | Clave | Por defecto | Valores |
 |---|---|---|
@@ -48,11 +52,24 @@ Estas claves ya se validan, pero se usarán cuando exista el servidor HTTPS.
 | `archivos` | Usa `certificado` y `llave`. `config validar` comprueba que existan y que formen un par válido. |
 | `solo_localhost_http` | HTTP sin cifrar. Solo se acepta si `escuchar` es `127.0.0.1`, `::1` o `localhost`; nunca se puede usar en la red. |
 
+Cómo confiar en el certificado autofirmado, usar uno propio o regenerarlo: [tls.md](tls.md).
+
 ### `[datos]`
 
 | Clave | Por defecto | Valores |
 |---|---|---|
 | `ruta` | `""` | Carpeta de la base de datos. Vacío significa la ruta del sistema (ver `prisma config ruta`). Si se indica, debe ser absoluta. En Windows, usa comillas simples para no escapar las barras: `ruta = 'D:\PRISMA\datos'`. |
+
+### `[limites]`
+
+Límites de peticiones a la API pública. Usan una cubeta de fichas: admiten ráfagas del tamaño del límite y luego se recargan de forma continua. `0` desactiva el límite.
+
+| Clave | Por defecto | Valores |
+|---|---|---|
+| `peticiones_ip_por_minuto` | `120` | Por dirección IP; se aplica antes que cualquier otra comprobación, incluso al preflight de CORS. |
+| `peticiones_cliente_por_minuto` | `60` | Por aplicación, una vez identificada. |
+
+Al superarlos, la API responde 429 `DEMASIADAS_PETICIONES` con `Retry-After`.
 
 ### `[dev]`
 
@@ -81,6 +98,7 @@ Error: /etc/prisma/config.toml: la configuración tiene 2 problema(s):
 | `trabajos.retencion_dias` | 30 | Días que se conserva el historial de trabajos. |
 | `admin.contrasena_hash` | — | Hash argon2id de la contraseña del panel. Se crea con `prisma admin restablecer-contrasena`. |
 | `admin.debe_cambiar` | — | `1` obliga a cambiar la contraseña al entrar al panel. |
+| `puente.nombre` | `PRISMA` | Nombre que muestra `GET /v1/salud`. |
 
 ⏳ El panel permitirá editarlos. Las tablas completas están en [arquitectura.md](arquitectura.md#datos).
 

@@ -2,12 +2,11 @@
 
 Esta guía instala PRISMA en el equipo de un negocio (PC con Windows, Raspberry Pi o Linux, o Mac) para que arranque solo y siga funcionando después de un reinicio.
 
-> **⏳ Estado actual.** Todavía no existen el servidor HTTPS, el panel de administración ni el comando `prisma servicio instalar`. Con lo que hay hoy puedes:
-> - dejar instalados el binario, la configuración y la base de datos;
-> - configurar y probar las impresoras;
-> - hacer que `prisma ejecutar` arranque con el sistema.
+> **⏳ Estado actual.** `prisma ejecutar` ya sirve la API HTTPS y las aplicaciones pueden imprimir por la red. Todavía faltan el panel de administración y el comando `prisma servicio instalar`, así que por ahora:
+> - las impresoras y las aplicaciones se configuran con la CLI;
+> - el arranque automático se hace con las herramientas de cada sistema (sección de cada sistema).
 >
-> `prisma ejecutar` todavía solo mantiene la base de datos: las aplicaciones podrán imprimir por la red cuando llegue el servidor. Esta guía se actualizará entonces; los pasos marcados con ⏳ cambiarán.
+> Los pasos marcados con ⏳ cambiarán cuando lleguen esas partes.
 
 ## 1. Requisitos del equipo
 
@@ -216,9 +215,9 @@ El servicio corre como root, así que ejecuta los comandos de administración co
 
 ---
 
-## 7. Red y cortafuegos ⏳
+## 7. Red y cortafuegos
 
-Cuando exista el servidor HTTPS, PRISMA escuchará en el puerto **8443**, configurable en `config.toml`. Habrá que permitirlo **solo en la red local**:
+La API escucha en el puerto **8443**, configurable en `config.toml`. Permítelo **solo en la red local**:
 
 ```powershell
 # Windows
@@ -231,6 +230,19 @@ sudo ufw allow from 192.168.1.0/24 to any port 8443 proto tcp
 ```
 
 Nunca expongas el puerto a Internet. PRISMA está pensado para la red local, y la seguridad de cada aplicación se configura por cliente.
+
+Desde otro equipo de la red, `https://<ip-del-puente>:8443/v1/salud` debe responder `{"ok":true,…}`.
+
+### Certificado y aplicaciones
+
+1. **Confía en el certificado** en cada equipo desde el que se imprimirá, como explica [tls.md](tls.md). `prisma tls info` muestra la huella para verificarlo.
+2. **Autoriza cada aplicación.** ⏳ Lo hará el panel; por ahora, con la CLI (usando el mismo usuario que el servicio):
+
+   ```sh
+   prisma clientes agregar --nombre "Caja web" --nivel 2 --origen https://caja.example --impresoras caja
+   ```
+
+   Entrega la llave `pk_…` que muestra el comando a quien desarrolla la aplicación; no se volverá a mostrar. Los niveles y la forma de llamar a la API están en [api-v1.md](api-v1.md).
 
 ## 8. Actualizar
 
@@ -268,4 +280,6 @@ Las carpetas de datos contienen el historial y la configuración: bórralas solo
 - [ ] `prisma impresoras probar <alias>` da «en línea» para cada impresora.
 - [ ] Hay contraseña de administrador (`prisma admin restablecer-contrasena`) y está guardada en un lugar seguro.
 - [ ] El servicio arranca solo tras reiniciar el equipo (revisa las bitácoras).
+- [ ] Desde otro equipo, `https://<ip>:8443/v1/salud` responde sin advertencia de certificado.
+- [ ] Cada aplicación está registrada (`prisma clientes listar`) con el nivel y las impresoras que necesita, y solo las que lo requieren tienen `abrir_cajon` o `raw`.
 - [ ] `modo_desarrollo` está en `false`.

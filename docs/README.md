@@ -14,6 +14,8 @@ PRISMA es un puente de impresión. Se instala en un equipo de la red local de un
 | Saber cómo está construido por dentro | [arquitectura.md](arquitectura.md) |
 | Contribuir al código | [desarrollo.md](desarrollo.md) |
 | Generar documentos JSON desde tu aplicación | [contrato-documento-v1.md](contrato-documento-v1.md) |
+| Imprimir desde tu aplicación (endpoints, autorización, CORS, errores) | [api-v1.md](api-v1.md) |
+| Configurar HTTPS y confiar en el certificado | [tls.md](tls.md) |
 | Resolver un problema | [solucion-de-problemas.md](solucion-de-problemas.md) |
 
 ## Estado actual
@@ -28,14 +30,14 @@ PRISMA está en desarrollo. Esto es lo que ya funciona y lo que falta:
 | Cola por impresora y estado (en línea / fuera de línea / ocupada) | ✅ Listo |
 | Base de datos, configuración y CLI | ✅ Listo |
 | Herramientas de desarrollo: impresora virtual, previsualización y decodificador | ✅ Listo |
-| Firma Ed25519 (verificación) | ✅ Listo |
-| Servidor HTTPS y API pública `/v1` | ⏳ Pendiente |
-| Panel de administración web | ⏳ Pendiente |
-| Llaves de cliente, orígenes y permisos en la API | ⏳ Pendiente (la base de datos ya tiene las tablas) |
+| Servidor HTTPS (autofirmado, archivos o solo localhost) y API pública `/v1` | ✅ Listo |
+| Autorización: orígenes, llaves `pk_` (argon2id), firma Ed25519, permisos, idempotencia, CORS y límites | ✅ Listo |
+| Gestión de clientes desde la CLI (`prisma clientes`) | ✅ Listo |
+| Panel de administración web (aprobar solicitudes de origen, editar clientes e impresoras) | ⏳ Pendiente |
 | SDK JavaScript | ⏳ Pendiente |
 | Instalación como servicio (`prisma servicio instalar`) e instaladores por plataforma | ⏳ Pendiente |
 
-Mientras falte el servidor HTTPS, las aplicaciones no pueden imprimir por la red. Hoy se imprime desde la CLI, con `prisma imprimir` en modo desarrollo. La documentación marca con **⏳** lo que todavía no existe.
+Las aplicaciones ya pueden imprimir por la red con la [API v1](api-v1.md). Mientras falte el panel, los clientes y las impresoras se administran con la CLI. La documentación marca con **⏳** lo que todavía no existe.
 
 ## Glosario
 

@@ -38,7 +38,8 @@ Ejecuta el puente en primer plano hasta que recibe Ctrl+C o SIGTERM. Escribe las
   - purga el historial vencido;
   - avisa si el panel no tiene contraseña.
 - **Cada hora:** purga los trabajos más antiguos que la retención (30 días por defecto) y los ids de idempotencia vencidos.
-- ⏳ Cuando exista el servidor HTTPS, este comando también lo levantará.
+- **Impresoras:** registra en la cola todas las impresoras activas y las prueba cada 30 s. Las que se agregan o modifican con la CLI mientras corre se toman en el siguiente trabajo.
+- **API:** levanta la API pública ([api-v1.md](api-v1.md)) en `servidor.escuchar:servidor.puerto` según `modo_tls` ([tls.md](tls.md)). Con `autofirmado`, genera el certificado la primera vez y registra su huella en la bitácora.
 
 ## `prisma admin restablecer-contrasena`
 
@@ -102,6 +103,51 @@ Comprueba que la impresora esté alcanzable **sin imprimir**: abre y cierra la c
 
 Elimina la impresora. Los permisos de los clientes sobre ella se borran con ella; el historial de trabajos se conserva.
 
+## `prisma clientes`
+
+Aplicaciones autorizadas a imprimir. ⏳ El panel hará lo mismo con un formulario.
+
+### `clientes agregar`
+
+```sh
+prisma clientes agregar --nombre "Caja web" --nivel 2 --origen https://caja.example
+```
+
+| Opción | Por defecto | Descripción |
+|---|---|---|
+| `--nombre` | **obligatorio** | Nombre de la aplicación. |
+| `--nivel` | `2` | `1` (origen), `2` (llave) o `3` (firma). Ver [api-v1.md](api-v1.md#autorización). |
+| `--origen` | — | Origen exacto desde el que imprime el navegador, por ejemplo `https://miapp.com`. Se puede repetir. Obligatorio en el nivel 1. Si estaba como solicitud pendiente, deja de estarlo. |
+| `--impresoras` | todas | Alias permitidos, separados por coma. |
+| `--operaciones` | ninguna | Operaciones sensibles habilitadas: `abrir_cajon`, `raw`. |
+| `--llave-publica` | — | Nivel 3: archivo PEM o base64 de la llave pública Ed25519. |
+| `--exigir-llave` | — | Nivel 3: exige además la llave de cliente. |
+| `--con-llave` | — | Genera una llave aunque el nivel no la exija. |
+| `--inactivo` | — | Lo registra desactivado. |
+
+Si el cliente tiene llave (nivel 2, `--exigir-llave` o `--con-llave`), el comando la muestra **una sola vez**. El puente guarda solo su hash argon2id.
+
+### `clientes listar`
+
+Muestra el id, el nombre, el nivel, el prefijo de la llave, los orígenes, las impresoras, las operaciones sensibles y si está activo.
+
+### `clientes regenerar-llave ID`
+
+Genera una llave nueva. La anterior deja de funcionar de inmediato.
+
+### `clientes eliminar ID`
+
+Elimina la aplicación con sus orígenes y permisos. Su historial de trabajos se conserva.
+
+## `prisma tls`
+
+| Comando | Descripción |
+|---|---|
+| `tls info` | Muestra el certificado en uso: archivo, nombres, IPs, vencimiento y huella SHA-256. Avisa si alguna IP actual del equipo no está incluida. |
+| `tls regenerar` | Solo en modo `autofirmado`. Genera un certificado nuevo con el nombre y las IPs actuales. El puente en marcha lo toma sin reiniciar. |
+
+Cómo confiar en el certificado en cada sistema: [tls.md](tls.md).
+
 ## `prisma imprimir DOCUMENTO.json [--impresora ALIAS]`
 
 Valida, renderiza e imprime un documento pasando por la misma cola que usará el servidor, y deja el trabajo en el historial con el cliente `cli_consola`.
@@ -151,3 +197,26 @@ Escucha por TCP como una impresora de red. Por cada trabajo muestra la traza y l
 | `--salida` | carpeta temporal | Dónde guardar los `.bin`. |
 | `--sin-traza` | — | Muestra solo la previsualización. |
 | `--sin-color` | — | Sin secuencias ANSI. |
+
+### `dev llaves --salida carpeta`
+
+Genera un par Ed25519 de prueba para un cliente de nivel 3: `privada.pem` (permisos 0600) y `publica.pem`. También muestra la pública en base64. No sobrescribe archivos existentes.
+
+### `dev firmar DOCUMENTO.json --llave privada.pem --cliente cli_…`
+
+Firma el documento como lo haría el backend de un cliente de nivel 3: agrega `cliente_id`, `emitido` (ahora), `expira` y `firma`.
+
+| Opción | Por defecto | Descripción |
+|---|---|---|
+| `--llave` | **obligatoria** | Llave privada Ed25519 en PEM. |
+| `--cliente` | **obligatorio** | Id del cliente de nivel 3. |
+| `--nuevo-id` | — | Reemplaza el `id` por un UUID v4 nuevo, para que el puente no lo tome como repetido. |
+| `--vigencia` | `90s` | Tiempo hasta `expira` (máximo `120s`). |
+| `-o`, `--salida` | salida estándar | Archivo de salida. |
+
+```sh
+prisma dev firmar pedido.json --llave privada.pem --cliente cli_xxx --nuevo-id -o firmado.json
+curl -k https://localhost:8443/v1/imprimir -H "Content-Type: application/json" --data-binary @firmado.json
+```
+
+Para comprobar un firmador propio, usa el vector fijo de [testdata/vector-firma](../testdata/vector-firma/LEEME.md).

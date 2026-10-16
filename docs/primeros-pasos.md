@@ -109,6 +109,33 @@ En la terminal 1 aparecen la traza de los comandos ESC/POS y la previsualizació
 
 Si los acentos salen mal o las columnas no cuadran, ajusta `--pagina`, `--comando-pagina` o `--columnas`. Ver [solucion-de-problemas.md](solucion-de-problemas.md).
 
+## 6. Imprimir por la API, como una aplicación
+
+Con la impresora virtual de la sección 4 todavía abierta:
+
+**Terminal 2** — registra una aplicación de nivel 2 y anota la llave `pk_…` que muestra el comando:
+
+```sh
+./dist/prisma clientes agregar --config config.dev.toml --nombre "Prueba" --nivel 2 --origen https://localhost
+```
+
+**Terminal 3** — arranca el puente. Escucha en `https://127.0.0.1:8443` y la primera vez genera su certificado autofirmado:
+
+```sh
+./dist/prisma ejecutar --config config.dev.toml
+```
+
+**Terminal 2** — imprime con curl. `-k` acepta el certificado autofirmado:
+
+```sh
+curl -k https://127.0.0.1:8443/v1/salud
+curl -k https://127.0.0.1:8443/v1/imprimir -H "Authorization: Bearer pk_…" --data-binary @ejemplos/validos/venta-simple.json
+```
+
+Si repites el mismo comando, el puente responde `"duplicado": true` y no imprime de nuevo, porque el documento tiene el mismo `id`.
+
+Para el nivel 3 (documentos firmados) y para llamar desde un navegador, sigue los ejemplos de [api-v1.md](api-v1.md#ejemplos). Para que el navegador confíe en el certificado, ver [tls.md](tls.md).
+
 ## Siguientes pasos
 
 - Escribe tus propios documentos con el [contrato](contrato-documento-v1.md). La carpeta [ejemplos/validos](../ejemplos/validos/) tiene un ejemplo de cada caso.

@@ -3,35 +3,44 @@
 ## Visión general
 
 ```
- Aplicación web / backend                        Equipo del negocio
- ─────────────────────────                       ─────────────────────────────────────────────────────────────
-                                 HTTPS + JSON    ┌──────────────────────────── prisma ────────────────────────────┐
-  SDK JS / fetch  ─────────────────────────────▶ │ servidor /v1 ⏳                                                 │
-                                                 │   │                                                            │
-                                                 │   ▼                                                            │
-                                                 │ contrato.Decodificar ── tamaño, JSON, versión, esquema, reglas │
-                                                 │   │                                                            │
-                                                 │   ▼                                                            │
-                                                 │ seguridad ── origen, llave pk_ ⏳, firma Ed25519, permisos ⏳   │
-                                                 │   │                                                            │
-                                                 │   ▼                                                            │
-                                                 │ almacen.IDsRecientes.Reservar ── idempotencia (10 min)          │
-                                                 │   │                                                            │
-                                                 │   ▼                                                            │
-                                                 │ escpos.Renderizar(doc, perfil) ── bytes + advertencias          │
-                                                 │   │                                                            │
-                                                 │   ▼                                                            │
-                                                 │ cola.Encolar(alias) ── una goroutine por impresora (FIFO)       │
-                                                 │   │                                                            │
-                                                 │   ▼                                                            │
-                                                 │ conector.Enviar ── red · USB · Bluetooth · archivo ─────────────┼──▶ 🖨️
-                                                 │   │                                                            │
-                                                 │   ▼                                                            │
-                                                 │ almacen.Trabajos ── historial (sin contenido del ticket)        │
-                                                 └────────────────────────────────────────────────────────────────┘
+ Aplicación web / backend                       Equipo del negocio
+ ────────────────────────                       ──────────────────────────────────────────────────────────────
+                                HTTPS + JSON    ┌──────────────────────────── prisma ─────────────────────────────┐
+  SDK JS / fetch / curl  ─────────────────────▶ │ servidor /v1 ── TLS, límite por IP, CORS                          │
+                                                │   │                                                              │
+                                                │   ▼                                                              │
+                                                │ seguridad.Identificar ── 1. origen  2. llave pk_ (argon2id+caché) │
+                                                │   │                                                              │
+                                                │   ▼                                                              │
+                                                │ contrato.LeerSobre ── tamaño, JSON, versión (sin validar todo)    │
+                                                │   │                                                              │
+                                                │   ▼                                                              │
+                                                │ seguridad.VerificarDocumento ── 3. firma Ed25519 y vigencia       │
+                                                │   │                                                              │
+                                                │   ▼                                                              │
+                                                │ almacen.IDsRecientes ── 4. idempotencia (10 min)                  │
+                                                │   │                                                              │
+                                                │   ▼                                                              │
+                                                │ seguridad.VerificarPermisos ── 5. impresora y operaciones         │
+                                                │   │                                                              │
+                                                │   ▼                                                              │
+                                                │ contrato.Decodificar ── 6. esquema y reglas                        │
+                                                │   │                                                              │
+                                                │   ▼                                                              │
+                                                │ escpos.Renderizar(doc, perfil) ── bytes + advertencias            │
+                                                │   │                                                              │
+                                                │   ▼                                                              │
+                                                │ cola.Encolar(alias) ── una goroutine por impresora (FIFO)         │
+                                                │   │                                                              │
+                                                │   ▼                                                              │
+                                                │ conector.Enviar ── red · USB · Bluetooth · archivo ───────────────┼──▶ 🖨️
+                                                │   │                                                              │
+                                                │   ▼                                                              │
+                                                │ almacen.Trabajos ── historial (sin contenido del ticket)          │
+                                                └──────────────────────────────────────────────────────────────────┘
 ```
 
-Hoy `prisma imprimir` (modo desarrollo) recorre el mismo camino desde `contrato.Decodificar` en adelante. No pasa por la seguridad ni por la idempotencia, que llegarán con el servidor.
+Lo costoso (validar el esquema completo, decodificar imágenes, renderizar) ocurre **después** de autorizar. `prisma imprimir` (modo desarrollo) recorre el mismo camino desde `contrato.Decodificar`, sin la autorización.
 
 ## Principios que guían el diseño
 
@@ -48,15 +57,16 @@ Hoy `prisma imprimir` (modo desarrollo) recorre el mismo camino desde `contrato.
 | `cmd/prisma` | CLI y punto de entrada | todos |
 | `internal/config` | `config.toml` (arranque) | `rutas` |
 | `internal/rutas` | rutas por sistema operativo | — |
-| `internal/almacen` | SQLite y repositorios | `seguridad` (normalizar orígenes) |
+| `internal/almacen` | SQLite, repositorios y normalización de orígenes | — |
 | `internal/contrato` | tipos del documento v1 y validación | `schema` |
 | `internal/escpos` | renderizador | `contrato`, `almacen` (perfil) |
 | `internal/conector` | envío a la impresora y detección | `almacen` (perfil), `dev` (vista del conector de archivo) |
 | `internal/cola` | filas por impresora y estado | `conector` |
-| `internal/seguridad` | orígenes, contraseñas, firmas | — |
+| `internal/seguridad` | autorización (origen, llave, firma, permisos), límites, contraseñas y llaves | `almacen`, `contrato` |
+| `internal/servidor` | HTTPS (TLS), API pública `/v1`, CORS | `seguridad`, `cola`, `escpos`, `dev` |
 | `internal/dev` | decodificador, simulador, vistas, impresora virtual | `escpos`, `contrato`, `almacen` |
 | `schema` | JSON Schema embebido | — |
-| ⏳ `internal/servidor`, `internal/admin`, `internal/servicio`, `sdk/js` | API, panel, servicio, SDK | — |
+| ⏳ `internal/admin`, `internal/servicio`, `sdk/js` | panel, servicio, SDK | — |
 
 ## Del documento a los bytes
 
@@ -110,13 +120,22 @@ Los detalles por sistema operativo están en [conectores.md](conectores.md).
 
 | Nivel | Cómo se identifica el cliente | Estado |
 |---|---|---|
-| 1 — Origen | Encabezado `Origin`, exacto, normalizado y sin comodines (`seguridad.NormalizarOrigen`). | Las tablas existen ⏳ falta la API |
-| 2 — Llave (por defecto) | Origen + `Authorization: Bearer pk_…`. Solo se guarda el SHA-256 de la llave y un prefijo para buscarla. | Las tablas existen ⏳ falta la API |
-| 3 — Firma | Origen + Ed25519 sobre la forma canónica JCS (RFC 8785) del documento sin `firma`. Se guarda solo la llave **pública**. | ✅ Verificación (`seguridad.VerificarFirma`) ⏳ falta la API |
+| 1 — Origen | Encabezado `Origin`, exacto, normalizado y sin comodines (`almacen.NormalizarOrigen`). | ✅ |
+| 2 — Llave (por defecto) | Origen + `Authorization: Bearer pk_…`, o solo la llave desde un servidor. Se guarda el hash argon2id y un prefijo público para buscarla. | ✅ |
+| 3 — Firma | Ed25519 sobre la forma canónica JCS (RFC 8785) del documento sin `firma`; se guarda solo la llave **pública**. Puede exigir además la llave (`exigir_llave`). | ✅ |
 
 Además:
 
-- **Contraseña del panel:** argon2id (64 MiB, 3 pasadas). Las llaves `pk_` usan SHA-256 porque son aleatorias de 256 bits: argon2 por cada impresión sería caro y permitiría agotar la memoria del puente.
+- **Contraseña del panel:** argon2id (64 MiB, 3 pasadas).
+- **Llaves `pk_`:** argon2id (19 MiB, 2 pasadas). Para que no sean una vía de denegación de servicio:
+  - se busca primero el prefijo público, así que una llave de un cliente inexistente se rechaza sin calcular nada;
+  - el resultado (válido o no) queda en caché 10 minutos;
+  - como máximo se calculan 2 a la vez;
+  - el límite por IP se aplica antes que todo.
+- **Límites:** cubeta de fichas por IP (antes de autorizar) y por cliente (después), configurable en `[limites]`.
+- **CORS:** eco exacto del origen autorizado (nunca `*`), `Vary: Origin`, preflight con `Access-Control-Allow-Private-Network`.
+- **Cabeceras:** `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Cache-Control: no-store` y una CSP restrictiva. Los errores internos no exponen detalles.
+- **TLS:** 1.2 como mínimo, con un certificado autofirmado o propio que se recarga en caliente (ver [tls.md](tls.md)).
 - **Operaciones sensibles:** `abrir_cajon` y `raw` están deshabilitadas por cliente hasta que el dueño las habilite.
 - **Orígenes desconocidos:** quedan como solicitudes pendientes, con un tope de 200 para que nadie llene la base.
 - **Bitácoras:** nunca registran el contenido de los tickets ni las llaves.

@@ -18,7 +18,7 @@ PRISMA es un servicio que se instala en una PC, Raspberry Pi o Mac dentro de la 
 }
 ```
 
-> **Estado: en desarrollo.** Ya funcionan el contrato del documento con su validación, el renderizador ESC/POS con su previsualización, los conectores (red, USB, Bluetooth y archivo), la cola por impresora, la configuración, la base de datos y la CLI. Todavía faltan el servidor HTTPS, el panel de administración y el SDK. Consulta la [hoja de ruta](#hoja-de-ruta).
+> **Estado: en desarrollo.** Ya funcionan el contrato del documento con su validación, el renderizador ESC/POS con su previsualización, los conectores (red, USB, Bluetooth y archivo), la cola por impresora, la configuración, la base de datos y la CLI; las aplicaciones ya imprimen por la [API v1](docs/api-v1.md) con HTTPS y autorización por niveles. Todavía faltan el panel de administración y el SDK. Consulta la [hoja de ruta](#hoja-de-ruta).
 
 ## Principios
 
@@ -87,6 +87,7 @@ make lint
 | [Desarrollo](docs/desarrollo.md) | Pruebas, golden, convenciones y ramas. |
 | [Solución de problemas](docs/solucion-de-problemas.md) | Errores frecuentes, acentos y columnas. |
 | [Contrato documento v1](docs/contrato-documento-v1.md) | El JSON que envían las aplicaciones. |
+| [API v1](docs/api-v1.md) · [HTTPS y certificados](docs/tls.md) | Endpoints, autorización, CORS, errores y cómo confiar en el certificado. |
 
 El índice completo está en [docs/README.md](docs/README.md).
 
@@ -96,9 +97,20 @@ El índice completo está en [docs/README.md](docs/README.md).
 prisma version                         # versión, plataforma y versiones del contrato
 prisma config ruta                     # dónde busca la configuración y los datos
 prisma config validar [--config ruta]  # valida config.toml y muestra la configuración efectiva
-prisma ejecutar [--config ruta]        # ejecuta el puente en primer plano
+prisma ejecutar [--config ruta]        # ejecuta el puente (API HTTPS) en primer plano
 prisma admin restablecer-contrasena    # genera una contraseña nueva para el panel
+prisma tls info | regenerar            # certificado HTTPS en uso / uno nuevo con las IPs actuales
 ```
+
+### Aplicaciones
+
+```sh
+prisma clientes agregar --nombre "Caja web" --nivel 2 --origen https://caja.example   # muestra su llave pk_ una vez
+prisma clientes agregar --nombre "Backend" --nivel 3 --llave-publica publica.pem
+prisma clientes listar | eliminar ID | regenerar-llave ID
+```
+
+Cómo llamar a la API desde una aplicación (niveles, CORS, errores y ejemplos con curl): [docs/api-v1.md](docs/api-v1.md).
 
 ### Impresoras
 
@@ -170,7 +182,8 @@ internal/escpos/      renderizador a ESC/POS, páginas de códigos, QR, códigos
 internal/conector/    red, USB (winspool / dispositivo / CUPS), Bluetooth (puerto serie), archivo y detección
 internal/cola/        cola FIFO por impresora y estado (en línea / fuera de línea / ocupada)
 internal/dev/         decodificador ESC/POS, impresora virtual y previsualización
-internal/seguridad/   orígenes, contraseñas y firmas Ed25519 (JCS)
+internal/seguridad/   autorización, llaves, límites, contraseñas y firmas Ed25519 (JCS)
+internal/servidor/    HTTPS y API pública /v1
 internal/version/     versión del binario
 schema/               JSON Schema publicados (embebidos en el binario)
 docs/                 especificaciones
@@ -195,7 +208,7 @@ Para contribuir, crea tu rama a partir de `develop` y abre el pull request hacia
 - [x] Renderizador ESC/POS, páginas de códigos y previsualización
 - [x] Conectores de red, USB, Bluetooth y archivo
 - [x] Cola por impresora
-- [ ] Servidor HTTPS y API pública `/v1`
+- [x] Servidor HTTPS, API pública `/v1` y autorización por niveles
 - [ ] Panel de administración
 - [ ] SDK JavaScript
 - [ ] Instalación como servicio y paquetes por plataforma

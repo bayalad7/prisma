@@ -37,6 +37,46 @@ El binario no está firmado:
 
 Es intencional: en producción, las aplicaciones imprimen por la API con su autorización. Para pruebas, usa una configuración de desarrollo aparte (`--config config.dev.toml`).
 
+## La aplicación no puede imprimir (API)
+
+### El navegador dice «NET::ERR_CERT_AUTHORITY_INVALID» o «la conexión no es privada»
+
+El equipo no confía en el certificado autofirmado del puente. Instálalo como confiable siguiendo [tls.md](tls.md). Una excepción temporal del navegador no sirve: las llamadas `fetch` de la aplicación siguen fallando.
+
+### Error de certificado con la IP correcta
+
+Si el equipo del puente cambió de IP, el certificado no la incluye: el puente lo avisa al arrancar y `prisma tls info` lo muestra. Ejecuta `prisma tls regenerar` y vuelve a confiar en él. Para que no se repita, dale una IP fija al equipo.
+
+### `fetch` falla con «TypeError: Failed to fetch» y la consola menciona CORS
+
+El origen de la página no está aprobado. El puente no le envía cabeceras CORS y el navegador no deja leer la respuesta. El origen quedó como **solicitud pendiente**. Apruébalo:
+- ⏳ desde el panel;
+- por ahora, registrando la aplicación con `prisma clientes agregar … --origen https://tu-app.example`.
+
+El origen debe coincidir **exactamente**: esquema (`https`), nombre y puerto.
+
+### 401 o 403 al imprimir
+
+| Código | Qué falta |
+|---|---|
+| `LLAVE_REQUERIDA` | La aplicación es de nivel 2 y no envió `Authorization: Bearer pk_…`. |
+| `LLAVE_INVALIDA` | La llave es incorrecta o se regeneró. Pide la nueva (`prisma clientes regenerar-llave`). |
+| `CREDENCIALES_REQUERIDAS` | La petición no trae origen, llave ni documento firmado. Desde un servidor, envía la llave. |
+| `ORIGEN_REQUERIDO` | La aplicación es de nivel 1: solo puede imprimir desde un navegador. |
+| `FIRMA_INVALIDA` | El documento cambió después de firmarlo, se firmó con otra llave o `cliente_id` no corresponde. Prueba tu firmador con [testdata/vector-firma](../testdata/vector-firma/LEEME.md). |
+| `FIRMA_EXPIRADA` | Pasaron más de `expira` + 30 s. Firma justo antes de enviar y revisa la hora del servidor que firma. |
+| `IMPRESORA_NO_PERMITIDA` · `OPERACION_NO_PERMITIDA` | La aplicación no tiene permiso para esa impresora o para `abrir_cajon` / `raw`. |
+
+La referencia completa de errores está en [api-v1.md](api-v1.md#códigos-de-error-de-la-api).
+
+### La respuesta dice `"duplicado": true` y no imprimió
+
+El documento llegó con el mismo `id` que otro de los últimos 10 minutos. Es la protección contra los tickets dobles. Genera un `id` (UUID v4) nuevo para cada ticket y reutilízalo solo al reintentar ese mismo ticket. Si el trabajo original **falló**, el `id` queda libre y el reintento sí imprime.
+
+### 429 `DEMASIADAS_PETICIONES`
+
+Se superó el límite de peticiones por minuto. Respeta `Retry-After`, o ajusta `[limites]` en [configuracion.md](configuracion.md).
+
 ## La impresora no imprime
 
 | Código | Causa típica | Qué hacer |
@@ -95,7 +135,7 @@ prisma impresoras agregar --alias caja … --columnas 42 --columnas-b 56
 - **No abre el cajón:**
   - registra la impresora con `--cajon`;
   - revisa el pin: la operación usa `pin: 2` por defecto, y algunos cajones usan el 5;
-  - ⏳ el cliente debe tener habilitada la operación `abrir_cajon`.
+  - la aplicación debe tener habilitada la operación (`prisma clientes agregar … --operaciones abrir_cajon`); si no, la API responde `OPERACION_NO_PERMITIDA`.
 
 ### El QR o el código de barras no aparece
 

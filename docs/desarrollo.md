@@ -59,6 +59,8 @@ go test ./internal/dev -actualizar  # regenera los archivos golden
 
 - **SQLite en memoria:** las pruebas de `internal/almacen` usan una base en memoria y un reloj controlado.
 - **Ejemplos del contrato:** las pruebas recorren `ejemplos/validos/*.json` y `ejemplos/invalidos/indice.json`. Si agregas una regla al contrato, agrega su ejemplo inválido y su entrada en el índice: `codigo`, `detecta` (`esquema` o `puente`), `ruta` y `regla`.
+- **Matriz de autorización:** `internal/servidor` prueba {nivel 1, 2, 3} × {origen válido, inválido, ausente} × {llave válida, inválida, ausente} × {firma válida, alterada, expirada, repetida} contra un oráculo escrito a partir de la especificación. Si cambias una regla de autorización, actualiza el oráculo (`esperado`) y [api-v1.md](api-v1.md).
+- **Vector de firma:** `testdata/vector-firma/` es público para los integradores; `internal/seguridad` comprueba que siga siendo coherente con el ejemplo del contrato.
 - **Golden:** `internal/dev/testdata/golden/` guarda la vista y la traza de cada ejemplo válido a 58 y 80 mm. Si cambias el renderizador a propósito, regenéralos con `-actualizar` y **revisa el diff** antes de commitear: es la forma de ver qué cambió en el papel.
 - **Por plataforma:** `internal/conector` tiene pruebas con build tags (`usb_windows_test.go`, `usb_unix_test.go`). `go test ./...` debe pasar en Windows, Linux y macOS.
 - **Race detector:** `-race` requiere CGO y el proyecto se compila sin él. Las pruebas concurrentes (cola, impresora virtual) protegen sus búferes con mutex.
@@ -75,7 +77,8 @@ go test ./internal/dev -actualizar  # regenera los archivos golden
 | `internal/escpos` | `Renderizar(doc, perfil, recursos)`: operaciones → bytes. Codificación de caracteres, disposición de filas, QR, códigos de barras e imágenes. |
 | `internal/conector` | `Conector{Enviar, Probar}` para red, USB, Bluetooth y archivo, más la detección de impresoras. |
 | `internal/cola` | Una goroutine por impresora (FIFO), límite de 20 trabajos y estado. |
-| `internal/seguridad` | Orígenes, contraseñas (argon2id) y firmas Ed25519 sobre JCS. |
+| `internal/seguridad` | Autorización (origen, llave, firma, permisos), límites de peticiones, contraseñas y llaves (argon2id), firmas Ed25519 sobre JCS. |
+| `internal/servidor` | HTTPS (autofirmado, archivos, solo localhost), API pública `/v1`, CORS y cabeceras de seguridad. |
 | `internal/dev` | Decodificador, simulador, vistas (texto/HTML) e impresora virtual. |
 | `schema` | JSON Schema publicado, embebido en el binario. |
 
