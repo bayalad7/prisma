@@ -1,5 +1,4 @@
-// Package seguridad reúne la lógica de autorización del puente: orígenes, llaves, contraseñas y firmas.
-package seguridad
+package almacen
 
 import (
 	"errors"

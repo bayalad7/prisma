@@ -51,8 +51,11 @@ func impresoraDePrueba(alias string) *Impresora {
 func clienteDePrueba(id string) *Cliente {
 	return &Cliente{
 		ID: id, Nombre: "App " + id, Nivel: NivelLlave,
-		LlaveHash: make([]byte, 32), LlavePrefijo: "pk_" + id[4:], TodasLasImpresoras: true, Activo: true,
+		LlaveHash: hashPrueba, LlavePrefijo: "pk_" + id[4:], TodasLasImpresoras: true, Activo: true,
 	}
 }
 
 var ctx = context.Background()
+
+// hashPrueba tiene forma de PHC argon2id; las pruebas del almacén no lo verifican.
+const hashPrueba = "$argon2id$v=19$m=8,t=1,p=1$c2Fs$aGFzaA"

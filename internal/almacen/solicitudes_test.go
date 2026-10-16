@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"testing"
 	"time"
-
-	"github.com/bayalad7/prisma/internal/seguridad"
 )
 
 func TestSolicitudesRegistrar(t *testing.T) {
@@ -22,7 +20,7 @@ func TestSolicitudesRegistrar(t *testing.T) {
 		t.Fatalf("segundo intento: %+v", s)
 	}
 	_, err = a.Solicitudes.Registrar(ctx, "no es un origen")
-	exigirError(t, err, seguridad.ErrOrigenInvalido)
+	exigirError(t, err, ErrOrigenInvalido)
 }
 
 func TestSolicitudesRechazarYEliminar(t *testing.T) {

@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
-
-	"github.com/bayalad7/prisma/internal/seguridad"
 )
 
 // Niveles de seguridad de un cliente.
@@ -28,9 +26,10 @@ type Cliente struct {
 	ID                   string // cli_...
 	Nombre               string
 	Nivel                int
-	LlaveHash            []byte // nivel 2: SHA-256 de la llave pk_
-	LlavePrefijo         string // nivel 2: parte pública de la llave, para buscarla y mostrarla
+	LlaveHash            string // hash argon2id (PHC) de la llave pk_; obligatoria en nivel 2
+	LlavePrefijo         string // parte pública de la llave, para buscarla y mostrarla
 	LlavePublica         []byte // nivel 3: llave pública Ed25519
+	ExigirLlave          bool   // nivel 3: exige además la llave pk_
 	OperacionesSensibles []string
 	TodasLasImpresoras   bool // false = solo las de ImpresorasPermitidas
 	Activo               bool
@@ -50,8 +49,8 @@ func (c *Cliente) PermiteOperacion(op string) bool {
 
 type RepoClientes struct{ a *Almacen }
 
-const columnasCliente = `id, nombre, nivel, llave_hash, llave_prefijo, llave_publica, operaciones_sensibles,
-	todas_las_impresoras, activo, creado, actualizado`
+const columnasCliente = `id, nombre, nivel, llave_hash, llave_prefijo, llave_publica, exigir_llave,
+	operaciones_sensibles, todas_las_impresoras, activo, creado, actualizado`
 
 func (r *RepoClientes) Crear(ctx context.Context, c *Cliente) error {
 	ops, err := codificarLista(c.OperacionesSensibles)
@@ -60,8 +59,8 @@ func (r *RepoClientes) Crear(ctx context.Context, c *Cliente) error {
 	}
 	ahora := r.a.ahora()
 	_, err = r.a.db.ExecContext(ctx, `INSERT INTO clientes (`+columnasCliente+`)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		c.ID, c.Nombre, c.Nivel, c.LlaveHash, textoNulo(c.LlavePrefijo), c.LlavePublica, ops,
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		c.ID, c.Nombre, c.Nivel, textoNulo(c.LlaveHash), textoNulo(c.LlavePrefijo), c.LlavePublica, bit(c.ExigirLlave), ops,
 		bit(c.TodasLasImpresoras), bit(c.Activo), ms(ahora), ms(ahora))
 	if err != nil {
 		return traducirError(err, "cliente "+c.ID)
@@ -81,7 +80,7 @@ func (r *RepoClientes) ObtenerPorPrefijo(ctx context.Context, prefijo string) (*
 
 // ObtenerPorOrigen busca al cliente al que pertenece un origen (se normaliza antes de buscar).
 func (r *RepoClientes) ObtenerPorOrigen(ctx context.Context, origen string) (*Cliente, error) {
-	norm, err := seguridad.NormalizarOrigen(origen)
+	norm, err := NormalizarOrigen(origen)
 	if err != nil {
 		return nil, err
 	}
@@ -117,9 +116,9 @@ func (r *RepoClientes) Actualizar(ctx context.Context, c *Cliente) error {
 	}
 	ahora := r.a.ahora()
 	res, err := r.a.db.ExecContext(ctx, `UPDATE clientes SET nombre = ?, nivel = ?, llave_hash = ?, llave_prefijo = ?,
-		llave_publica = ?, operaciones_sensibles = ?, todas_las_impresoras = ?, activo = ?, actualizado = ?
-		WHERE id = ?`,
-		c.Nombre, c.Nivel, c.LlaveHash, textoNulo(c.LlavePrefijo), c.LlavePublica, ops,
+		llave_publica = ?, exigir_llave = ?, operaciones_sensibles = ?, todas_las_impresoras = ?, activo = ?,
+		actualizado = ? WHERE id = ?`,
+		c.Nombre, c.Nivel, textoNulo(c.LlaveHash), textoNulo(c.LlavePrefijo), c.LlavePublica, bit(c.ExigirLlave), ops,
 		bit(c.TodasLasImpresoras), bit(c.Activo), ms(ahora), c.ID)
 	if err := exigirUnaFila(res, err, "cliente "+c.ID); err != nil {
 		return err
@@ -191,7 +190,7 @@ func (r *RepoClientes) PuedeImprimirEn(ctx context.Context, clienteID, alias str
 
 // AgregarOrigen aprueba un origen para el cliente. Falla con ErrDuplicado si ya pertenece a cualquier cliente.
 func (r *RepoClientes) AgregarOrigen(ctx context.Context, clienteID, origen string) error {
-	norm, err := seguridad.NormalizarOrigen(origen)
+	norm, err := NormalizarOrigen(origen)
 	if err != nil {
 		return err
 	}
@@ -200,7 +199,7 @@ func (r *RepoClientes) AgregarOrigen(ctx context.Context, clienteID, origen stri
 }
 
 func (r *RepoClientes) QuitarOrigen(ctx context.Context, clienteID, origen string) error {
-	norm, err := seguridad.NormalizarOrigen(origen)
+	norm, err := NormalizarOrigen(origen)
 	if err != nil {
 		return err
 	}
@@ -218,11 +217,11 @@ func (r *RepoClientes) Origenes(ctx context.Context, clienteID string) ([]string
 
 func escanearCliente(f filaEscaneable) (*Cliente, error) {
 	var c Cliente
-	var prefijo sql.NullString
+	var hash, prefijo sql.NullString
 	var ops string
-	var todas, activo int
+	var exigir, todas, activo int
 	var creado, actualizado int64
-	err := f.Scan(&c.ID, &c.Nombre, &c.Nivel, &c.LlaveHash, &prefijo, &c.LlavePublica, &ops, &todas, &activo,
+	err := f.Scan(&c.ID, &c.Nombre, &c.Nivel, &hash, &prefijo, &c.LlavePublica, &exigir, &ops, &todas, &activo,
 		&creado, &actualizado)
 	if err != nil {
 		return nil, err
@@ -230,7 +229,7 @@ func escanearCliente(f filaEscaneable) (*Cliente, error) {
 	if err := json.Unmarshal([]byte(ops), &c.OperacionesSensibles); err != nil {
 		return nil, fmt.Errorf("operaciones_sensibles del cliente %s: %w", c.ID, err)
 	}
-	c.LlavePrefijo = prefijo.String
+	c.LlaveHash, c.LlavePrefijo, c.ExigirLlave = hash.String, prefijo.String, exigir == 1
 	c.TodasLasImpresoras, c.Activo = todas == 1, activo == 1
 	c.Creado, c.Actualizado = desdeMs(creado), desdeMs(actualizado)
 	return &c, nil

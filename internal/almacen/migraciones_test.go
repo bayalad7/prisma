@@ -115,3 +115,47 @@ func TestAbrirArchivoPersiste(t *testing.T) {
 		t.Errorf("journal_mode = %q, quiero wal", modo)
 	}
 }
+
+// TestMigracion0002ConservaReferencias reconstruye la tabla clientes con datos reales: los
+// orígenes y permisos no deben borrarse en cascada y los hashes SHA-256 viejos se descartan.
+func TestMigracion0002ConservaReferencias(t *testing.T) {
+	db := memoriaSinMigrar(t)
+	todas, _ := cargarMigraciones(migracionesFS)
+	solo1 := fstest.MapFS{"migraciones/0001_inicial.sql": {Data: []byte(todas[0].sql)}}
+	exigirSinError(t, migrar(ctx, db, solo1))
+	for _, q := range []string{
+		`INSERT INTO impresoras (alias, nombre, tipo, destino, ancho_mm, columnas, columnas_fuente_b, ancho_px,
+			pagina_codigos, comando_pagina_codigos, creada, actualizada) VALUES ('caja','c','red','x',80,48,64,576,'CP858',19,0,0)`,
+		`INSERT INTO clientes (id, nombre, nivel, llave_hash, llave_prefijo, creado, actualizado)
+			VALUES ('cli_viejo0001', 'Viejo', 2, randomblob(32), 'pk_viejo', 0, 0)`,
+		`INSERT INTO clientes (id, nombre, nivel, llave_publica, creado, actualizado)
+			VALUES ('cli_firma0001', 'Firma', 3, randomblob(32), 0, 0)`,
+		`INSERT INTO clientes_origenes VALUES ('cli_viejo0001', 'https://viejo.example')`,
+		`INSERT INTO clientes_impresoras VALUES ('cli_firma0001', 1)`,
+	} {
+		_, err := db.ExecContext(ctx, q)
+		exigirSinError(t, err)
+	}
+
+	exigirSinError(t, migrar(ctx, db, migracionesFS))
+	var origenes, permisos, fk int
+	db.QueryRowContext(ctx, `SELECT count(*) FROM clientes_origenes`).Scan(&origenes)
+	db.QueryRowContext(ctx, `SELECT count(*) FROM clientes_impresoras`).Scan(&permisos)
+	db.QueryRowContext(ctx, `PRAGMA foreign_keys`).Scan(&fk)
+	if origenes != 1 || permisos != 1 {
+		t.Fatalf("la reconstrucción borró referencias: orígenes %d, permisos %d", origenes, permisos)
+	}
+	if fk != 1 {
+		t.Fatal("las claves foráneas deben quedar activas después de migrar")
+	}
+	var nivel, activo int
+	var hash sql.NullString
+	exigirSinError(t, db.QueryRowContext(ctx, `SELECT nivel, activo, llave_hash FROM clientes WHERE id = 'cli_viejo0001'`).Scan(&nivel, &activo, &hash))
+	if nivel != 1 || activo != 0 || hash.Valid {
+		t.Fatalf("cliente con hash SHA-256: nivel %d, activo %d, hash %v", nivel, activo, hash)
+	}
+	exigirSinError(t, db.QueryRowContext(ctx, `SELECT nivel, activo FROM clientes WHERE id = 'cli_firma0001'`).Scan(&nivel, &activo))
+	if nivel != 3 || activo != 1 {
+		t.Fatalf("cliente de nivel 3: nivel %d, activo %d", nivel, activo)
+	}
+}

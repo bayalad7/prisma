@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"time"
-
-	"github.com/bayalad7/prisma/internal/seguridad"
 )
 
 // Estados de una solicitud de origen.
@@ -35,7 +33,7 @@ type RepoSolicitudes struct{ a *Almacen }
 // Registrar anota un intento de un origen desconocido: crea la solicitud o incrementa sus intentos.
 // Una solicitud rechazada sigue rechazada.
 func (r *RepoSolicitudes) Registrar(ctx context.Context, origen string) (*Solicitud, error) {
-	norm, err := seguridad.NormalizarOrigen(origen)
+	norm, err := NormalizarOrigen(origen)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +65,7 @@ func (r *RepoSolicitudes) Registrar(ctx context.Context, origen string) (*Solici
 }
 
 func (r *RepoSolicitudes) Obtener(ctx context.Context, origen string) (*Solicitud, error) {
-	norm, err := seguridad.NormalizarOrigen(origen)
+	norm, err := NormalizarOrigen(origen)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +95,7 @@ func (r *RepoSolicitudes) Listar(ctx context.Context, estado string) ([]Solicitu
 
 // Aprobar asigna el origen al cliente y elimina la solicitud, en una sola transacción.
 func (r *RepoSolicitudes) Aprobar(ctx context.Context, origen, clienteID string) error {
-	norm, err := seguridad.NormalizarOrigen(origen)
+	norm, err := NormalizarOrigen(origen)
 	if err != nil {
 		return err
 	}
@@ -122,7 +120,7 @@ func (r *RepoSolicitudes) Eliminar(ctx context.Context, origen string) error {
 }
 
 func (r *RepoSolicitudes) cambiar(ctx context.Context, origen, consulta string) error {
-	norm, err := seguridad.NormalizarOrigen(origen)
+	norm, err := NormalizarOrigen(origen)
 	if err != nil {
 		return err
 	}
