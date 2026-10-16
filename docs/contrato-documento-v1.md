@@ -346,7 +346,7 @@ Envía bytes a la impresora tal cual, sin ninguna transformación. Úsalo solo p
 
 `abrir_cajon` y `raw` están **deshabilitadas por defecto** para cada cliente. El dueño del puente las habilita, una por una, en el panel de administración.
 
-Si un cliente envía una operación sensible que no tiene permitida, el puente rechaza **el documento completo**, sin imprimir nada. Ese error de permisos está documentado en la especificación de la API.
+Si un cliente envía una operación sensible que no tiene permitida, el puente rechaza **el documento completo**, sin imprimir nada. La respuesta es 403 `OPERACION_NO_PERMITIDA` (ver [api-v1.md](api-v1.md)).
 
 ## 5. Límites
 
@@ -462,47 +462,56 @@ El cliente genera un `id` (UUID v4) nuevo para cada ticket y lo **reutiliza en l
 
 Gracias a esto puedes reintentar sin miedo después de un error de red: el ticket no saldrá dos veces.
 
+- **Reintento después de un fallo:** si el trabajo original **falló** (impresora apagada, sin papel…), el puente libera el `id`. Reintentar el mismo documento vuelve a intentar imprimirlo, no se toma como repetido.
+- **Nivel 3:** reenviar un documento firmado que sigue vigente produce la respuesta de duplicado, así que una firma capturada no sirve para imprimir dos veces (anti-repetición).
+
 ## 9. Validación y errores
 
 ### Orden de validación
 
-El puente valida en este orden y se detiene en el primer paso que falla:
+El puente valida en este orden y se detiene en el primer paso que falla. Nada costoso (esquema completo, imágenes, render) ocurre antes de saber quién envía el documento y si puede imprimir:
 
-1. **Tamaño del cuerpo:** `DOCUMENTO_DEMASIADO_GRANDE`.
-2. **JSON válido** (I-JSON, sin claves duplicadas): `JSON_INVALIDO`.
-3. **`version`:** `VERSION_NO_SOPORTADA`. Se comprueba antes que el resto, para que un documento de otra versión reciba este código y no un error genérico.
-4. **Esquema:** `OPERACION_DESCONOCIDA`, `DEMASIADAS_OPERACIONES` o `DOCUMENTO_INVALIDO`.
-5. **Reglas del documento que no dependen de la impresora:**
+1. **Autorización de la petición:** origen y llave de cliente (ver [api-v1.md](api-v1.md)).
+2. **Tamaño del cuerpo:** `DOCUMENTO_DEMASIADO_GRANDE`.
+3. **JSON válido** (I-JSON, sin claves duplicadas): `JSON_INVALIDO`.
+4. **`version`:** `VERSION_NO_SOPORTADA`. Se comprueba antes que el resto, para que un documento de otra versión reciba este código y no un error genérico.
+5. **Firma**, en el nivel 3: `FIRMA_REQUERIDA`, `FIRMA_INVALIDA` o `FIRMA_EXPIRADA`. En todos los niveles se respeta `expira` si viene.
+6. **Idempotencia:** `ID_REUTILIZADO`, o la respuesta de duplicado.
+7. **Permisos del cliente** sobre la impresora y las operaciones sensibles: `IMPRESORA_NO_PERMITIDA`, `OPERACION_NO_PERMITIDA`.
+8. **Esquema:** `OPERACION_DESCONOCIDA`, `DEMASIADAS_OPERACIONES` o `DOCUMENTO_INVALIDO`.
+9. **Reglas del documento que no dependen de la impresora:**
    - `CODIGO_BARRAS_INVALIDO`: dígito verificador incorrecto.
    - `IMAGEN_INVALIDA`: un PNG en línea dañado o demasiado grande.
    - `FILA_NO_CABE`: porcentajes que suman más de 100.
    - `FIRMA_INVALIDA`: la vigencia de la firma no está entre 0 y 120 s.
-6. **Firma**, en el nivel 3: `FIRMA_REQUERIDA`, `FIRMA_INVALIDA` o `FIRMA_EXPIRADA`.
-7. **Permisos del cliente** sobre la impresora y las operaciones (ver la especificación de la API).
-8. **Perfil de la impresora:** `FILA_NO_CABE`, `IMAGEN_INVALIDA`, `RECURSO_NO_ENCONTRADO` u `OPERACION_NO_SOPORTADA`.
-9. **Idempotencia:** `ID_REUTILIZADO`, o la respuesta de duplicado.
+10. **Perfil de la impresora:** `IMPRESORA_NO_ENCONTRADA`, `FILA_NO_CABE`, `IMAGEN_INVALIDA`, `RECURSO_NO_ENCONTRADO` u `OPERACION_NO_SOPORTADA`.
+
+Para los pasos 5 a 7, el puente lee del documento solo `id`, `impresora`, los campos de firma y el `tipo` de cada operación. La validación completa llega en el paso 8.
 
 ### Forma del error
 
+Todas las respuestas llevan `ok`. Los errores agregan su código, mensaje y sugerencia en el mismo nivel:
+
 ```json
 {
-  "error": {
-    "codigo": "DOCUMENTO_INVALIDO",
-    "mensaje": "El documento no cumple el contrato v1.",
-    "sugerencia": "Revisa los detalles; cada uno indica el campo y la regla que falló.",
-    "detalles": [
-      {
-        "ruta": "/operaciones/3/alineacion",
-        "regla": "enum",
-        "mensaje": "Debe ser izquierda, centro o derecha."
-      }
-    ]
-  }
+  "ok": false,
+  "codigo": "DOCUMENTO_INVALIDO",
+  "mensaje": "El documento no cumple el contrato v1.",
+  "sugerencia": "Revisa los detalles; cada uno indica el campo y la regla que falló.",
+  "detalles": [
+    {
+      "ruta": "/operaciones/3/alineacion",
+      "regla": "enum",
+      "mensaje": "debe ser uno de: izquierda, centro, derecha"
+    }
+  ]
 }
 ```
 
 - `codigo` es estable. Programa contra él, no contra `mensaje`, que puede cambiar o traducirse.
+- `detalles` solo aparece en los errores del documento.
 - `ruta` es un JSON Pointer (RFC 6901) que apunta al campo del documento.
+- Si el error ocurrió al imprimir, la respuesta incluye además `trabajo_id`.
 
 ### Códigos del contrato
 
@@ -524,7 +533,7 @@ El puente valida en este orden y se detiene en el primer paso que falla:
 | `FILA_NO_CABE` | 422 | Las columnas de una `fila` no caben en el ancho de la impresora. |
 | `OPERACION_NO_SOPORTADA` | 422 | La impresora no puede ejecutar una operación (ver [§6](#6-capacidades-de-la-impresora)). |
 
-Los errores de autenticación, permisos, orígenes e impresoras inexistentes no forman parte del contrato del documento. Están descritos en la especificación de la API `/v1/`.
+Los errores de autenticación, permisos, orígenes e impresoras inexistentes no forman parte del contrato del documento. Están descritos en [api-v1.md](api-v1.md).
 
 ## 10. Política de versiones
 
@@ -550,12 +559,11 @@ Los errores de autenticación, permisos, orígenes e impresoras inexistentes no 
 
   ```json
   {
-    "error": {
-      "codigo": "VERSION_NO_SOPORTADA",
-      "mensaje": "Este puente no soporta documentos versión 2.",
-      "sugerencia": "Actualiza PRISMA en el equipo del negocio o envía el documento en una versión soportada.",
-      "versiones_soportadas": ["1"]
-    }
+    "ok": false,
+    "codigo": "VERSION_NO_SOPORTADA",
+    "mensaje": "Este puente no soporta documentos versión 2.",
+    "sugerencia": "Actualiza PRISMA en el equipo del negocio o envía el documento en una versión soportada.",
+    "versiones_soportadas": ["1"]
   }
   ```
 
