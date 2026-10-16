@@ -45,16 +45,7 @@ var esquema = sync.OnceValues(func() (*jsonschema.Schema, error) {
 // tamaño, JSON (I-JSON), versión, JSON Schema y reglas del documento que no dependen de la
 // impresora. Los errores son siempre *Error.
 func Decodificar(datos []byte) (*Documento, error) {
-	if len(datos) > MaxBytesDocumento {
-		return nil, NuevoError(ErrDocumentoDemasiadoGrande,
-			fmt.Sprintf("El documento mide %d bytes; el máximo es %d (256 KB).", len(datos), MaxBytesDocumento),
-			"Reduce las imágenes en línea o guárdalas en el puente y usa \"recurso\".", "", "tamano_maximo")
-	}
-	if err := revisarJSON(datos); err != nil {
-		return nil, NuevoError(ErrJSONInvalido, "El cuerpo no es JSON válido: "+err.Error()+".",
-			"Envía un único objeto JSON en UTF-8, sin BOM y sin claves repetidas.", "", "json")
-	}
-	if err := revisarVersion(datos); err != nil {
+	if err := revisarInicio(datos); err != nil {
 		return nil, err
 	}
 	if err := validarEsquema(datos); err != nil {
@@ -69,6 +60,60 @@ func Decodificar(datos []byte) (*Documento, error) {
 		return nil, err
 	}
 	return doc, nil
+}
+
+// revisarInicio aplica los tres primeros pasos: tamaño, JSON estricto y versión.
+func revisarInicio(datos []byte) error {
+	if len(datos) > MaxBytesDocumento {
+		return NuevoError(ErrDocumentoDemasiadoGrande,
+			fmt.Sprintf("El documento mide %d bytes; el máximo es %d (256 KB).", len(datos), MaxBytesDocumento),
+			"Reduce las imágenes en línea o guárdalas en el puente y usa \"recurso\".", "", "tamano_maximo")
+	}
+	if err := revisarJSON(datos); err != nil {
+		return NuevoError(ErrJSONInvalido, "El cuerpo no es JSON válido: "+err.Error()+".",
+			"Envía un único objeto JSON en UTF-8, sin BOM y sin claves repetidas.", "", "json")
+	}
+	return revisarVersion(datos)
+}
+
+// Sobre son los datos del documento que necesita la autorización (firma, idempotencia y
+// permisos) antes de la validación completa, que es más costosa.
+type Sobre struct {
+	ID, Impresora, ClienteID, Firma string
+	Emitido, Expira                 string // tal como vienen (RFC 3339); vacías si faltan
+	Tipos                           []string
+	Crudo                           []byte
+}
+
+// LeerSobre aplica los primeros pasos de la validación (tamaño, JSON estricto y versión) y extrae
+// el sobre sin validar el esquema. Los campos con un tipo inesperado quedan vacíos: Decodificar
+// los rechazará después con un error preciso.
+func LeerSobre(datos []byte) (*Sobre, error) {
+	if err := revisarInicio(datos); err != nil {
+		return nil, err
+	}
+	var obj map[string]json.RawMessage
+	if err := json.Unmarshal(datos, &obj); err != nil {
+		return nil, NuevoError(ErrDocumentoInvalido, "El documento debe ser un objeto JSON.",
+			"Envía un objeto con version, id, impresora y operaciones.", "", "type")
+	}
+	cadena := func(clave string) string {
+		var s string
+		json.Unmarshal(obj[clave], &s)
+		return s
+	}
+	s := &Sobre{ID: cadena("id"), Impresora: cadena("impresora"), ClienteID: cadena("cliente_id"), Firma: cadena("firma"),
+		Emitido: cadena("emitido"), Expira: cadena("expira"), Crudo: datos}
+	var ops []json.RawMessage
+	json.Unmarshal(obj["operaciones"], &ops)
+	for _, op := range ops {
+		var t struct {
+			Tipo string `json:"tipo"`
+		}
+		json.Unmarshal(op, &t)
+		s.Tipos = append(s.Tipos, t.Tipo)
+	}
+	return s, nil
 }
 
 // revisarJSON exige un único valor JSON en UTF-8 válido, sin BOM, sin claves duplicadas
