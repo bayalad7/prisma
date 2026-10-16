@@ -203,3 +203,20 @@ func TestModoArchivosConParValido(t *testing.T) {
 		t.Fatalf("esperaba error de par inválido, obtuve %v", err)
 	}
 }
+
+func TestLimites(t *testing.T) {
+	c, _, err := Cargar(escribir(t, "[limites]\npeticiones_ip_por_minuto = 0\npeticiones_cliente_por_minuto = 30\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Limites.PorIP != 0 || c.Limites.PorCliente != 30 {
+		t.Fatalf("límites: %+v", c.Limites)
+	}
+	if d := PorDefecto().Limites; d.PorIP != 120 || d.PorCliente != 60 {
+		t.Fatalf("por defecto: %+v", d)
+	}
+	_, _, err = Cargar(escribir(t, "[limites]\npeticiones_ip_por_minuto = -1\n"))
+	if err == nil || !strings.Contains(err.Error(), "limites.peticiones_ip_por_minuto") {
+		t.Fatalf("esperaba error de límite negativo: %v", err)
+	}
+}

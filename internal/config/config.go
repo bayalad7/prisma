@@ -29,6 +29,13 @@ type Config struct {
 	Servidor Servidor `toml:"servidor"`
 	Datos    Datos    `toml:"datos"`
 	Dev      Dev      `toml:"dev"`
+	Limites  Limites  `toml:"limites"`
+}
+
+// Limites de peticiones a la API pública. 0 desactiva el límite.
+type Limites struct {
+	PorIP      int `toml:"peticiones_ip_por_minuto"`
+	PorCliente int `toml:"peticiones_cliente_por_minuto"`
 }
 
 type Servidor struct {
@@ -56,6 +63,7 @@ func PorDefecto() Config {
 			Puerto:   8443,
 			ModoTLS:  TLSAutofirmado,
 		},
+		Limites: Limites{PorIP: 120, PorCliente: 60},
 	}
 }
 
@@ -206,6 +214,13 @@ func (c Config) Validar() error {
 		}
 	default:
 		agregar("servidor.modo_tls", "%q no es válido; usa %s", s.ModoTLS, descripcionModosTLS)
+	}
+
+	if c.Limites.PorIP < 0 {
+		agregar("limites.peticiones_ip_por_minuto", "no puede ser negativo (0 desactiva el límite)")
+	}
+	if c.Limites.PorCliente < 0 {
+		agregar("limites.peticiones_cliente_por_minuto", "no puede ser negativo (0 desactiva el límite)")
 	}
 
 	if c.Datos.Ruta != "" && !filepath.IsAbs(c.Datos.Ruta) {

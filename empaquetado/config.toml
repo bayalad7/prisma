@@ -21,6 +21,11 @@ llave = ""
 # Carpeta de la base de datos. Vacío = ruta por defecto del sistema (ver: prisma config ruta).
 ruta = ""
 
+[limites]
+# Peticiones por minuto a la API (admiten ráfagas de ese tamaño). 0 desactiva el límite.
+peticiones_ip_por_minuto = 120
+peticiones_cliente_por_minuto = 60
+
 [dev]
 # Herramientas de desarrollo (impresora virtual, etc.). Nunca lo actives en un negocio.
 modo_desarrollo = false
