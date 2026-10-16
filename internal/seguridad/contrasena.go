@@ -26,14 +26,18 @@ var errHashInvalido = errors.New("hash de contraseña con formato inválido")
 // HashContrasena devuelve el hash argon2id en formato PHC:
 // $argon2id$v=19$m=65536,t=3,p=4$<sal>$<hash>
 func HashContrasena(contrasena string) (string, error) {
+	return hashArgon2id(contrasena, argonMemoriaKiB, argonPasadas, argonHilos)
+}
+
+func hashArgon2id(secreto string, memoriaKiB, pasadas uint32, hilos uint8) (string, error) {
 	sal := make([]byte, argonSal)
 	if _, err := rand.Read(sal); err != nil {
 		return "", err
 	}
-	hash := argon2.IDKey([]byte(contrasena), sal, argonPasadas, argonMemoriaKiB, argonHilos, argonLargo)
+	hash := argon2.IDKey([]byte(secreto), sal, pasadas, memoriaKiB, hilos, argonLargo)
 	b64 := base64.RawStdEncoding
 	return fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
-		argon2.Version, argonMemoriaKiB, argonPasadas, argonHilos, b64.EncodeToString(sal), b64.EncodeToString(hash)), nil
+		argon2.Version, memoriaKiB, pasadas, hilos, b64.EncodeToString(sal), b64.EncodeToString(hash)), nil
 }
 
 // VerificarContrasena compara en tiempo constante. Respeta los parámetros guardados en el hash,
