@@ -6,13 +6,17 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/bayalad7/prisma/internal/almacen"
+	"github.com/bayalad7/prisma/internal/cola"
+	"github.com/bayalad7/prisma/internal/conector"
 	"github.com/bayalad7/prisma/internal/config"
+	"github.com/bayalad7/prisma/internal/servidor"
 	"github.com/bayalad7/prisma/internal/version"
 )
 
@@ -64,14 +68,38 @@ func ejecutar(ctx context.Context, rutaConfig string, log *slog.Logger) error {
 		log.Warn("el panel aún no tiene contraseña de administrador; créala con \"prisma admin restablecer-contrasena\"")
 	}
 
-	log.Warn("el servidor HTTPS todavía no está implementado; el puente solo mantiene la base de datos",
-		"escuchar", cfg.Servidor.Escuchar, "puerto", cfg.Servidor.Puerto, "modo_tls", cfg.Servidor.ModoTLS)
+	// Solo se registran los cambios entre en línea y fuera de línea; «ocupada» ocurre en cada trabajo.
+	var muEstados sync.Mutex
+	ultimoEstado := map[string]cola.Estado{}
+	q := cola.Nueva(cola.Opciones{AlCambiarEstado: func(alias string, e cola.Estado, err error) {
+		muEstados.Lock()
+		defer muEstados.Unlock()
+		if e == cola.Ocupada || ultimoEstado[alias] == e {
+			return
+		}
+		ultimoEstado[alias] = e
+		if err != nil {
+			log.Warn("estado de impresora", "alias", alias, "estado", e, "codigo", conector.Codigo(err))
+		} else {
+			log.Info("estado de impresora", "alias", alias, "estado", e)
+		}
+	}})
+	defer q.Cerrar()
+	srv := servidor.Nuevo(servidor.Opciones{Almacen: alm, Cola: q, Limites: cfg.Limites, Version: version.Version, Log: log})
+	if err := srv.RegistrarImpresoras(ctx); err != nil {
+		return err
+	}
+	errServidor := make(chan error, 1)
+	go func() { errServidor <- srv.Escuchar(ctx, cfg, nil) }()
 
 	cada := time.NewTicker(time.Hour)
 	defer cada.Stop()
 	for {
 		select {
-		case <-ctx.Done():
+		case err := <-errServidor:
+			if err != nil {
+				return fmt.Errorf("el servidor se detuvo: %w", err)
+			}
 			log.Info("PRISMA detenido")
 			return nil
 		case <-cada.C:

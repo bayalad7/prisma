@@ -1,6 +1,9 @@
 package main
 
 import (
+	"crypto/ed25519"
+	"crypto/rand"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
@@ -10,12 +13,14 @@ import (
 	"path/filepath"
 	"strconv"
 	"syscall"
+	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/bayalad7/prisma/internal/contrato"
 	"github.com/bayalad7/prisma/internal/dev"
 	"github.com/bayalad7/prisma/internal/escpos"
+	"github.com/bayalad7/prisma/internal/seguridad"
 )
 
 func nuevoComandoDev() *cobra.Command {
@@ -23,8 +28,121 @@ func nuevoComandoDev() *cobra.Command {
 		Use:   "dev",
 		Short: "Herramientas de desarrollo (decodificar y previsualizar tickets)",
 	}
-	cmd.AddCommand(nuevoComandoDecodificar(), nuevoComandoPrevisualizar(), nuevoComandoRenderizar(), nuevoComandoImpresoraVirtual())
+	cmd.AddCommand(nuevoComandoDecodificar(), nuevoComandoPrevisualizar(), nuevoComandoRenderizar(), nuevoComandoImpresoraVirtual(),
+		nuevoComandoLlaves(), nuevoComandoFirmar())
 	return cmd
+}
+
+func nuevoComandoLlaves() *cobra.Command {
+	var dir string
+	cmd := &cobra.Command{
+		Use:   "llaves --salida carpeta",
+		Short: "Genera un par de llaves Ed25519 de prueba para un cliente de nivel 3",
+		Args:  cobra.NoArgs,
+		RunE: func(c *cobra.Command, _ []string) error {
+			publica, privada, err := ed25519.GenerateKey(rand.Reader)
+			if err != nil {
+				return err
+			}
+			pPEM, err := seguridad.LlavePrivadaPEM(privada)
+			if err != nil {
+				return err
+			}
+			uPEM, err := seguridad.LlavePublicaPEM(publica)
+			if err != nil {
+				return err
+			}
+			if err := os.MkdirAll(dir, 0o700); err != nil {
+				return err
+			}
+			rutaPrivada, rutaPublica := filepath.Join(dir, "privada.pem"), filepath.Join(dir, "publica.pem")
+			for _, a := range []string{rutaPrivada, rutaPublica} {
+				if _, err := os.Stat(a); err == nil {
+					return fmt.Errorf("%s ya existe; elige otra carpeta para no sobrescribir llaves", a)
+				}
+			}
+			if err := os.WriteFile(rutaPrivada, pPEM, 0o600); err != nil {
+				return err
+			}
+			if err := os.WriteFile(rutaPublica, uPEM, 0o644); err != nil {
+				return err
+			}
+			w := c.OutOrStdout()
+			fmt.Fprintf(w, "Llave privada: %s (guárdala solo en el backend que firma)\n", rutaPrivada)
+			fmt.Fprintf(w, "Llave pública: %s\n", rutaPublica)
+			fmt.Fprintf(w, "Pública en base64: %s\n\n", base64.StdEncoding.EncodeToString(publica))
+			fmt.Fprintf(w, "Registra el cliente con: prisma clientes agregar --nombre \"Backend\" --nivel 3 --llave-publica %s\n", rutaPublica)
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&dir, "salida", ".", "carpeta donde guardar privada.pem y publica.pem")
+	return cmd
+}
+
+func nuevoComandoFirmar() *cobra.Command {
+	var llave, cliente, salida string
+	var nuevoID bool
+	var vigencia time.Duration
+	cmd := &cobra.Command{
+		Use:   "firmar documento.json --llave privada.pem --cliente cli_xxx",
+		Short: "Firma un documento como lo haría el backend de un cliente de nivel 3",
+		Long: "Agrega cliente_id, emitido (ahora), expira y firma (Ed25519 sobre la forma canónica JCS).\n" +
+			"El resultado se puede enviar con curl:\n" +
+			"  prisma dev firmar doc.json --llave privada.pem --cliente cli_xxx --nuevo-id -o firmado.json\n" +
+			"  curl -k https://localhost:8443/v1/imprimir -H \"Content-Type: application/json\" --data-binary @firmado.json",
+		Args: cobra.ExactArgs(1),
+		RunE: func(c *cobra.Command, args []string) error {
+			doc, err := os.ReadFile(args[0])
+			if err != nil {
+				return err
+			}
+			pem, err := os.ReadFile(llave)
+			if err != nil {
+				return err
+			}
+			privada, err := seguridad.LeerLlavePrivada(pem)
+			if err != nil {
+				return fmt.Errorf("%s: %w", llave, err)
+			}
+			if vigencia <= 0 || vigencia > contrato.VigenciaMaxima {
+				return fmt.Errorf("--vigencia debe estar entre 1s y %s", contrato.VigenciaMaxima)
+			}
+			op := seguridad.OpcionesFirma{ClienteID: cliente, Vigencia: vigencia}
+			if nuevoID {
+				op.NuevoID = uuidV4()
+			}
+			firmado, err := seguridad.FirmarDocumento(doc, privada, op)
+			if err != nil {
+				return err
+			}
+			if salida == "" {
+				_, err = c.OutOrStdout().Write(firmado)
+				return err
+			}
+			if err := os.WriteFile(salida, firmado, 0o644); err != nil {
+				return err
+			}
+			fmt.Fprintf(c.ErrOrStderr(), "Documento firmado en %s (vence en %s).\n", salida, vigencia)
+			return nil
+		},
+	}
+	f := cmd.Flags()
+	f.StringVar(&llave, "llave", "", "llave privada Ed25519 en PEM (obligatoria)")
+	f.StringVar(&cliente, "cliente", "", "id del cliente de nivel 3, cli_… (obligatorio)")
+	f.BoolVar(&nuevoID, "nuevo-id", false, "reemplaza el id del documento por un UUID v4 nuevo (para no repetir)")
+	f.DurationVar(&vigencia, "vigencia", 90*time.Second, "tiempo hasta expira (máximo 120s)")
+	f.StringVarP(&salida, "salida", "o", "", "archivo de salida (por defecto, la salida estándar)")
+	cmd.MarkFlagRequired("llave")
+	cmd.MarkFlagRequired("cliente")
+	return cmd
+}
+
+func uuidV4() string {
+	b := make([]byte, 16)
+	rand.Read(b)
+	b[6] = b[6]&0x0f | 0x40
+	b[8] = b[8]&0x3f | 0x80
+	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 }
 
 func nuevoComandoImpresoraVirtual() *cobra.Command {
