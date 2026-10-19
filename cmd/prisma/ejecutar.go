@@ -12,6 +12,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/bayalad7/prisma/internal/admin"
 	"github.com/bayalad7/prisma/internal/almacen"
 	"github.com/bayalad7/prisma/internal/cola"
 	"github.com/bayalad7/prisma/internal/conector"
@@ -65,7 +66,7 @@ func ejecutar(ctx context.Context, rutaConfig string, log *slog.Logger) error {
 	if _, ok, err := alm.Ajustes.Obtener(ctx, almacen.AjusteContrasenaAdmin); err != nil {
 		return err
 	} else if !ok {
-		log.Warn("el panel aún no tiene contraseña de administrador; créala con \"prisma admin restablecer-contrasena\"")
+		log.Warn("el panel aún no tiene contraseña: ábrelo en este equipo (/admin) o usa \"prisma admin codigo-inicial\" para configurarlo desde otro")
 	}
 
 	// Solo se registran los cambios entre en línea y fuera de línea; «ocupada» ocurre en cada trabajo.
@@ -86,9 +87,14 @@ func ejecutar(ctx context.Context, rutaConfig string, log *slog.Logger) error {
 	}})
 	defer q.Cerrar()
 	srv := servidor.Nuevo(servidor.Opciones{Almacen: alm, Cola: q, Limites: cfg.Limites, Version: version.Version, Log: log})
+	if err := srv.CargarAjustes(ctx); err != nil {
+		return err
+	}
 	if err := srv.RegistrarImpresoras(ctx); err != nil {
 		return err
 	}
+	panel := admin.Nuevo(admin.Opciones{Almacen: alm, Servidor: srv, Cola: q, Config: cfg, Version: version.Version, Log: log})
+	srv.MontarPanel(panel.Handler())
 	errServidor := make(chan error, 1)
 	go func() { errServidor <- srv.Escuchar(ctx, cfg, nil) }()
 
