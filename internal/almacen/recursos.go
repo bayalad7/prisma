@@ -23,7 +23,7 @@ type RepoRecursos struct{ a *Almacen }
 // La validación del PNG (formato, dimensiones) corresponde a quien llama.
 func (r *RepoRecursos) Guardar(ctx context.Context, rec *Recurso) error {
 	ahora := r.a.ahora()
-	_, err := r.a.db.ExecContext(ctx, `INSERT INTO recursos (nombre, png, ancho_px, alto_px, creado) VALUES (?, ?, ?, ?, ?)
+	_, err := r.a.bd().ExecContext(ctx, `INSERT INTO recursos (nombre, png, ancho_px, alto_px, creado) VALUES (?, ?, ?, ?, ?)
 		ON CONFLICT (nombre) DO UPDATE SET png = excluded.png, ancho_px = excluded.ancho_px,
 		alto_px = excluded.alto_px, creado = excluded.creado`,
 		rec.Nombre, rec.PNG, rec.AnchoPx, rec.AltoPx, ms(ahora))
@@ -37,7 +37,7 @@ func (r *RepoRecursos) Guardar(ctx context.Context, rec *Recurso) error {
 func (r *RepoRecursos) Obtener(ctx context.Context, nombre string) (*Recurso, error) {
 	var rec Recurso
 	var creado int64
-	err := r.a.db.QueryRowContext(ctx, `SELECT nombre, png, ancho_px, alto_px, creado FROM recursos WHERE nombre = ?`, nombre).
+	err := r.a.bd().QueryRowContext(ctx, `SELECT nombre, png, ancho_px, alto_px, creado FROM recursos WHERE nombre = ?`, nombre).
 		Scan(&rec.Nombre, &rec.PNG, &rec.AnchoPx, &rec.AltoPx, &creado)
 	if err != nil {
 		return nil, traducirError(err, "recurso "+nombre)
@@ -48,7 +48,7 @@ func (r *RepoRecursos) Obtener(ctx context.Context, nombre string) (*Recurso, er
 
 // Listar devuelve los recursos sin el contenido PNG.
 func (r *RepoRecursos) Listar(ctx context.Context) ([]Recurso, error) {
-	filas, err := r.a.db.QueryContext(ctx, `SELECT nombre, ancho_px, alto_px, creado FROM recursos ORDER BY nombre`)
+	filas, err := r.a.bd().QueryContext(ctx, `SELECT nombre, ancho_px, alto_px, creado FROM recursos ORDER BY nombre`)
 	if err != nil {
 		return nil, err
 	}
@@ -67,6 +67,6 @@ func (r *RepoRecursos) Listar(ctx context.Context) ([]Recurso, error) {
 }
 
 func (r *RepoRecursos) Eliminar(ctx context.Context, nombre string) error {
-	res, err := r.a.db.ExecContext(ctx, `DELETE FROM recursos WHERE nombre = ?`, nombre)
+	res, err := r.a.bd().ExecContext(ctx, `DELETE FROM recursos WHERE nombre = ?`, nombre)
 	return exigirUnaFila(res, err, "recurso "+nombre)
 }

@@ -13,6 +13,8 @@ const (
 	AjusteContrasenaAdmin = "admin.contrasena_hash" // PHC argon2id
 	AjusteDebeCambiar     = "admin.debe_cambiar"    // "1" = el panel obliga a cambiar la contraseña
 	AjusteRetencionDias   = "trabajos.retencion_dias"
+	AjusteCodigoInicial   = "admin.codigo_inicial"   // "<sha256>|<vence ms>": configuración inicial desde otro equipo
+	AjusteSoloRedPrivada  = "panel.solo_red_privada" // "0" permite abrir el panel desde cualquier IP
 )
 
 // RetencionDiasPorDefecto es cuántos días se conserva el historial de trabajos.
@@ -23,7 +25,7 @@ type RepoAjustes struct{ a *Almacen }
 // Obtener devuelve el valor y si existe.
 func (r *RepoAjustes) Obtener(ctx context.Context, clave string) (string, bool, error) {
 	var v string
-	err := r.a.db.QueryRowContext(ctx, `SELECT valor FROM ajustes WHERE clave = ?`, clave).Scan(&v)
+	err := r.a.bd().QueryRowContext(ctx, `SELECT valor FROM ajustes WHERE clave = ?`, clave).Scan(&v)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", false, nil
 	}
@@ -35,7 +37,7 @@ func (r *RepoAjustes) Obtener(ctx context.Context, clave string) (string, bool, 
 
 // Establecer crea o reemplaza un ajuste.
 func (r *RepoAjustes) Establecer(ctx context.Context, clave, valor string) error {
-	_, err := r.a.db.ExecContext(ctx, `INSERT INTO ajustes (clave, valor, actualizado) VALUES (?, ?, ?)
+	_, err := r.a.bd().ExecContext(ctx, `INSERT INTO ajustes (clave, valor, actualizado) VALUES (?, ?, ?)
 		ON CONFLICT (clave) DO UPDATE SET valor = excluded.valor, actualizado = excluded.actualizado`,
 		clave, valor, ms(r.a.ahora()))
 	return traducirError(err, "ajuste "+clave)
@@ -56,7 +58,7 @@ func (r *RepoAjustes) EstablecerVarios(ctx context.Context, valores map[string]s
 }
 
 func (r *RepoAjustes) Eliminar(ctx context.Context, clave string) error {
-	_, err := r.a.db.ExecContext(ctx, `DELETE FROM ajustes WHERE clave = ?`, clave)
+	_, err := r.a.bd().ExecContext(ctx, `DELETE FROM ajustes WHERE clave = ?`, clave)
 	return err
 }
 

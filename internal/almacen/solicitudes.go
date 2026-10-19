@@ -69,14 +69,14 @@ func (r *RepoSolicitudes) Obtener(ctx context.Context, origen string) (*Solicitu
 	if err != nil {
 		return nil, err
 	}
-	s, err := escanearSolicitud(r.a.db.QueryRowContext(ctx,
+	s, err := escanearSolicitud(r.a.bd().QueryRowContext(ctx,
 		`SELECT origen, primera_vez, ultima_vez, intentos, estado FROM solicitudes_origen WHERE origen = ?`, norm))
 	return s, traducirError(err, "solicitud "+norm)
 }
 
 // Listar devuelve las solicitudes con el estado indicado ("" = todas), las más recientes primero.
 func (r *RepoSolicitudes) Listar(ctx context.Context, estado string) ([]Solicitud, error) {
-	filas, err := r.a.db.QueryContext(ctx, `SELECT origen, primera_vez, ultima_vez, intentos, estado
+	filas, err := r.a.bd().QueryContext(ctx, `SELECT origen, primera_vez, ultima_vez, intentos, estado
 		FROM solicitudes_origen WHERE ? = '' OR estado = ? ORDER BY ultima_vez DESC`, estado, estado)
 	if err != nil {
 		return nil, err
@@ -124,7 +124,7 @@ func (r *RepoSolicitudes) cambiar(ctx context.Context, origen, consulta string) 
 	if err != nil {
 		return err
 	}
-	res, err := r.a.db.ExecContext(ctx, consulta, norm)
+	res, err := r.a.bd().ExecContext(ctx, consulta, norm)
 	return exigirUnaFila(res, err, "solicitud "+norm)
 }
 

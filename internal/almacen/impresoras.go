@@ -47,7 +47,7 @@ const columnasImpresora = `id, alias, nombre, tipo, destino, ancho_mm, columnas,
 // Crear inserta la impresora y completa ID, Creada y Actualizada.
 func (r *RepoImpresoras) Crear(ctx context.Context, imp *Impresora) error {
 	ahora := r.a.ahora()
-	res, err := r.a.db.ExecContext(ctx, `INSERT INTO impresoras (alias, nombre, tipo, destino, ancho_mm, columnas,
+	res, err := r.a.bd().ExecContext(ctx, `INSERT INTO impresoras (alias, nombre, tipo, destino, ancho_mm, columnas,
 		columnas_fuente_b, ancho_px, pagina_codigos, comando_pagina_codigos, soporta_qr_nativo, soporta_corte,
 		soporta_cajon, soporta_imagen, soporta_codigo_barras_nativo, baudios, activa, creada, actualizada)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -65,14 +65,14 @@ func (r *RepoImpresoras) Crear(ctx context.Context, imp *Impresora) error {
 
 // Obtener busca una impresora por su alias.
 func (r *RepoImpresoras) Obtener(ctx context.Context, alias string) (*Impresora, error) {
-	fila := r.a.db.QueryRowContext(ctx, `SELECT `+columnasImpresora+` FROM impresoras WHERE alias = ?`, alias)
+	fila := r.a.bd().QueryRowContext(ctx, `SELECT `+columnasImpresora+` FROM impresoras WHERE alias = ?`, alias)
 	imp, err := escanearImpresora(fila)
 	return imp, traducirError(err, "impresora "+alias)
 }
 
 // Listar devuelve todas las impresoras ordenadas por alias.
 func (r *RepoImpresoras) Listar(ctx context.Context) ([]Impresora, error) {
-	filas, err := r.a.db.QueryContext(ctx, `SELECT `+columnasImpresora+` FROM impresoras ORDER BY alias`)
+	filas, err := r.a.bd().QueryContext(ctx, `SELECT `+columnasImpresora+` FROM impresoras ORDER BY alias`)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (r *RepoImpresoras) Listar(ctx context.Context) ([]Impresora, error) {
 // Actualizar guarda todos los campos de la impresora identificada por ID (incluido un cambio de alias).
 func (r *RepoImpresoras) Actualizar(ctx context.Context, imp *Impresora) error {
 	ahora := r.a.ahora()
-	res, err := r.a.db.ExecContext(ctx, `UPDATE impresoras SET alias = ?, nombre = ?, tipo = ?, destino = ?,
+	res, err := r.a.bd().ExecContext(ctx, `UPDATE impresoras SET alias = ?, nombre = ?, tipo = ?, destino = ?,
 		ancho_mm = ?, columnas = ?, columnas_fuente_b = ?, ancho_px = ?, pagina_codigos = ?,
 		comando_pagina_codigos = ?, soporta_qr_nativo = ?, soporta_corte = ?, soporta_cajon = ?,
 		soporta_imagen = ?, soporta_codigo_barras_nativo = ?, baudios = ?, activa = ?, actualizada = ?
@@ -109,7 +109,7 @@ func (r *RepoImpresoras) Actualizar(ctx context.Context, imp *Impresora) error {
 
 // Eliminar borra la impresora; los permisos de clientes sobre ella se borran en cascada.
 func (r *RepoImpresoras) Eliminar(ctx context.Context, alias string) error {
-	res, err := r.a.db.ExecContext(ctx, `DELETE FROM impresoras WHERE alias = ?`, alias)
+	res, err := r.a.bd().ExecContext(ctx, `DELETE FROM impresoras WHERE alias = ?`, alias)
 	return exigirUnaFila(res, err, "impresora "+alias)
 }
 

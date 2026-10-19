@@ -47,7 +47,7 @@ func (r *RepoTrabajos) Crear(ctx context.Context, t *Trabajo) error {
 	}
 	ahora := r.a.ahora()
 	t.Estado = TrabajoEncolado
-	_, err = r.a.db.ExecContext(ctx, `INSERT INTO trabajos (id, documento_id, cliente_id, impresora_alias, referencia,
+	_, err = r.a.bd().ExecContext(ctx, `INSERT INTO trabajos (id, documento_id, cliente_id, impresora_alias, referencia,
 		estado, advertencias, creado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 		t.ID, t.DocumentoID, t.ClienteID, t.ImpresoraAlias, textoNulo(t.Referencia), t.Estado, adv, ms(ahora))
 	if err != nil {
@@ -59,7 +59,7 @@ func (r *RepoTrabajos) Crear(ctx context.Context, t *Trabajo) error {
 
 // MarcarImprimiendo pasa un trabajo encolado a imprimiendo.
 func (r *RepoTrabajos) MarcarImprimiendo(ctx context.Context, id string) error {
-	res, err := r.a.db.ExecContext(ctx, `UPDATE trabajos SET estado = 'imprimiendo' WHERE id = ? AND estado = 'encolado'`, id)
+	res, err := r.a.bd().ExecContext(ctx, `UPDATE trabajos SET estado = 'imprimiendo' WHERE id = ? AND estado = 'encolado'`, id)
 	return exigirUnaFila(res, err, "trabajo encolado "+id)
 }
 
@@ -72,7 +72,7 @@ func (r *RepoTrabajos) Finalizar(ctx context.Context, id, estado, codigoError st
 	if err != nil {
 		return err
 	}
-	res, err := r.a.db.ExecContext(ctx, `UPDATE trabajos SET estado = ?, codigo_error = ?, advertencias = ?,
+	res, err := r.a.bd().ExecContext(ctx, `UPDATE trabajos SET estado = ?, codigo_error = ?, advertencias = ?,
 		duracion_ms = ?, finalizado = ? WHERE id = ? AND estado IN ('encolado', 'imprimiendo')`,
 		estado, textoNulo(codigoError), adv, duracion.Milliseconds(), ms(r.a.ahora()), id)
 	return exigirUnaFila(res, err, "trabajo pendiente "+id)
@@ -80,7 +80,7 @@ func (r *RepoTrabajos) Finalizar(ctx context.Context, id, estado, codigoError st
 
 // MarcarInterrumpidos cierra como fallidos los trabajos que quedaron pendientes al detenerse el puente.
 func (r *RepoTrabajos) MarcarInterrumpidos(ctx context.Context) (int64, error) {
-	res, err := r.a.db.ExecContext(ctx, `UPDATE trabajos SET estado = 'fallido', codigo_error = ?, finalizado = ?
+	res, err := r.a.bd().ExecContext(ctx, `UPDATE trabajos SET estado = 'fallido', codigo_error = ?, finalizado = ?
 		WHERE estado IN ('encolado', 'imprimiendo')`, CodigoPuenteReiniciado, ms(r.a.ahora()))
 	if err != nil {
 		return 0, err
@@ -89,7 +89,7 @@ func (r *RepoTrabajos) MarcarInterrumpidos(ctx context.Context) (int64, error) {
 }
 
 func (r *RepoTrabajos) Obtener(ctx context.Context, id string) (*Trabajo, error) {
-	t, err := escanearTrabajo(r.a.db.QueryRowContext(ctx, `SELECT `+columnasTrabajo+` FROM trabajos WHERE id = ?`, id))
+	t, err := escanearTrabajo(r.a.bd().QueryRowContext(ctx, `SELECT `+columnasTrabajo+` FROM trabajos WHERE id = ?`, id))
 	return t, traducirError(err, "trabajo "+id)
 }
 
@@ -98,7 +98,8 @@ type FiltroTrabajos struct {
 	ClienteID      string
 	ImpresoraAlias string
 	Estado         string
-	Limite         int // 0 = 100
+	Desde, Hasta   time.Time // creados en [Desde, Hasta); cero = sin límite
+	Limite         int       // 0 = 100
 }
 
 // Listar devuelve los trabajos más recientes primero.
@@ -106,9 +107,14 @@ func (r *RepoTrabajos) Listar(ctx context.Context, f FiltroTrabajos) ([]Trabajo,
 	if f.Limite <= 0 {
 		f.Limite = 100
 	}
-	filas, err := r.a.db.QueryContext(ctx, `SELECT `+columnasTrabajo+` FROM trabajos
+	hasta := int64(1 << 62)
+	if !f.Hasta.IsZero() {
+		hasta = ms(f.Hasta)
+	}
+	filas, err := r.a.bd().QueryContext(ctx, `SELECT `+columnasTrabajo+` FROM trabajos
 		WHERE (?1 = '' OR cliente_id = ?1) AND (?2 = '' OR impresora_alias = ?2) AND (?3 = '' OR estado = ?3)
-		ORDER BY creado DESC, id LIMIT ?4`, f.ClienteID, f.ImpresoraAlias, f.Estado, f.Limite)
+		AND creado >= ?5 AND creado < ?6
+		ORDER BY creado DESC, id LIMIT ?4`, f.ClienteID, f.ImpresoraAlias, f.Estado, f.Limite, ms(f.Desde), hasta)
 	if err != nil {
 		return nil, err
 	}
@@ -124,9 +130,28 @@ func (r *RepoTrabajos) Listar(ctx context.Context, f FiltroTrabajos) ([]Trabajo,
 	return lista, filas.Err()
 }
 
+// Contar devuelve cuántos trabajos hay en cada estado entre los creados desde la fecha indicada.
+func (r *RepoTrabajos) Contar(ctx context.Context, desde time.Time) (map[string]int, error) {
+	filas, err := r.a.bd().QueryContext(ctx, `SELECT estado, count(*) FROM trabajos WHERE creado >= ? GROUP BY estado`, ms(desde))
+	if err != nil {
+		return nil, err
+	}
+	defer filas.Close()
+	conteo := map[string]int{}
+	for filas.Next() {
+		var estado string
+		var n int
+		if err := filas.Scan(&estado, &n); err != nil {
+			return nil, err
+		}
+		conteo[estado] = n
+	}
+	return conteo, filas.Err()
+}
+
 // Purgar borra los trabajos terminados creados antes de la fecha indicada.
 func (r *RepoTrabajos) Purgar(ctx context.Context, antesDe time.Time) (int64, error) {
-	res, err := r.a.db.ExecContext(ctx, `DELETE FROM trabajos WHERE creado < ? AND estado IN ('completado', 'fallido')`, ms(antesDe))
+	res, err := r.a.bd().ExecContext(ctx, `DELETE FROM trabajos WHERE creado < ? AND estado IN ('completado', 'fallido')`, ms(antesDe))
 	if err != nil {
 		return 0, err
 	}

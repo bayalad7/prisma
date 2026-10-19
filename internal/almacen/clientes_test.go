@@ -32,9 +32,10 @@ func TestClientesCrearYObtener(t *testing.T) {
 func TestClientesRestriccionesPorNivel(t *testing.T) {
 	a, _ := nuevoAlmacen(t)
 
+	// Un nivel 2 sin llave es válido: es una llave revocada (no podrá autenticarse).
 	sinLlave := clienteDePrueba("cli_sinllave")
 	sinLlave.LlaveHash, sinLlave.LlavePrefijo = "", ""
-	exigirError(t, a.Clientes.Crear(ctx, sinLlave), ErrInvalido)
+	exigirSinError(t, a.Clientes.Crear(ctx, sinLlave))
 
 	firma := &Cliente{ID: "cli_firma001", Nombre: "Backend", Nivel: NivelFirma, Activo: true}
 	exigirError(t, a.Clientes.Crear(ctx, firma), ErrInvalido)

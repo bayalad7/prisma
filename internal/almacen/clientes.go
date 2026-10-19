@@ -58,7 +58,7 @@ func (r *RepoClientes) Crear(ctx context.Context, c *Cliente) error {
 		return err
 	}
 	ahora := r.a.ahora()
-	_, err = r.a.db.ExecContext(ctx, `INSERT INTO clientes (`+columnasCliente+`)
+	_, err = r.a.bd().ExecContext(ctx, `INSERT INTO clientes (`+columnasCliente+`)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		c.ID, c.Nombre, c.Nivel, textoNulo(c.LlaveHash), textoNulo(c.LlavePrefijo), c.LlavePublica, bit(c.ExigirLlave), ops,
 		bit(c.TodasLasImpresoras), bit(c.Activo), ms(ahora), ms(ahora))
@@ -88,12 +88,12 @@ func (r *RepoClientes) ObtenerPorOrigen(ctx context.Context, origen string) (*Cl
 }
 
 func (r *RepoClientes) uno(ctx context.Context, where string, arg any, que string) (*Cliente, error) {
-	c, err := escanearCliente(r.a.db.QueryRowContext(ctx, `SELECT `+columnasCliente+` FROM clientes `+where, arg))
+	c, err := escanearCliente(r.a.bd().QueryRowContext(ctx, `SELECT `+columnasCliente+` FROM clientes `+where, arg))
 	return c, traducirError(err, que)
 }
 
 func (r *RepoClientes) Listar(ctx context.Context) ([]Cliente, error) {
-	filas, err := r.a.db.QueryContext(ctx, `SELECT `+columnasCliente+` FROM clientes ORDER BY nombre, id`)
+	filas, err := r.a.bd().QueryContext(ctx, `SELECT `+columnasCliente+` FROM clientes ORDER BY nombre, id`)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (r *RepoClientes) Actualizar(ctx context.Context, c *Cliente) error {
 		return err
 	}
 	ahora := r.a.ahora()
-	res, err := r.a.db.ExecContext(ctx, `UPDATE clientes SET nombre = ?, nivel = ?, llave_hash = ?, llave_prefijo = ?,
+	res, err := r.a.bd().ExecContext(ctx, `UPDATE clientes SET nombre = ?, nivel = ?, llave_hash = ?, llave_prefijo = ?,
 		llave_publica = ?, exigir_llave = ?, operaciones_sensibles = ?, todas_las_impresoras = ?, activo = ?,
 		actualizado = ? WHERE id = ?`,
 		c.Nombre, c.Nivel, textoNulo(c.LlaveHash), textoNulo(c.LlavePrefijo), c.LlavePublica, bit(c.ExigirLlave), ops,
@@ -129,7 +129,7 @@ func (r *RepoClientes) Actualizar(ctx context.Context, c *Cliente) error {
 
 // Eliminar borra el cliente con sus orígenes y permisos. Su historial de trabajos se conserva.
 func (r *RepoClientes) Eliminar(ctx context.Context, id string) error {
-	res, err := r.a.db.ExecContext(ctx, `DELETE FROM clientes WHERE id = ?`, id)
+	res, err := r.a.bd().ExecContext(ctx, `DELETE FROM clientes WHERE id = ?`, id)
 	return exigirUnaFila(res, err, "cliente "+id)
 }
 
@@ -170,7 +170,7 @@ func (r *RepoClientes) EstablecerImpresoras(ctx context.Context, clienteID strin
 
 // ImpresorasPermitidas devuelve los alias permitidos explícitamente (solo aplica si TodasLasImpresoras = false).
 func (r *RepoClientes) ImpresorasPermitidas(ctx context.Context, clienteID string) ([]string, error) {
-	filas, err := r.a.db.QueryContext(ctx, `SELECT i.alias FROM clientes_impresoras ci
+	filas, err := r.a.bd().QueryContext(ctx, `SELECT i.alias FROM clientes_impresoras ci
 		JOIN impresoras i ON i.id = ci.impresora_id WHERE ci.cliente_id = ? ORDER BY i.alias`, clienteID)
 	if err != nil {
 		return nil, err
@@ -181,7 +181,7 @@ func (r *RepoClientes) ImpresorasPermitidas(ctx context.Context, clienteID strin
 // PuedeImprimirEn indica si el cliente tiene permiso sobre la impresora (no comprueba si está activa).
 func (r *RepoClientes) PuedeImprimirEn(ctx context.Context, clienteID, alias string) (bool, error) {
 	var permitido bool
-	err := r.a.db.QueryRowContext(ctx, `SELECT c.todas_las_impresoras = 1 OR EXISTS (
+	err := r.a.bd().QueryRowContext(ctx, `SELECT c.todas_las_impresoras = 1 OR EXISTS (
 			SELECT 1 FROM clientes_impresoras ci JOIN impresoras i ON i.id = ci.impresora_id
 			WHERE ci.cliente_id = c.id AND i.alias = ?)
 		FROM clientes c WHERE c.id = ?`, alias, clienteID).Scan(&permitido)
@@ -194,7 +194,7 @@ func (r *RepoClientes) AgregarOrigen(ctx context.Context, clienteID, origen stri
 	if err != nil {
 		return err
 	}
-	_, err = r.a.db.ExecContext(ctx, `INSERT INTO clientes_origenes (cliente_id, origen) VALUES (?, ?)`, clienteID, norm)
+	_, err = r.a.bd().ExecContext(ctx, `INSERT INTO clientes_origenes (cliente_id, origen) VALUES (?, ?)`, clienteID, norm)
 	return traducirError(err, "origen "+norm)
 }
 
@@ -203,12 +203,12 @@ func (r *RepoClientes) QuitarOrigen(ctx context.Context, clienteID, origen strin
 	if err != nil {
 		return err
 	}
-	res, err := r.a.db.ExecContext(ctx, `DELETE FROM clientes_origenes WHERE cliente_id = ? AND origen = ?`, clienteID, norm)
+	res, err := r.a.bd().ExecContext(ctx, `DELETE FROM clientes_origenes WHERE cliente_id = ? AND origen = ?`, clienteID, norm)
 	return exigirUnaFila(res, err, "origen "+norm)
 }
 
 func (r *RepoClientes) Origenes(ctx context.Context, clienteID string) ([]string, error) {
-	filas, err := r.a.db.QueryContext(ctx, `SELECT origen FROM clientes_origenes WHERE cliente_id = ? ORDER BY origen`, clienteID)
+	filas, err := r.a.bd().QueryContext(ctx, `SELECT origen FROM clientes_origenes WHERE cliente_id = ? ORDER BY origen`, clienteID)
 	if err != nil {
 		return nil, err
 	}
