@@ -167,3 +167,14 @@ func VerificarFirma(crudo []byte, firma string, publica ed25519.PublicKey) error
 	}
 	return nil
 }
+
+// HuellaLlavePublica identifica una llave pública para mostrarla: SHA-256 de sus 32 bytes,
+// los primeros 8 en hexadecimal.
+func HuellaLlavePublica(k ed25519.PublicKey) string {
+	h := sha256.Sum256(k)
+	partes := make([]string, 8)
+	for i := range partes {
+		partes[i] = fmt.Sprintf("%02X", h[i])
+	}
+	return "SHA-256 " + strings.Join(partes, ":") + ":…"
+}

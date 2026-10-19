@@ -28,11 +28,14 @@ func NuevoLimitador(porMinuto int) *Limitador {
 
 // Permitir consume una ficha de la clave. Si no hay, devuelve cuánto esperar para reintentar.
 func (l *Limitador) Permitir(clave string) (bool, time.Duration) {
-	if l == nil || l.porMinuto <= 0 {
+	if l == nil {
 		return true, 0
 	}
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	if l.porMinuto <= 0 {
+		return true, 0
+	}
 	ahora := l.Ahora()
 	capacidad := float64(l.porMinuto)
 	porSegundo := capacidad / 60
@@ -60,4 +63,19 @@ func (l *Limitador) Permitir(clave string) (bool, time.Duration) {
 	}
 	espera := time.Duration((1 - c.fichas) / porSegundo * float64(time.Second))
 	return false, espera
+}
+
+// Configurar cambia el límite en caliente (por ejemplo, desde el panel). 0 lo desactiva.
+func (l *Limitador) Configurar(porMinuto int) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.porMinuto = porMinuto
+	clear(l.cubetas)
+}
+
+// PorMinuto devuelve el límite vigente.
+func (l *Limitador) PorMinuto() int {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.porMinuto
 }

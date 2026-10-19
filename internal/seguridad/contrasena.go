@@ -2,8 +2,10 @@ package seguridad
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strings"
@@ -96,4 +98,32 @@ func GenerarContrasena() (string, error) {
 		b.WriteByte(alfabetoContrasena[int(aleatorio[i])%len(alfabetoContrasena)])
 	}
 	return b.String(), nil
+}
+
+// alfabetoCodigo evita caracteres ambiguos y se dicta fácil en mayúsculas.
+const alfabetoCodigo = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
+
+// GenerarCodigoInicial crea el código de un solo uso para configurar el panel desde otro equipo
+// (8 caracteres, 40 bits, mostrado como XXXX-XXXX) y el hash que se guarda.
+func GenerarCodigoInicial() (codigo, hash string, err error) {
+	b := make([]byte, 8)
+	if _, err := rand.Read(b); err != nil {
+		return "", "", err
+	}
+	for i := range b {
+		b[i] = alfabetoCodigo[int(b[i])%len(alfabetoCodigo)] // 256 es múltiplo de 32: sin sesgo
+	}
+	return string(b[:4]) + "-" + string(b[4:]), HashCodigo(string(b)), nil
+}
+
+// HashCodigo normaliza el código (sin guiones ni espacios, en mayúsculas) y devuelve su SHA-256.
+func HashCodigo(codigo string) string {
+	n := strings.ToUpper(strings.NewReplacer("-", "", " ", "").Replace(codigo))
+	h := sha256.Sum256([]byte(n))
+	return hex.EncodeToString(h[:])
+}
+
+// VerificarCodigo compara en tiempo constante un código con su hash.
+func VerificarCodigo(codigo, hash string) bool {
+	return subtle.ConstantTimeCompare([]byte(HashCodigo(codigo)), []byte(hash)) == 1
 }
