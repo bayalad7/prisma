@@ -54,7 +54,15 @@ type Servidor struct {
 
 	mu          sync.Mutex
 	registradas map[string]time.Time // alias → versión del perfil registrada en la cola
+	panel       http.Handler
+	iniciado    time.Time
 }
+
+// Ajustes de la base de datos que usa el servidor. Mandan sobre los valores de config.toml.
+const (
+	AjusteLimiteIP      = "limites.ip_por_minuto"
+	AjusteLimiteCliente = "limites.cliente_por_minuto"
+)
 
 // Nuevo crea el servidor.
 func Nuevo(op Opciones) *Servidor {
@@ -70,8 +78,36 @@ func Nuevo(op Opciones) *Servidor {
 	return &Servidor{
 		op: op, aut: seguridad.NuevoAutorizador(op.Almacen),
 		porIP: seguridad.NuevoLimitador(op.Limites.PorIP), porCliente: seguridad.NuevoLimitador(op.Limites.PorCliente),
-		registradas: map[string]time.Time{},
+		registradas: map[string]time.Time{}, iniciado: time.Now(),
 	}
+}
+
+// MontarPanel sirve el panel de administración en /admin con las mismas protecciones (límite por
+// IP, cabeceras y bitácora) que la API.
+func (s *Servidor) MontarPanel(h http.Handler) { s.panel = h }
+
+// Iniciado es el momento en que arrancó el servidor.
+func (s *Servidor) Iniciado() time.Time { return s.iniciado }
+
+// CargarAjustes aplica los límites guardados en la base (el panel los edita); si no hay, quedan
+// los de config.toml.
+func (s *Servidor) CargarAjustes(ctx context.Context) error {
+	for clave, lim := range map[string]*seguridad.Limitador{AjusteLimiteIP: s.porIP, AjusteLimiteCliente: s.porCliente} {
+		v, ok, err := s.op.Almacen.Ajustes.Obtener(ctx, clave)
+		if err != nil {
+			return err
+		}
+		if n, err := strconv.Atoi(v); ok && err == nil && n >= 0 {
+			lim.Configurar(n)
+		}
+	}
+	return nil
+}
+
+// ActualizarLimites cambia los límites en caliente (no los guarda).
+func (s *Servidor) ActualizarLimites(porIP, porCliente int) {
+	s.porIP.Configurar(porIP)
+	s.porCliente.Configurar(porCliente)
 }
 
 // Autorizador permite ajustar el reloj en las pruebas.
@@ -90,7 +126,7 @@ func (s *Servidor) RegistrarImpresoras(ctx context.Context) error {
 	}
 	for _, imp := range lista {
 		if imp.Activa {
-			if err := s.asegurarRegistrada(imp); err != nil {
+			if err := s.AsegurarRegistrada(imp); err != nil {
 				s.op.Log.Warn("no se pudo preparar la impresora", "alias", imp.Alias, "error", err.Error())
 			}
 		}
@@ -98,9 +134,9 @@ func (s *Servidor) RegistrarImpresoras(ctx context.Context) error {
 	return nil
 }
 
-// asegurarRegistrada registra la impresora en la cola, o actualiza su conector si el perfil
-// cambió desde que se registró (por ejemplo, desde la CLI con el puente en marcha).
-func (s *Servidor) asegurarRegistrada(imp almacen.Impresora) error {
+// AsegurarRegistrada registra la impresora en la cola, o actualiza su conector si el perfil
+// cambió desde que se registró (desde el panel o la CLI con el puente en marcha).
+func (s *Servidor) AsegurarRegistrada(imp almacen.Impresora) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if v, ok := s.registradas[imp.Alias]; ok && v.Equal(imp.Actualizada) {
@@ -113,6 +149,40 @@ func (s *Servidor) asegurarRegistrada(imp almacen.Impresora) error {
 	s.op.Cola.Registrar(imp.Alias, con)
 	s.registradas[imp.Alias] = imp.Actualizada
 	return nil
+}
+
+// QuitarImpresora la saca de la cola (al eliminarla o cambiarle el alias).
+func (s *Servidor) QuitarImpresora(alias string) {
+	s.mu.Lock()
+	delete(s.registradas, alias)
+	s.mu.Unlock()
+	s.op.Cola.Quitar(alias)
+}
+
+// SincronizarImpresoras deja la cola igual que la base: quita las que ya no existen y vuelve a
+// registrar las activas (por ejemplo, después de restaurar un respaldo).
+func (s *Servidor) SincronizarImpresoras(ctx context.Context) error {
+	lista, err := s.op.Almacen.Impresoras.Listar(ctx)
+	if err != nil {
+		return err
+	}
+	existen := map[string]bool{}
+	for _, imp := range lista {
+		existen[imp.Alias] = true
+	}
+	s.mu.Lock()
+	var sobran []string
+	for alias := range s.registradas {
+		if !existen[alias] {
+			sobran = append(sobran, alias)
+		}
+	}
+	clear(s.registradas)
+	s.mu.Unlock()
+	for _, alias := range sobran {
+		s.op.Cola.Quitar(alias)
+	}
+	return s.RegistrarImpresoras(ctx)
 }
 
 // ruta asocia métodos con manejadores para una misma ruta.
@@ -128,6 +198,10 @@ func (s *Servidor) Handler() http.Handler {
 		"/v1/previsualizar": {http.MethodPost: s.previsualizar},
 	}
 	enrutar := func(w http.ResponseWriter, r *http.Request) {
+		if s.panel != nil && (r.URL.Path == "/admin" || strings.HasPrefix(r.URL.Path, "/admin/")) {
+			s.panel.ServeHTTP(w, r)
+			return
+		}
 		metodos, ok := rutas[r.URL.Path]
 		if !ok {
 			s.responderError(w, r, rechazo(http.StatusNotFound, "RUTA_NO_ENCONTRADA",
@@ -315,10 +389,16 @@ var estadoConector = map[string]int{
 // responderError traduce cualquier error a la respuesta JSON. Los errores no previstos se
 // registran completos en la bitácora y al cliente solo le llega un mensaje genérico.
 func (s *Servidor) responderError(w http.ResponseWriter, r *http.Request, err error) {
-	s.responderErrorTrabajo(w, r, err, "")
+	ResponderError(w, r, err, "", s.op.Log)
 }
 
 func (s *Servidor) responderErrorTrabajo(w http.ResponseWriter, r *http.Request, err error, trabajoID string) {
+	ResponderError(w, r, err, trabajoID, s.op.Log)
+}
+
+// ResponderError escribe cualquier error con el formato de la API ({ok:false, codigo, mensaje,
+// sugerencia, …}) y el estado HTTP que le corresponde. Lo usa también el panel.
+func ResponderError(w http.ResponseWriter, r *http.Request, err error, trabajoID string, log *slog.Logger) {
 	resp := respuestaError{TrabajoID: trabajoID}
 	estado := http.StatusInternalServerError
 	var (
@@ -354,7 +434,7 @@ func (s *Servidor) responderErrorTrabajo(w http.ResponseWriter, r *http.Request,
 		estado, resp.Codigo = http.StatusServiceUnavailable, "PUENTE_NO_DISPONIBLE"
 		resp.Mensaje, resp.Sugerencia = "El puente se está deteniendo.", "Vuelve a intentarlo en unos segundos."
 	default:
-		s.op.Log.Error("error interno", "metodo", r.Method, "ruta", r.URL.Path, "error", err.Error())
+		log.Error("error interno", "metodo", r.Method, "ruta", r.URL.Path, "error", err.Error())
 		resp.Codigo, resp.Mensaje = "ERROR_INTERNO", "Ocurrió un error interno en el puente."
 		resp.Sugerencia = "Vuelve a intentarlo; si persiste, revisa la bitácora del puente."
 	}

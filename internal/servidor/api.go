@@ -194,7 +194,8 @@ func (s *Servidor) impresoraActiva(ctx context.Context, alias string) (*almacen.
 	return imp, err
 }
 
-func nuevoTrabajoID() string {
+// NuevoTrabajoID genera un identificador de trabajo.
+func NuevoTrabajoID() string {
 	b := make([]byte, 8)
 	rand.Read(b)
 	return "trb_" + hex.EncodeToString(b)
@@ -224,7 +225,7 @@ func (s *Servidor) imprimir(w http.ResponseWriter, r *http.Request) {
 		s.responderError(w, r, err)
 		return
 	}
-	if err := s.asegurarRegistrada(*imp); err != nil {
+	if err := s.AsegurarRegistrada(*imp); err != nil {
 		s.responderError(w, r, err)
 		return
 	}
@@ -234,7 +235,7 @@ func (s *Servidor) imprimir(w http.ResponseWriter, r *http.Request) {
 		s.responderError(w, r, err)
 		return
 	}
-	trabajoID := nuevoTrabajoID()
+	trabajoID := NuevoTrabajoID()
 	// La reserva es atómica: si otra petición con el mismo id ganó la carrera, se responde como repetido.
 	res, previo, err := s.op.Almacen.IDsRecientes.Reservar(ctx, almacen.IDReciente{
 		ClienteID: cli.ID, DocumentoID: doc.ID, HashContenido: hash, TrabajoID: trabajoID})
