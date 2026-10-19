@@ -2,11 +2,7 @@
 
 Esta guía instala PRISMA en el equipo de un negocio (PC con Windows, Raspberry Pi o Linux, o Mac) para que arranque solo y siga funcionando después de un reinicio.
 
-> **⏳ Estado actual.** `prisma ejecutar` ya sirve la API HTTPS y las aplicaciones pueden imprimir por la red. Todavía faltan el panel de administración y el comando `prisma servicio instalar`, así que por ahora:
-> - las impresoras y las aplicaciones se configuran con la CLI;
-> - el arranque automático se hace con las herramientas de cada sistema (sección de cada sistema).
->
-> Los pasos marcados con ⏳ cambiarán cuando lleguen esas partes.
+> **⏳ Estado actual.** `prisma ejecutar` sirve la API HTTPS y el [panel de administración](panel.md). Todavía falta el comando `prisma servicio instalar`, así que el arranque automático se hace con las herramientas de cada sistema (sección de cada sistema). Los pasos marcados con ⏳ cambiarán cuando llegue esa parte.
 
 ## 1. Requisitos del equipo
 
@@ -63,7 +59,6 @@ sudo install -d -m 0755 /etc/prisma
 sudo install -m 0644 empaquetado/config.toml /etc/prisma/config.toml   # ejemplo comentado
 
 sudo -u prisma prisma config validar
-sudo -u prisma prisma admin restablecer-contrasena      # anota la contraseña (⏳ se usará en el panel)
 ```
 
 ### Impresoras
@@ -128,7 +123,6 @@ Copy-Item .\prisma-windows-amd64.exe "C:\Program Files\PRISMA\prisma.exe"
 Copy-Item .\empaquetado\config.toml "C:\ProgramData\PRISMA\config.toml"   # opcional
 
 & "C:\Program Files\PRISMA\prisma.exe" config validar
-& "C:\Program Files\PRISMA\prisma.exe" admin restablecer-contrasena
 ```
 
 El binario no está firmado. Si SmartScreen lo bloquea, en las propiedades del archivo marca **Desbloquear**, o elige *Más información > Ejecutar de todas formas*.
@@ -176,7 +170,6 @@ sudo install -m 0755 prisma-darwin-arm64 /usr/local/bin/prisma
 sudo xattr -d com.apple.quarantine /usr/local/bin/prisma 2>/dev/null   # binario no firmado
 sudo mkdir -p "/Library/Application Support/PRISMA" /Library/Logs/PRISMA
 sudo prisma config validar
-sudo prisma admin restablecer-contrasena
 ```
 
 ### Servicio con launchd
@@ -236,13 +229,11 @@ Desde otro equipo de la red, `https://<ip-del-puente>:8443/v1/salud` debe respon
 ### Certificado y aplicaciones
 
 1. **Confía en el certificado** en cada equipo desde el que se imprimirá, como explica [tls.md](tls.md). `prisma tls info` muestra la huella para verificarlo.
-2. **Autoriza cada aplicación.** ⏳ Lo hará el panel; por ahora, con la CLI (usando el mismo usuario que el servicio):
+2. **Abre el panel y crea la contraseña.** En el propio equipo del puente, abre `https://localhost:8443/admin`. Desde otro equipo de la red, abre `https://<ip-del-puente>:8443/admin` y escribe el código que muestra `prisma admin codigo-inicial` en el equipo del puente (vence a los 30 minutos). Detalles en [panel.md](panel.md).
+3. **Agrega las impresoras** en *Impresoras* e imprime el ticket de diagnóstico de cada una.
+4. **Autoriza cada aplicación** en *Aplicaciones*, o aprueba su origen en *Solicitudes* cuando intente imprimir. Entrega la llave `pk_…` a quien desarrolla la aplicación; no se volverá a mostrar. Los niveles y la forma de llamar a la API están en [api-v1.md](api-v1.md).
 
-   ```sh
-   prisma clientes agregar --nombre "Caja web" --nivel 2 --origen https://caja.example --impresoras caja
-   ```
-
-   Entrega la llave `pk_…` que muestra el comando a quien desarrolla la aplicación; no se volverá a mostrar. Los niveles y la forma de llamar a la API están en [api-v1.md](api-v1.md).
+   La CLI hace lo mismo (`prisma impresoras …`, `prisma clientes …`), útil para automatizar instalaciones. Ejecútala con el mismo usuario que el servicio.
 
 ## 8. Actualizar
 
@@ -257,8 +248,8 @@ Una versión **anterior** no abre una base ya migrada por una versión más nuev
 
 Todo el estado está en `prisma.db`: impresoras, clientes, orígenes, historial y ajustes. `config.toml` se respalda aparte.
 
-- **Respaldar:** detén el servicio y copia `prisma.db`. Si existen `prisma.db-wal` y `prisma.db-shm`, cópialos también. ⏳ Habrá un comando para respaldar en caliente.
-- **Restaurar:** detén el servicio, reemplaza los archivos e inícialo.
+- **Respaldar:** en el panel, *Ajustes → Respaldo → Descargar respaldo*. Es una copia consistente que se hace sin detener el puente. Sin el panel: detén el servicio y copia `prisma.db` (y `prisma.db-wal` y `prisma.db-shm` si existen).
+- **Restaurar:** en el panel, *Ajustes → Respaldo → Restaurar*. El puente valida el archivo, lo aplica con una pausa breve y deja la base anterior como `prisma.db.antes-de-restaurar`. Sin el panel: detén el servicio, reemplaza los archivos e inícialo.
 
 La base contiene hashes de llaves y de la contraseña del panel. Guarda los respaldos en un lugar con acceso restringido.
 
@@ -278,8 +269,10 @@ Las carpetas de datos contienen el historial y la configuración: bórralas solo
 - [ ] `prisma config validar` da «La configuración es válida».
 - [ ] El equipo tiene IP fija, y las impresoras de red también.
 - [ ] `prisma impresoras probar <alias>` da «en línea» para cada impresora.
-- [ ] Hay contraseña de administrador (`prisma admin restablecer-contrasena`) y está guardada en un lugar seguro.
+- [ ] El panel tiene contraseña de administrador y está guardada en un lugar seguro.
 - [ ] El servicio arranca solo tras reiniciar el equipo (revisa las bitácoras).
 - [ ] Desde otro equipo, `https://<ip>:8443/v1/salud` responde sin advertencia de certificado.
-- [ ] Cada aplicación está registrada (`prisma clientes listar`) con el nivel y las impresoras que necesita, y solo las que lo requieren tienen `abrir_cajon` o `raw`.
+- [ ] El ticket de diagnóstico de cada impresora sale completo, con la regla de columnas en una sola línea.
+- [ ] Cada aplicación está registrada (panel → *Aplicaciones*) con el nivel y las impresoras que necesita, y solo las que lo requieren tienen `abrir_cajon` o `raw`.
+- [ ] No quedan solicitudes pendientes sin revisar.
 - [ ] `modo_desarrollo` está en `false`.

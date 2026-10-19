@@ -8,6 +8,7 @@ PRISMA es un puente de impresión. Se instala en un equipo de la red local de un
 |---|---|
 | Ver PRISMA funcionando en 5 minutos, sin impresora | [primeros-pasos.md](primeros-pasos.md) |
 | Instalarlo en el equipo de un negocio | [instalacion.md](instalacion.md) |
+| Configurar impresoras y aplicaciones desde el navegador | [panel.md](panel.md) |
 | Conectar una impresora (red, USB, Bluetooth) | [conectores.md](conectores.md) |
 | Conocer todos los comandos y opciones | [cli.md](cli.md) |
 | Configurar `config.toml` | [configuracion.md](configuracion.md) |
@@ -33,11 +34,11 @@ PRISMA está en desarrollo. Esto es lo que ya funciona y lo que falta:
 | Servidor HTTPS (autofirmado, archivos o solo localhost) y API pública `/v1` | ✅ Listo |
 | Autorización: orígenes, llaves `pk_` (argon2id), firma Ed25519, permisos, idempotencia, CORS y límites | ✅ Listo |
 | Gestión de clientes desde la CLI (`prisma clientes`) | ✅ Listo |
-| Panel de administración web (aprobar solicitudes de origen, editar clientes e impresoras) | ⏳ Pendiente |
+| Panel de administración web en `/admin` ([panel.md](panel.md)) | ✅ Listo |
 | SDK JavaScript | ⏳ Pendiente |
 | Instalación como servicio (`prisma servicio instalar`) e instaladores por plataforma | ⏳ Pendiente |
 
-Las aplicaciones ya pueden imprimir por la red con la [API v1](api-v1.md). Mientras falte el panel, los clientes y las impresoras se administran con la CLI. La documentación marca con **⏳** lo que todavía no existe.
+Las aplicaciones ya pueden imprimir por la red con la [API v1](api-v1.md), y el dueño configura todo desde el [panel](panel.md) sin usar la CLI. La documentación marca con **⏳** lo que todavía no existe.
 
 ## Glosario
 

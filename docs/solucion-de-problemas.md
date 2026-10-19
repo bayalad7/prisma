@@ -45,13 +45,13 @@ El equipo no confía en el certificado autofirmado del puente. Instálalo como c
 
 ### Error de certificado con la IP correcta
 
-Si el equipo del puente cambió de IP, el certificado no la incluye: el puente lo avisa al arrancar y `prisma tls info` lo muestra. Ejecuta `prisma tls regenerar` y vuelve a confiar en él. Para que no se repita, dale una IP fija al equipo.
+Si el equipo del puente cambió de IP, el certificado no la incluye: el puente lo avisa al arrancar, y `prisma tls info` y el panel (*Ajustes → HTTPS*) lo muestran. Regenéralo en el panel o con `prisma tls regenerar` y vuelve a confiar en él. Para que no se repita, dale una IP fija al equipo.
 
 ### `fetch` falla con «TypeError: Failed to fetch» y la consola menciona CORS
 
 El origen de la página no está aprobado. El puente no le envía cabeceras CORS y el navegador no deja leer la respuesta. El origen quedó como **solicitud pendiente**. Apruébalo:
-- ⏳ desde el panel;
-- por ahora, registrando la aplicación con `prisma clientes agregar … --origen https://tu-app.example`.
+- en el [panel](panel.md), sección *Solicitudes*;
+- o con la CLI: `prisma clientes agregar … --origen https://tu-app.example`.
 
 El origen debe coincidir **exactamente**: esquema (`https`), nombre y puerto.
 
@@ -152,6 +152,24 @@ Para ver el resultado antes de imprimir:
 ```sh
 prisma dev previsualizar documento.json --ancho 58
 ```
+
+## Panel de administración
+
+### El panel responde `ACCESO_SOLO_RED_LOCAL`
+
+Por defecto el panel solo se abre desde IPs privadas de la red local y desde el propio equipo del puente. Si llegas a través de una VPN o de una red con IPs públicas, entra desde el equipo del puente y desactiva *Ajustes → Solo red local*.
+
+### El panel pide un código de configuración
+
+El panel aún no tiene contraseña y lo abriste desde otro equipo. Ejecuta `prisma admin codigo-inicial` en el equipo del puente, o abre `https://localhost:8443/admin` en ese mismo equipo.
+
+### Olvidé la contraseña del panel
+
+En el equipo del puente, ejecuta `prisma admin restablecer-contrasena` con el mismo usuario que el servicio. El panel pedirá cambiarla al entrar.
+
+### `ACCESO_BLOQUEADO` al entrar al panel
+
+Hubo 5 contraseñas incorrectas desde ese equipo. Espera 5 minutos; los demás equipos no quedan bloqueados.
 
 ## Diagnóstico avanzado
 

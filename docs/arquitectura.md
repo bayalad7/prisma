@@ -64,9 +64,10 @@ Lo costoso (validar el esquema completo, decodificar imágenes, renderizar) ocur
 | `internal/cola` | filas por impresora y estado | `conector` |
 | `internal/seguridad` | autorización (origen, llave, firma, permisos), límites, contraseñas y llaves | `almacen`, `contrato` |
 | `internal/servidor` | HTTPS (TLS), API pública `/v1`, CORS | `seguridad`, `cola`, `escpos`, `dev` |
+| `internal/admin` | panel `/admin`: HTML/CSS/JS embebidos, sesiones, CSRF y API interna `/admin/api` | `servidor`, `almacen`, `seguridad`, `escpos`, `dev` |
 | `internal/dev` | decodificador, simulador, vistas, impresora virtual | `escpos`, `contrato`, `almacen` |
 | `schema` | JSON Schema embebido | — |
-| ⏳ `internal/admin`, `internal/servicio`, `sdk/js` | panel, servicio, SDK | — |
+| ⏳ `internal/servicio`, `sdk/js` | servicio, SDK | — |
 
 ## Del documento a los bytes
 
@@ -126,13 +127,13 @@ Los detalles por sistema operativo están en [conectores.md](conectores.md).
 
 Además:
 
-- **Contraseña del panel:** argon2id (64 MiB, 3 pasadas).
+- **Panel:** contraseña argon2id (64 MiB, 3 pasadas, una verificación a la vez) con bloqueo de 5 minutos tras 5 fallos por IP; sesión en memoria con cookie `HttpOnly`, `Secure` y `SameSite=Strict`; token CSRF; solo IPs privadas por defecto; CSP `default-src 'self'`. Detalles en [panel.md](panel.md#seguridad-del-panel).
 - **Llaves `pk_`:** argon2id (19 MiB, 2 pasadas). Para que no sean una vía de denegación de servicio:
   - se busca primero el prefijo público, así que una llave de un cliente inexistente se rechaza sin calcular nada;
   - el resultado (válido o no) queda en caché 10 minutos;
   - como máximo se calculan 2 a la vez;
   - el límite por IP se aplica antes que todo.
-- **Límites:** cubeta de fichas por IP (antes de autorizar) y por cliente (después), configurable en `[limites]`.
+- **Límites:** cubeta de fichas por IP (antes de autorizar) y por cliente (después). El valor inicial está en `[limites]`; el panel lo cambia en caliente y lo guarda en `ajustes`.
 - **CORS:** eco exacto del origen autorizado (nunca `*`), `Vary: Origin`, preflight con `Access-Control-Allow-Private-Network`.
 - **Cabeceras:** `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Cache-Control: no-store` y una CSP restrictiva. Los errores internos no exponen detalles.
 - **TLS:** 1.2 como mínimo, con un certificado autofirmado o propio que se recarga en caliente (ver [tls.md](tls.md)).
@@ -154,7 +155,7 @@ SQLite (`prisma.db`) en modo WAL, con claves foráneas activas y tablas `STRICT`
 | `trabajos` | Historial: estado, código de error, advertencias y duración. **Sin** contenido del ticket. |
 | `ids_recientes` | Idempotencia: id del documento, hash del contenido y trabajo original. Sobrevive a los reinicios. |
 | `recursos` | Imágenes PNG guardadas en el puente. |
-| `ajustes` | Contraseña del panel, retención, etc. |
+| `ajustes` | Contraseña del panel, retención, límites, nombre del puente, acceso al panel, etc. |
 
 ## Errores
 

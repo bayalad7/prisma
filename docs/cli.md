@@ -36,16 +36,23 @@ Ejecuta el puente en primer plano hasta que recibe Ctrl+C o SIGTERM. Escribe las
   - crea la base de datos si no existe y aplica las migraciones;
   - marca como `PUENTE_REINICIADO` los trabajos que quedaron a medias;
   - purga el historial vencido;
+  - aplica los límites guardados desde el panel;
   - avisa si el panel no tiene contraseña.
 - **Cada hora:** purga los trabajos más antiguos que la retención (30 días por defecto) y los ids de idempotencia vencidos.
 - **Impresoras:** registra en la cola todas las impresoras activas y las prueba cada 30 s. Las que se agregan o modifican con la CLI mientras corre se toman en el siguiente trabajo.
-- **API:** levanta la API pública ([api-v1.md](api-v1.md)) en `servidor.escuchar:servidor.puerto` según `modo_tls` ([tls.md](tls.md)). Con `autofirmado`, genera el certificado la primera vez y registra su huella en la bitácora.
+- **API y panel:** levanta la API pública ([api-v1.md](api-v1.md)) y el panel en `/admin` ([panel.md](panel.md)) en `servidor.escuchar:servidor.puerto` según `modo_tls` ([tls.md](tls.md)). Con `autofirmado`, genera el certificado la primera vez y registra su huella en la bitácora.
 
 ## `prisma admin restablecer-contrasena`
 
 Genera una contraseña aleatoria para el panel (por ejemplo, `k7Rmq-Xa3Vt-9pLwe-Hc2Nf`) y la muestra **una sola vez**. Guarda solo su hash argon2id y marca que hay que cambiarla en el próximo inicio de sesión.
 
-Funciona solo en el equipo del puente, porque escribe directamente en su base de datos. Se puede ejecutar aunque el puente esté corriendo.
+Funciona solo en el equipo del puente, porque escribe directamente en su base de datos. Se puede ejecutar aunque el puente esté corriendo: las sesiones abiertas en el panel terminan.
+
+## `prisma admin codigo-inicial`
+
+Genera el código de un solo uso (por ejemplo, `8527-HDH3`) para crear la contraseña del panel **desde otro equipo** de la red. Vence a los 30 minutos y se anula tras 10 intentos fallidos. Desde el propio equipo del puente no hace falta: basta con abrir `https://localhost:8443/admin`.
+
+Falla si el panel ya tiene contraseña; en ese caso usa `prisma admin restablecer-contrasena`.
 
 ## `prisma impresoras`
 
@@ -105,7 +112,7 @@ Elimina la impresora. Los permisos de los clientes sobre ella se borran con ella
 
 ## `prisma clientes`
 
-Aplicaciones autorizadas a imprimir. ⏳ El panel hará lo mismo con un formulario.
+Aplicaciones autorizadas a imprimir. El [panel](panel.md) hace lo mismo en *Aplicaciones*.
 
 ### `clientes agregar`
 

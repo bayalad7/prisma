@@ -25,7 +25,7 @@ Cada aplicación se registra en el puente como un **cliente**, con un nivel de s
 | **2 — Llave** (por defecto) | `Origin` aprobado (desde un navegador) **y** `Authorization: Bearer pk_…`. Desde un servidor, solo la llave. | La mayoría de las aplicaciones. |
 | **3 — Firma** | Documentos firmados con Ed25519 por el backend de la aplicación ([contrato §7](contrato-documento-v1.md#7-firma-nivel-3)). La llave `pk_…` es opcional, salvo que el cliente la exija. | Aplicaciones con backend que no deben poder ser suplantadas. |
 
-**Cómo se registra un cliente:** ⏳ desde el panel. Por ahora, desde la CLI:
+**Cómo se registra un cliente:** el dueño del puente lo crea en el [panel](panel.md) (*Aplicaciones*), o aprueba en *Solicitudes* el origen de tu página después de su primer intento. También se puede con la CLI:
 
 ```sh
 prisma clientes agregar --nombre "Caja web" --nivel 2 --origen https://caja.example
@@ -148,8 +148,8 @@ Desde un navegador, una petición de un origen no aprobado falla como **error de
 | Límite | Valor | Respuesta |
 |---|---|---|
 | Cuerpo de la petición | 300 KB leídos; el documento puede medir hasta 256 KB | 413 `DOCUMENTO_DEMASIADO_GRANDE` |
-| Peticiones por IP | 120 por minuto (`limites.peticiones_ip_por_minuto`) | 429 `DEMASIADAS_PETICIONES` + `Retry-After` |
-| Peticiones por cliente | 60 por minuto (`limites.peticiones_cliente_por_minuto`) | 429 `DEMASIADAS_PETICIONES` + `Retry-After` |
+| Peticiones por IP | 120 por minuto por defecto (`[limites]` de `config.toml`, o el panel) | 429 `DEMASIADAS_PETICIONES` + `Retry-After` |
+| Peticiones por cliente | 60 por minuto por defecto (`[limites]` de `config.toml`, o el panel) | 429 `DEMASIADAS_PETICIONES` + `Retry-After` |
 | Trabajos pendientes por impresora | 20 | 503 `COLA_LLENA` + `Retry-After` |
 
 Los límites admiten ráfagas: con 60 por minuto se pueden enviar 60 seguidas y luego una por segundo.

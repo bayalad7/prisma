@@ -5,7 +5,7 @@ PRISMA tiene dos niveles de configuración:
 | Dónde | Qué contiene | Cómo se cambia |
 |---|---|---|
 | `config.toml` | Solo lo necesario para **arrancar**: red, TLS, límites de peticiones, ruta de datos y modo desarrollo. | Editando el archivo y reiniciando. |
-| Base de datos (`prisma.db`) | Todo lo demás: impresoras, clientes, orígenes, permisos, recursos, retención y contraseña del panel. | ⏳ Desde el panel. Hoy, con la CLI (`prisma impresoras …`, `prisma clientes …`, `prisma admin …`). |
+| Base de datos (`prisma.db`) | Todo lo demás: impresoras, clientes, orígenes, permisos, recursos, retención, límites editados y contraseña del panel. | Desde el [panel](panel.md), sin reiniciar. También con la CLI (`prisma impresoras …`, `prisma clientes …`, `prisma admin …`). |
 
 ## `config.toml`
 
@@ -71,6 +71,8 @@ Límites de peticiones a la API pública. Usan una cubeta de fichas: admiten rá
 
 Al superarlos, la API responde 429 `DEMASIADAS_PETICIONES` con `Retry-After`.
 
+Estos valores son los **iniciales**. Si se cambian en el panel (*Ajustes → Límites*), se guardan en la base de datos, se aplican sin reiniciar y mandan sobre `config.toml`.
+
 ### `[dev]`
 
 | Clave | Por defecto | Valores |
@@ -96,11 +98,14 @@ Error: /etc/prisma/config.toml: la configuración tiene 2 problema(s):
 | Clave | Por defecto | Significado |
 |---|---|---|
 | `trabajos.retencion_dias` | 30 | Días que se conserva el historial de trabajos. |
-| `admin.contrasena_hash` | — | Hash argon2id de la contraseña del panel. Se crea con `prisma admin restablecer-contrasena`. |
+| `admin.contrasena_hash` | — | Hash argon2id de la contraseña del panel. Se crea en la configuración inicial del panel o con `prisma admin restablecer-contrasena`. |
 | `admin.debe_cambiar` | — | `1` obliga a cambiar la contraseña al entrar al panel. |
-| `puente.nombre` | `PRISMA` | Nombre que muestra `GET /v1/salud`. |
+| `admin.codigo_inicial` | — | Hash y vencimiento del código de `prisma admin codigo-inicial`. Se borra al usarlo. |
+| `puente.nombre` | `PRISMA` | Nombre que muestra `GET /v1/salud` y el panel. |
+| `limites.ip_por_minuto`, `limites.cliente_por_minuto` | `[limites]` de `config.toml` | Límites editados en el panel. |
+| `panel.solo_red_privada` | `1` | `0` permite abrir el panel desde cualquier IP. |
 
-⏳ El panel permitirá editarlos. Las tablas completas están en [arquitectura.md](arquitectura.md#datos).
+Se editan en el panel (*Ajustes*). Las tablas completas están en [arquitectura.md](arquitectura.md#datos).
 
 ## Perfil de una impresora
 

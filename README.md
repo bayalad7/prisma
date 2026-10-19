@@ -18,7 +18,7 @@ PRISMA es un servicio que se instala en una PC, Raspberry Pi o Mac dentro de la 
 }
 ```
 
-> **Estado: en desarrollo.** Ya funcionan el contrato del documento con su validación, el renderizador ESC/POS con su previsualización, los conectores (red, USB, Bluetooth y archivo), la cola por impresora, la configuración, la base de datos y la CLI; las aplicaciones ya imprimen por la [API v1](docs/api-v1.md) con HTTPS y autorización por niveles. Todavía faltan el panel de administración y el SDK. Consulta la [hoja de ruta](#hoja-de-ruta).
+> **Estado: en desarrollo.** Ya funcionan el contrato del documento con su validación, el renderizador ESC/POS con su previsualización, los conectores (red, USB, Bluetooth y archivo), la cola por impresora, la configuración, la base de datos y la CLI; las aplicaciones ya imprimen por la [API v1](docs/api-v1.md) con HTTPS y autorización por niveles, y el dueño configura todo desde el [panel de administración](docs/panel.md). Todavía faltan el SDK y la instalación como servicio. Consulta la [hoja de ruta](#hoja-de-ruta).
 
 ## Principios
 
@@ -97,7 +97,8 @@ El índice completo está en [docs/README.md](docs/README.md).
 prisma version                         # versión, plataforma y versiones del contrato
 prisma config ruta                     # dónde busca la configuración y los datos
 prisma config validar [--config ruta]  # valida config.toml y muestra la configuración efectiva
-prisma ejecutar [--config ruta]        # ejecuta el puente (API HTTPS) en primer plano
+prisma ejecutar [--config ruta]        # ejecuta el puente (API HTTPS y panel /admin) en primer plano
+prisma admin codigo-inicial            # código para configurar el panel desde otro equipo
 prisma admin restablecer-contrasena    # genera una contraseña nueva para el panel
 prisma tls info | regenerar            # certificado HTTPS en uso / uno nuevo con las IPs actuales
 ```
@@ -209,6 +210,6 @@ Para contribuir, crea tu rama a partir de `develop` y abre el pull request hacia
 - [x] Conectores de red, USB, Bluetooth y archivo
 - [x] Cola por impresora
 - [x] Servidor HTTPS, API pública `/v1` y autorización por niveles
-- [ ] Panel de administración
+- [x] Panel de administración
 - [ ] SDK JavaScript
 - [ ] Instalación como servicio y paquetes por plataforma
