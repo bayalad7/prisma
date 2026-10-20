@@ -18,7 +18,7 @@ PRISMA es un servicio que se instala en una PC, Raspberry Pi o Mac dentro de la 
 }
 ```
 
-> **Estado: en desarrollo.** Ya funcionan el contrato del documento con su validación, el renderizador ESC/POS con su previsualización, los conectores (red, USB, Bluetooth y archivo), la cola por impresora, la configuración, la base de datos y la CLI; las aplicaciones ya imprimen por la [API v1](docs/api-v1.md) con HTTPS y autorización por niveles, y el dueño configura todo desde el [panel de administración](docs/panel.md). Todavía faltan el SDK y la instalación como servicio. Consulta la [hoja de ruta](#hoja-de-ruta).
+> **Estado: en desarrollo.** Ya funcionan el contrato del documento con su validación, el renderizador ESC/POS con su previsualización, los conectores (red, USB, Bluetooth y archivo), la cola por impresora, la configuración, la base de datos y la CLI; las aplicaciones ya imprimen por la [API v1](docs/api-v1.md) con HTTPS y autorización por niveles, el dueño configura todo desde el [panel de administración](docs/panel.md), y los integradores tienen un [SDK JavaScript](sdk/js/) con [guías](docs/integradores/README.md) y firmadores de nivel 3 para PHP, Node.js y Python. Todavía falta la instalación como servicio. Consulta la [hoja de ruta](#hoja-de-ruta).
 
 ## Principios
 
@@ -111,7 +111,7 @@ prisma clientes agregar --nombre "Backend" --nivel 3 --llave-publica publica.pem
 prisma clientes listar | eliminar ID | regenerar-llave ID
 ```
 
-Cómo llamar a la API desde una aplicación (niveles, CORS, errores y ejemplos con curl): [docs/api-v1.md](docs/api-v1.md).
+Cómo integrar PRISMA en una aplicación (SDK, niveles, firmas y errores): [docs/integradores/](docs/integradores/README.md).
 
 ### Impresoras
 
@@ -211,5 +211,5 @@ Para contribuir, crea tu rama a partir de `develop` y abre el pull request hacia
 - [x] Cola por impresora
 - [x] Servidor HTTPS, API pública `/v1` y autorización por niveles
 - [x] Panel de administración
-- [ ] SDK JavaScript
+- [x] SDK JavaScript, firmadores de referencia y guías para integradores
 - [ ] Instalación como servicio y paquetes por plataforma

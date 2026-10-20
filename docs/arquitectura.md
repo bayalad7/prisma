@@ -67,7 +67,9 @@ Lo costoso (validar el esquema completo, decodificar imágenes, renderizar) ocur
 | `internal/admin` | panel `/admin`: HTML/CSS/JS embebidos, sesiones, CSRF y API interna `/admin/api` | `servidor`, `almacen`, `seguridad`, `escpos`, `dev` |
 | `internal/dev` | decodificador, simulador, vistas, impresora virtual | `escpos`, `contrato`, `almacen` |
 | `schema` | JSON Schema embebido | — |
-| ⏳ `internal/servicio`, `sdk/js` | servicio, SDK | — |
+| `sdk/js` | SDK JavaScript: constructor de documentos, validación local, reintentos y diagnóstico | API pública `/v1` (por HTTP) |
+| `sdk/firmadores` | firmadores de nivel 3 de referencia (PHP, Node.js, Python) | — |
+| ⏳ `internal/servicio` | servicio | — |
 
 ## Del documento a los bytes
 

@@ -2,6 +2,8 @@
 
 La API que usan las aplicaciones para imprimir en un puente PRISMA. El documento que se envía está especificado en [contrato-documento-v1.md](contrato-documento-v1.md).
 
+> Si integras PRISMA en tu aplicación, empieza por la [guía para integradores](integradores/README.md): el SDK JavaScript, los niveles de seguridad y los firmadores de nivel 3.
+
 - **Base:** `https://<equipo-del-puente>:8443/v1/`. El puerto se configura en [configuracion.md](configuracion.md).
 - **Formato:** JSON en UTF-8, salvo `/v1/previsualizar`, que devuelve HTML.
 - **TLS:** obligatorio, salvo en el modo `solo_localhost_http`. Para que el navegador confíe en el certificado autofirmado, ver [tls.md](tls.md).
@@ -195,7 +197,7 @@ const resultado = await respuesta.json();
 if (!resultado.ok) alert(`${resultado.mensaje}\n${resultado.sugerencia}`);
 ```
 
-⏳ El SDK JavaScript (`sdk/js/prisma.js`) hará esto, con reintentos idempotentes.
+El [SDK JavaScript](integradores/referencia-sdk.md) hace esto, valida el documento antes de enviarlo y reintenta los errores de red con el mismo `id`.
 
 ### Nivel 2 con curl
 
@@ -220,24 +222,13 @@ curl -k https://192.168.1.10:8443/v1/imprimir -H "Content-Type: application/json
 
 El documento firmado vence a los 90 s (`--vigencia`, como máximo 120 s). Para cada ticket nuevo, fírmalo de nuevo con `--nuevo-id`.
 
-### Firmar desde tu backend (Node.js)
+### Firmar desde tu backend
+
+Hay firmadores de referencia para PHP, Node.js y Python en [`sdk/firmadores`](../sdk/firmadores/README.md). La guía está en [integradores/firmar-documentos.md](integradores/firmar-documentos.md).
 
 ```js
-import { sign, createPrivateKey } from "node:crypto";
-import canonicalize from "canonicalize";            // JCS (RFC 8785)
-
-function firmar(documento, clienteId, llavePrivadaPem) {
-  const emitido = new Date();
-  const doc = {
-    ...documento,
-    cliente_id: clienteId,
-    emitido: emitido.toISOString().replace(/\.\d{3}Z$/, "Z"),
-    expira: new Date(emitido.getTime() + 90_000).toISOString().replace(/\.\d{3}Z$/, "Z"),
-  };
-  delete doc.firma;
-  const firma = sign(null, Buffer.from(canonicalize(doc), "utf8"), createPrivateKey(llavePrivadaPem));
-  return { ...doc, firma: firma.toString("base64") };
-}
+import { firmar } from "./firmador.mjs";   // sdk/firmadores/node
+const firmado = firmar(documento, { clienteId: "cli_…", llavePrivada: pem });
 ```
 
 Para validar tu firmador, usa el vector fijo de [testdata/vector-firma](../testdata/vector-firma/LEEME.md): con su llave y su documento debes obtener exactamente su `firma.txt`.

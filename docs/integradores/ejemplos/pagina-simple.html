@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PRISMA · página simple</title>
+</head>
+<body>
+  <!-- Nivel 2: el dueño del puente aprueba el origen de esta página y te entrega la llave pk_…
+       Cambia la URL del puente, la llave y el alias de la impresora por los tuyos. -->
+  <button id="imprimir">Imprimir ticket de prueba</button>
+  <p id="resultado"></p>
+
+  <script src="https://cdn.jsdelivr.net/npm/@bayalad7/prisma@0.1/dist/prisma.umd.js"></script>
+  <script>
+    const prisma = new Prisma({ url: "https://192.168.1.10:8443", llave: "pk_..." });
+    document.getElementById("imprimir").onclick = () => prisma
+      .imprimir("caja", (d) => d.texto("¡Hola desde mi página!", { negrita: true, alineacion: "centro" }).qr("https://example.com").cortar())
+      .then((r) => (resultado.textContent = `Impreso (${r.trabajo_id})`))
+      .catch((e) => (resultado.textContent = `${e.mensaje} ${e.sugerencia}`));
+  </script>
+</body>
+</html>

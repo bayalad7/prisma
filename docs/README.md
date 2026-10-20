@@ -14,6 +14,7 @@ PRISMA es un puente de impresión. Se instala en un equipo de la red local de un
 | Configurar `config.toml` | [configuracion.md](configuracion.md) |
 | Saber cómo está construido por dentro | [arquitectura.md](arquitectura.md) |
 | Contribuir al código | [desarrollo.md](desarrollo.md) |
+| Integrar PRISMA en tu aplicación (SDK, niveles, firmas) | [integradores/](integradores/README.md) |
 | Generar documentos JSON desde tu aplicación | [contrato-documento-v1.md](contrato-documento-v1.md) |
 | Imprimir desde tu aplicación (endpoints, autorización, CORS, errores) | [api-v1.md](api-v1.md) |
 | Configurar HTTPS y confiar en el certificado | [tls.md](tls.md) |
@@ -35,7 +36,7 @@ PRISMA está en desarrollo. Esto es lo que ya funciona y lo que falta:
 | Autorización: orígenes, llaves `pk_` (argon2id), firma Ed25519, permisos, idempotencia, CORS y límites | ✅ Listo |
 | Gestión de clientes desde la CLI (`prisma clientes`) | ✅ Listo |
 | Panel de administración web en `/admin` ([panel.md](panel.md)) | ✅ Listo |
-| SDK JavaScript | ⏳ Pendiente |
+| SDK JavaScript, firmadores de nivel 3 (PHP, Node.js, Python) y guías para integradores ([integradores/](integradores/README.md)) | ✅ Listo |
 | Instalación como servicio (`prisma servicio instalar`) e instaladores por plataforma | ⏳ Pendiente |
 
 Las aplicaciones ya pueden imprimir por la red con la [API v1](api-v1.md), y el dueño configura todo desde el [panel](panel.md) sin usar la CLI. La documentación marca con **⏳** lo que todavía no existe.
