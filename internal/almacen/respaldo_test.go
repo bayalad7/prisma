@@ -1,9 +1,12 @@
 package almacen
 
 import (
+	"database/sql"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -82,5 +85,48 @@ func TestTrabajosPorFechaYConteo(t *testing.T) {
 	exigirSinError(t, err)
 	if conteo[TrabajoCompletado] != 2 || conteo[TrabajoFallido] != 1 {
 		t.Fatalf("conteo: %v", conteo)
+	}
+}
+
+func TestRespaldarSiHayMigraciones(t *testing.T) {
+	dir := t.TempDir()
+	ruta := filepath.Join(dir, "prisma.db")
+	respaldos := filepath.Join(dir, "respaldos")
+
+	// Sin base todavía, o con la base al día, no hay nada que respaldar.
+	if r, err := RespaldarSiHayMigraciones(ctx, ruta, respaldos, "v1"); err != nil || r != "" {
+		t.Fatalf("sin base: %q, %v", r, err)
+	}
+	a, err := Abrir(ctx, ruta)
+	exigirSinError(t, err)
+	exigirSinError(t, a.Ajustes.Establecer(ctx, "x", "valor"))
+	if r, err := RespaldarSiHayMigraciones(ctx, ruta, respaldos, "v1"); err != nil || r != "" {
+		t.Fatalf("al día: %q, %v", r, err)
+	}
+
+	// Una base de un esquema anterior (simulado bajando user_version) se copia antes de migrar.
+	_, err = a.bd().ExecContext(ctx, "PRAGMA user_version = 1")
+	exigirSinError(t, err)
+	exigirSinError(t, a.Cerrar())
+	for i := range RespaldosAntesDeMigrar + 2 {
+		r, err := RespaldarSiHayMigraciones(ctx, ruta, respaldos, fmt.Sprintf("v%d", i))
+		exigirSinError(t, err)
+		if i == 0 {
+			if filepath.Dir(r) != respaldos || !strings.Contains(filepath.Base(r), "esquema1-v0") {
+				t.Fatalf("respaldo en %q", r)
+			}
+			copia, err := sql.Open("sqlite", "file:"+r+"?mode=ro")
+			exigirSinError(t, err)
+			var v string
+			exigirSinError(t, copia.QueryRowContext(ctx, "SELECT valor FROM ajustes WHERE clave = 'x'").Scan(&v))
+			copia.Close()
+			if v != "valor" {
+				t.Fatalf("la copia tiene %q", v)
+			}
+		}
+	}
+	copias, _ := filepath.Glob(filepath.Join(respaldos, "*.db"))
+	if len(copias) != RespaldosAntesDeMigrar {
+		t.Fatalf("se esperaban %d copias, hay %d", RespaldosAntesDeMigrar, len(copias))
 	}
 }

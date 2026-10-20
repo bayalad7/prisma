@@ -8,6 +8,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+	"sort"
+	"time"
 )
 
 // cabeceraSQLite son los primeros bytes de todo archivo de base de datos SQLite.
@@ -18,6 +21,56 @@ const cabeceraSQLite = "SQLite format 3\x00"
 func (a *Almacen) Respaldar(ctx context.Context, destino string) error {
 	_, err := a.bd().ExecContext(ctx, "VACUUM INTO ?", destino)
 	return err
+}
+
+// RespaldosAntesDeMigrar es cuántas copias automáticas previas a una migración se conservan.
+const RespaldosAntesDeMigrar = 5
+
+// RespaldarSiHayMigraciones copia la base en dir antes de que Abrir la migre a un esquema nuevo
+// (por ejemplo, después de actualizar PRISMA). Devuelve la ruta de la copia, o "" si la base no
+// existe todavía o ya está al día. Conserva solo las últimas RespaldosAntesDeMigrar copias.
+func RespaldarSiHayMigraciones(ctx context.Context, ruta, dir, etiqueta string) (string, error) {
+	if _, err := os.Stat(ruta); errors.Is(err, os.ErrNotExist) {
+		return "", nil
+	}
+	db, err := sql.Open("sqlite", "file:"+ruta+"?mode=ro")
+	if err != nil {
+		return "", err
+	}
+	defer db.Close()
+	version, err := versionEsquema(ctx, db)
+	if err != nil {
+		return "", err
+	}
+	conocidas, err := cargarMigraciones(migracionesFS)
+	if err != nil {
+		return "", err
+	}
+	if version < 1 || version >= len(conocidas) {
+		return "", nil // base nueva, al día, o más nueva que este binario (Abrir lo rechaza)
+	}
+	if err := os.MkdirAll(dir, 0o750); err != nil {
+		return "", err
+	}
+	destino := filepath.Join(dir, fmt.Sprintf("prisma-esquema%d-%s-%s.db", version, etiqueta, time.Now().UTC().Format("20060102-150405")))
+	if _, err := db.ExecContext(ctx, "VACUUM INTO ?", destino); err != nil {
+		return "", fmt.Errorf("no se pudo respaldar la base antes de migrarla: %w", err)
+	}
+	if viejos, _ := filepath.Glob(filepath.Join(dir, "prisma-esquema*.db")); len(viejos) > RespaldosAntesDeMigrar {
+		sort.Slice(viejos, func(i, j int) bool { return modificado(viejos[i]).Before(modificado(viejos[j])) })
+		for _, v := range viejos[:len(viejos)-RespaldosAntesDeMigrar] {
+			os.Remove(v)
+		}
+	}
+	return destino, nil
+}
+
+func modificado(ruta string) time.Time {
+	info, err := os.Stat(ruta)
+	if err != nil {
+		return time.Time{}
+	}
+	return info.ModTime()
 }
 
 // ErrRespaldoInvalido: el archivo no es un respaldo que este puente pueda usar.

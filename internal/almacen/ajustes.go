@@ -10,11 +10,12 @@ import (
 
 // Claves de ajustes conocidas.
 const (
-	AjusteContrasenaAdmin = "admin.contrasena_hash" // PHC argon2id
-	AjusteDebeCambiar     = "admin.debe_cambiar"    // "1" = el panel obliga a cambiar la contraseña
-	AjusteRetencionDias   = "trabajos.retencion_dias"
-	AjusteCodigoInicial   = "admin.codigo_inicial"   // "<sha256>|<vence ms>": configuración inicial desde otro equipo
-	AjusteSoloRedPrivada  = "panel.solo_red_privada" // "0" permite abrir el panel desde cualquier IP
+	AjusteContrasenaAdmin       = "admin.contrasena_hash" // PHC argon2id
+	AjusteDebeCambiar           = "admin.debe_cambiar"    // "1" = el panel obliga a cambiar la contraseña
+	AjusteRetencionDias         = "trabajos.retencion_dias"
+	AjusteCodigoInicial         = "admin.codigo_inicial"      // "<sha256>|<vence ms>": configuración inicial desde otro equipo
+	AjusteSoloRedPrivada        = "panel.solo_red_privada"    // "0" permite abrir el panel desde cualquier IP
+	AjusteBuscarActualizaciones = "actualizaciones.comprobar" // "0" = no consultar GitHub por versiones nuevas
 )
 
 // RetencionDiasPorDefecto es cuántos días se conserva el historial de trabajos.
