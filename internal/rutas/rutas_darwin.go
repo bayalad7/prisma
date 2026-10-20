@@ -8,6 +8,6 @@ func porDefecto() Rutas {
 	return Rutas{
 		Config: raizDarwin + "/config.toml",
 		Datos:  raizDarwin + "/datos",
-		Logs:   raizDarwin + "/logs",
+		Logs:   "/Library/Logs/PRISMA",
 	}
 }
