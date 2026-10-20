@@ -7,13 +7,14 @@ PRISMA es un puente de impresión. Se instala en un equipo de la red local de un
 | Si quieres… | Lee |
 |---|---|
 | Ver PRISMA funcionando en 5 minutos, sin impresora | [primeros-pasos.md](primeros-pasos.md) |
-| Instalarlo en el equipo de un negocio | [instalacion.md](instalacion.md) |
+| Instalarlo en el equipo de un negocio (Windows, Raspberry Pi, Linux, Mac) | [instalacion.md](instalacion.md) |
 | Configurar impresoras y aplicaciones desde el navegador | [panel.md](panel.md) |
 | Conectar una impresora (red, USB, Bluetooth) | [conectores.md](conectores.md) |
 | Conocer todos los comandos y opciones | [cli.md](cli.md) |
 | Configurar `config.toml` | [configuracion.md](configuracion.md) |
 | Saber cómo está construido por dentro | [arquitectura.md](arquitectura.md) |
 | Contribuir al código | [desarrollo.md](desarrollo.md) |
+| Publicar una versión (llaves, CI, instaladores) | [publicar.md](publicar.md) |
 | Integrar PRISMA en tu aplicación (SDK, niveles, firmas) | [integradores/](integradores/README.md) |
 | Generar documentos JSON desde tu aplicación | [contrato-documento-v1.md](contrato-documento-v1.md) |
 | Imprimir desde tu aplicación (endpoints, autorización, CORS, errores) | [api-v1.md](api-v1.md) |
@@ -37,7 +38,8 @@ PRISMA está en desarrollo. Esto es lo que ya funciona y lo que falta:
 | Gestión de clientes desde la CLI (`prisma clientes`) | ✅ Listo |
 | Panel de administración web en `/admin` ([panel.md](panel.md)) | ✅ Listo |
 | SDK JavaScript, firmadores de nivel 3 (PHP, Node.js, Python) y guías para integradores ([integradores/](integradores/README.md)) | ✅ Listo |
-| Instalación como servicio (`prisma servicio instalar`) e instaladores por plataforma | ⏳ Pendiente |
+| Servicio del sistema (`prisma servicio`), instaladores (Inno Setup, .deb, .pkg), `prisma actualizar` y CI | ✅ Listo |
+| Primera versión publicada en GitHub Releases y SDK en npm | ⏳ Pendiente |
 
 Las aplicaciones ya pueden imprimir por la red con la [API v1](api-v1.md), y el dueño configura todo desde el [panel](panel.md) sin usar la CLI. La documentación marca con **⏳** lo que todavía no existe.
 

@@ -30,9 +30,10 @@ Muestra la versión, el commit, la fecha de compilación, la plataforma y las ve
 
 ## `prisma ejecutar`
 
-Ejecuta el puente en primer plano hasta que recibe Ctrl+C o SIGTERM. Escribe las bitácoras en JSON por stderr.
+Ejecuta el puente en primer plano hasta que recibe Ctrl+C o SIGTERM. Escribe las bitácoras en JSON por stderr. En un negocio, el puente corre como servicio ([`prisma servicio`](#prisma-servicio)), que hace lo mismo con la bitácora en un archivo rotativo.
 
 - **Al arrancar:**
+  - si la versión nueva cambia el esquema de la base, guarda antes una copia en `<datos>/respaldos` (conserva las últimas 5);
   - crea la base de datos si no existe y aplica las migraciones;
   - marca como `PUENTE_REINICIADO` los trabajos que quedaron a medias;
   - purga el historial vencido;
@@ -40,7 +41,48 @@ Ejecuta el puente en primer plano hasta que recibe Ctrl+C o SIGTERM. Escribe las
   - avisa si el panel no tiene contraseña.
 - **Cada hora:** purga los trabajos más antiguos que la retención (30 días por defecto) y los ids de idempotencia vencidos.
 - **Impresoras:** registra en la cola todas las impresoras activas y las prueba cada 30 s. Las que se agregan o modifican con la CLI mientras corre se toman en el siguiente trabajo.
+- **Versiones nuevas:** una hora después de arrancar, y luego una vez al día, pregunta a GitHub Releases si hay una versión nueva y la avisa en el panel. Se desactiva en *Ajustes → Actualizaciones*. Las compilaciones de desarrollo no consultan.
 - **API y panel:** levanta la API pública ([api-v1.md](api-v1.md)) y el panel en `/admin` ([panel.md](panel.md)) en `servidor.escuchar:servidor.puerto` según `modo_tls` ([tls.md](tls.md)). Con `autofirmado`, genera el certificado la primera vez y registra su huella en la bitácora.
+
+## `prisma servicio`
+
+Instala PRISMA como servicio del sistema, para que arranque con el equipo y se reinicie si falla.
+
+| Comando | Qué hace |
+|---|---|
+| `servicio instalar` | Registra el servicio con inicio automático, sin iniciarlo. Si ya existía, lo vuelve a registrar con la configuración actual. |
+| `servicio iniciar` · `detener` · `reiniciar` | Controlan el servicio. |
+| `servicio estado` | Dice si está instalado y en marcha, y dónde está su bitácora. No requiere permisos de administrador. |
+| `servicio desinstalar` | Lo detiene y lo quita. Conserva datos, configuración y bitácoras. |
+
+Todos, salvo `estado`, requieren permisos de administrador: PowerShell como administrador en Windows, `sudo` en Linux y macOS. `--config ruta` instala el servicio con esa configuración.
+
+| | Windows | Linux | macOS |
+|---|---|---|---|
+| Gestor | Servicio «PRISMA - Puente de Impresión Térmica» (`PRISMA`) | Unidad de systemd `prisma.service` | LaunchDaemon `com.github.bayalad7.prisma` |
+| Corre como | LocalSystem | usuario de sistema `prisma` (grupos `lp` y `dialout`), que el comando crea si no existe | usuario oculto `_prisma`, que el comando crea con `dscl` |
+| Ante un fallo | se reinicia a los 5 s | `Restart=on-failure`, a los 5 s | se reinicia si termina con error |
+| Además | regla del firewall para el puerto, solo subred local; la carpeta de datos queda solo para SYSTEM y Administradores | `ProtectSystem`, `ProtectHome` y `NoNewPrivileges`; el binario debe estar fuera de `/home` | — |
+
+- **Bitácora:** `prisma.log` en la carpeta de bitácoras, que rota al llegar a 10 MB y conserva 5 archivos anteriores. En Linux también va a journald (`journalctl -u prisma`).
+- **Linux con el paquete .deb:** la unidad la instala el paquete en `/lib/systemd/system`. `servicio instalar` lo detecta y no la duplica; los demás comandos funcionan igual.
+
+## `prisma actualizar [--comprobar] [--si] [--forzar]`
+
+Instala la última versión publicada en GitHub Releases:
+
+1. Descarga `checksums.txt` y verifica su firma Ed25519 con la llave embebida en el binario. Si no verifica, no instala nada.
+2. Descarga el archivo de esta plataforma y verifica su SHA-256.
+3. Detiene el servicio, reemplaza el programa y lo vuelve a iniciar. En Windows, el `.exe` anterior queda como `prisma.exe.old` y se borra en el siguiente arranque.
+4. Si PRISMA se instaló con el paquete `.deb`, descarga el `.deb` de la versión e instala con `dpkg`, para que el sistema de paquetes siga sabiendo qué versión hay.
+
+| Opción | Efecto |
+|---|---|
+| `--comprobar` | Solo dice si hay una versión nueva. |
+| `--si` / `-y` | No pide confirmación. |
+| `--forzar` | Reinstala aunque no haya versión nueva, o reemplaza una compilación de desarrollo. |
+
+Requiere permisos de administrador. La base de datos se respalda sola antes de migrarla, al siguiente arranque. Una compilación sin la llave de las versiones (por ejemplo, una compilada con `go build` a secas) se niega a instalar.
 
 ## `prisma admin restablecer-contrasena`
 

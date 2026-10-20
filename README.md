@@ -18,7 +18,7 @@ PRISMA es un servicio que se instala en una PC, Raspberry Pi o Mac dentro de la 
 }
 ```
 
-> **Estado: en desarrollo.** Ya funcionan el contrato del documento con su validación, el renderizador ESC/POS con su previsualización, los conectores (red, USB, Bluetooth y archivo), la cola por impresora, la configuración, la base de datos y la CLI; las aplicaciones ya imprimen por la [API v1](docs/api-v1.md) con HTTPS y autorización por niveles, el dueño configura todo desde el [panel de administración](docs/panel.md), y los integradores tienen un [SDK JavaScript](sdk/js/) con [guías](docs/integradores/README.md) y firmadores de nivel 3 para PHP, Node.js y Python. Todavía falta la instalación como servicio. Consulta la [hoja de ruta](#hoja-de-ruta).
+> **Estado: en desarrollo.** Ya funcionan el contrato del documento con su validación, el renderizador ESC/POS con su previsualización, los conectores (red, USB, Bluetooth y archivo), la cola por impresora, la configuración, la base de datos y la CLI; las aplicaciones ya imprimen por la [API v1](docs/api-v1.md) con HTTPS y autorización por niveles, el dueño configura todo desde el [panel de administración](docs/panel.md), los integradores tienen un [SDK JavaScript](sdk/js/) con [guías](docs/integradores/README.md) y firmadores de nivel 3 para PHP, Node.js y Python, y se instala como servicio en Windows, Linux/Raspberry Pi y macOS ([instalación](docs/instalacion.md)). Todavía no hay una versión publicada. Consulta la [hoja de ruta](#hoja-de-ruta).
 
 ## Principios
 
@@ -101,6 +101,8 @@ prisma ejecutar [--config ruta]        # ejecuta el puente (API HTTPS y panel /a
 prisma admin codigo-inicial            # código para configurar el panel desde otro equipo
 prisma admin restablecer-contrasena    # genera una contraseña nueva para el panel
 prisma tls info | regenerar            # certificado HTTPS en uso / uno nuevo con las IPs actuales
+prisma servicio instalar | iniciar | estado | detener | reiniciar | desinstalar
+prisma actualizar [--comprobar]        # instala la última versión (firma y SHA-256 verificados)
 ```
 
 ### Aplicaciones
@@ -185,11 +187,17 @@ internal/cola/        cola FIFO por impresora y estado (en línea / fuera de lí
 internal/dev/         decodificador ESC/POS, impresora virtual y previsualización
 internal/seguridad/   autorización, llaves, límites, contraseñas y firmas Ed25519 (JCS)
 internal/servidor/    HTTPS y API pública /v1
+internal/admin/       panel de administración /admin (HTML/CSS/JS embebidos)
+internal/servicio/    servicio del sistema (Windows, systemd, launchd) y bitácora rotativa
+internal/actualizacion/ versiones nuevas: firma, checksums y reemplazo del binario
 internal/version/     versión del binario
+sdk/js/               SDK JavaScript público
+sdk/firmadores/       firmadores de nivel 3 (PHP, Node.js, Python)
 schema/               JSON Schema publicados (embebidos en el binario)
 docs/                 especificaciones
 ejemplos/             documentos de ejemplo válidos e inválidos
-empaquetado/          archivos para instalación
+empaquetado/          instaladores: Inno Setup (Windows), .deb (nfpm), .pkg (macOS) y script de Raspberry Pi
+.github/workflows/    CI y publicación de versiones
 ```
 
 ## Ramas
@@ -212,4 +220,5 @@ Para contribuir, crea tu rama a partir de `develop` y abre el pull request hacia
 - [x] Servidor HTTPS, API pública `/v1` y autorización por niveles
 - [x] Panel de administración
 - [x] SDK JavaScript, firmadores de referencia y guías para integradores
-- [ ] Instalación como servicio y paquetes por plataforma
+- [x] Instalación como servicio, instaladores por plataforma, actualizaciones y CI
+- [ ] Primera versión publicada

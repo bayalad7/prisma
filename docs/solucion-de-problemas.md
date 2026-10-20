@@ -21,10 +21,11 @@ Una versión más nueva de PRISMA ya migró la base. Instala esa versión o una 
 La base la creó otro usuario, normalmente root al ejecutar un comando con `sudo`. Hay que devolvérsela al usuario del servicio:
 
 ```sh
-sudo chown -R prisma:prisma /var/lib/prisma
+sudo chown -R prisma:prisma /var/lib/prisma                                   # Linux
+sudo chown -R _prisma:_prisma "/Library/Application Support/PRISMA/datos"    # macOS
 ```
 
-A partir de entonces, ejecuta los comandos de administración como ese usuario: `sudo -u prisma prisma …`.
+A partir de entonces, ejecuta los comandos de administración como ese usuario: `sudo -u prisma prisma …` en Linux, `sudo -u _prisma prisma …` en macOS. Los problemas de instalación (SmartScreen, firewall, el servicio que no arranca) están en [instalacion.md](instalacion.md#problemas-comunes).
 
 ### Windows bloquea el ejecutable (SmartScreen) o macOS dice que no se puede abrir
 

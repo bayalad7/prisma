@@ -24,9 +24,18 @@ No se necesita CGO ni un compilador de C: todo es Go puro, incluida la base de d
 | Binario local | `.\build.ps1 build` → `dist\prisma.exe` | `make build` → `dist/prisma` |
 | Las 6 plataformas | `.\build.ps1 build-todo` → `dist\prisma-<so>-<arq>[.exe]` | `make build-todo` |
 | Análisis estático | `.\build.ps1 lint` (`go vet` + staticcheck v0.8.2) | `make lint` |
+| Paquetes e instaladores | `.\build.ps1 deb` · `instalador` · `checksums` | `make deb` · `pkg` · `checksums` |
 | Limpiar | `.\build.ps1 limpiar` | `make limpiar` |
 
-La versión, el commit y la fecha se inyectan al compilar con `-ldflags`. La versión sale de `git describe`. Un binario compilado con `go build` a secas muestra `0.0.0-dev`.
+La versión, el commit, la fecha y la llave pública de las versiones (`empaquetado/llave-releases.pub`) se inyectan al compilar con `-ldflags`. La versión sale de `git describe`, sin la «v». Un binario compilado con `go build` a secas muestra `0.0.0-dev` y no puede usar `prisma actualizar`.
+
+**CI** ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)) corre en cada push a `main` y `develop` y en cada pull request:
+
+- `go vet`, staticcheck y `go test -race` en Windows, Ubuntu y macOS;
+- las pruebas del SDK en los tres sistemas, y las de los firmadores;
+- un trabajo que instala el servicio de verdad en los tres sistemas, comprueba que el panel responda, lo reinicia y lo desinstala.
+
+Las versiones se publican con una etiqueta: ver [publicar.md](publicar.md).
 
 Para revisar el código de otra plataforma sin cambiar de equipo:
 

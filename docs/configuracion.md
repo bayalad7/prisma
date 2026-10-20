@@ -104,6 +104,7 @@ Error: /etc/prisma/config.toml: la configuración tiene 2 problema(s):
 | `puente.nombre` | `PRISMA` | Nombre que muestra `GET /v1/salud` y el panel. |
 | `limites.ip_por_minuto`, `limites.cliente_por_minuto` | `[limites]` de `config.toml` | Límites editados en el panel. |
 | `panel.solo_red_privada` | `1` | `0` permite abrir el panel desde cualquier IP. |
+| `actualizaciones.comprobar` | `1` | `0` deja de preguntar a GitHub, una vez al día, si hay una versión nueva. |
 
 Se editan en el panel (*Ajustes*). Las tablas completas están en [arquitectura.md](arquitectura.md#datos).
 

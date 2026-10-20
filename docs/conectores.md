@@ -179,9 +179,9 @@ Registra la impresora con `--tipo bluetooth --destino /dev/rfcomm0`.
 
 | Sistema | Qué necesita el usuario del servicio PRISMA |
 |---|---|
-| Windows | Permiso de *Imprimir* sobre la impresora (lo tiene por defecto). Los puertos COM no requieren permisos especiales. |
-| Linux | Grupo `lp` para `/dev/usb/lpN`; grupo `dialout` para `/dev/rfcommN` y `/dev/ttyUSBN`; acceso a CUPS (por defecto, cualquier usuario local). |
-| macOS | Acceso a CUPS (por defecto). Los puertos `/dev/cu.*` son accesibles para el usuario que inició sesión. |
+| Windows | El servicio corre como LocalSystem: imprime en las impresoras instaladas para todos los usuarios y abre los puertos COM sin permisos especiales. Una impresora instalada solo para un usuario no la ve: instálala para todos. |
+| Linux | El usuario `prisma` necesita el grupo `lp` para `/dev/usb/lpN` y `dialout` para `/dev/rfcommN` y `/dev/ttyUSBN`; el instalador y `prisma servicio instalar` los agregan. CUPS lo puede usar cualquier usuario local. |
+| macOS | El usuario `_prisma` imprime a través de CUPS, que lo permite por defecto, y abre los puertos `/dev/cu.*`, que son de lectura y escritura para todos. |
 
 Después de agregar un usuario a un grupo, reinicia el servicio para que tome el cambio.
 

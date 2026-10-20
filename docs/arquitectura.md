@@ -69,7 +69,8 @@ Lo costoso (validar el esquema completo, decodificar imágenes, renderizar) ocur
 | `schema` | JSON Schema embebido | — |
 | `sdk/js` | SDK JavaScript: constructor de documentos, validación local, reintentos y diagnóstico | API pública `/v1` (por HTTP) |
 | `sdk/firmadores` | firmadores de nivel 3 de referencia (PHP, Node.js, Python) | — |
-| ⏳ `internal/servicio` | servicio | — |
+| `internal/servicio` | servicio del sistema (kardianos/service): unidad de systemd, LaunchDaemon, servicio de Windows, usuario y carpetas; bitácora rotativa | — |
+| `internal/actualizacion` | versiones nuevas en GitHub Releases: firma de checksums, SHA-256, reemplazo del binario y aviso del panel | — |
 
 ## Del documento a los bytes
 
