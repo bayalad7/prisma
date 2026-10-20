@@ -6,12 +6,14 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"sync"
 	"syscall"
 	"time"
 
 	"github.com/spf13/cobra"
 
+	"github.com/bayalad7/prisma/internal/actualizacion"
 	"github.com/bayalad7/prisma/internal/admin"
 	"github.com/bayalad7/prisma/internal/almacen"
 	"github.com/bayalad7/prisma/internal/cola"
@@ -43,6 +45,12 @@ func ejecutar(ctx context.Context, rutaConfig string, log *slog.Logger) error {
 		"modo_desarrollo", cfg.Dev.ModoDesarrollo)
 
 	ruta := cfg.RutaBaseDatos()
+	// Después de una actualización, la base se copia antes de migrarla al esquema nuevo.
+	if copia, err := almacen.RespaldarSiHayMigraciones(ctx, ruta, filepath.Join(cfg.DirDatos(), "respaldos"), version.Version); err != nil {
+		return err
+	} else if copia != "" {
+		log.Info("base de datos respaldada antes de migrarla", "respaldo", copia)
+	}
 	alm, err := almacen.Abrir(ctx, ruta)
 	if err != nil {
 		return err
@@ -93,7 +101,18 @@ func ejecutar(ctx context.Context, rutaConfig string, log *slog.Logger) error {
 	if err := srv.RegistrarImpresoras(ctx); err != nil {
 		return err
 	}
-	panel := admin.Nuevo(admin.Opciones{Almacen: alm, Servidor: srv, Cola: q, Config: cfg, Version: version.Version, Log: log})
+	// Aviso de versiones nuevas en el panel: una consulta diaria a GitHub, desactivable en Ajustes.
+	aviso := &actualizacion.Aviso{}
+	comprobador := &actualizacion.Comprobador{
+		Cliente: actualizacion.NuevoCliente(version.Version), Actual: version.Version, Aviso: aviso,
+		Activo: func(ctx context.Context) bool {
+			v, _, _ := alm.Ajustes.Obtener(ctx, almacen.AjusteBuscarActualizaciones)
+			return v != "0"
+		},
+		Inicial: time.Hour, Cada: 24 * time.Hour, Log: log,
+	}
+	go comprobador.Correr(ctx)
+	panel := admin.Nuevo(admin.Opciones{Almacen: alm, Servidor: srv, Cola: q, Config: cfg, Version: version.Version, Log: log, Aviso: aviso})
 	srv.MontarPanel(panel.Handler())
 	errServidor := make(chan error, 1)
 	go func() { errServidor <- srv.Escuchar(ctx, cfg, nil) }()

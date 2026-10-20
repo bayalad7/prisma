@@ -62,6 +62,8 @@ func nuevoComandoRaiz() *cobra.Command {
 		nuevoComandoConfig(op),
 		nuevoComandoEjecutar(op),
 		nuevoComandoAdmin(op),
+		nuevoComandoServicio(op),
+		nuevoComandoActualizar(op),
 		nuevoComandoImpresoras(op),
 		nuevoComandoClientes(op),
 		nuevoComandoTLS(op),

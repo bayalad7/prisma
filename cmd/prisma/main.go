@@ -7,11 +7,13 @@ import (
 	"io"
 	"os"
 
+	"github.com/bayalad7/prisma/internal/actualizacion"
 	"github.com/bayalad7/prisma/internal/conector"
 	"github.com/bayalad7/prisma/internal/contrato"
 )
 
 func main() {
+	actualizacion.LimpiarAnterior() // el .exe anterior que dejó «prisma actualizar» en Windows
 	if err := nuevoComandoRaiz().Execute(); err != nil {
 		imprimirError(os.Stderr, err)
 		os.Exit(1)
