@@ -1,0 +1,150 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    name: Go (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: go vet
+        run: go vet ./...
+      - name: staticcheck
+        run: go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...
+      - name: go test -race
+        env:
+          CGO_ENABLED: "1" # -race necesita CGO; los binarios publicados se compilan sin él
+        run: go test -race ./...
+      - name: Compila las 6 plataformas
+        if: matrix.os == 'ubuntu-latest'
+        run: make build-todo VERSION=0.0.0-ci
+
+  sdk:
+    name: SDK JS (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: npm test
+        working-directory: sdk/js
+        run: npm test
+      - name: Tipos (TypeScript)
+        if: matrix.os == 'ubuntu-latest'
+        working-directory: sdk/js
+        run: npm install --no-audit --no-fund && npm run tipos
+
+  firmadores:
+    name: Firmadores (PHP, Node.js, Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: sodium, mbstring
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: pip install cryptography
+      - run: php sdk/firmadores/php/prueba.php
+      - run: node --test "sdk/firmadores/node/*.test.mjs"
+      - run: python -m unittest discover -s sdk/firmadores/python
+
+  servicio:
+    name: Servicio (${{ matrix.os }})
+    needs: go
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Compila
+        shell: bash
+        run: CGO_ENABLED=0 go build -o "prisma-ci$(go env GOEXE)" ./cmd/prisma
+
+      - name: Instala e inicia el servicio (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo install -m 0755 prisma-ci /usr/local/bin/prisma
+          sudo prisma servicio instalar
+          sudo prisma servicio iniciar
+          systemctl is-enabled prisma
+          id prisma
+      - name: Instala e inicia el servicio (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          sudo install -m 0755 prisma-ci /usr/local/bin/prisma
+          sudo prisma servicio instalar
+          sudo prisma servicio iniciar
+          id _prisma
+          sudo launchctl print system/com.github.bayalad7.prisma | head -20
+      - name: Instala e inicia el servicio (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force "$env:ProgramFiles\PRISMA" | Out-Null
+          Copy-Item prisma-ci.exe "$env:ProgramFiles\PRISMA\prisma.exe"
+          & "$env:ProgramFiles\PRISMA\prisma.exe" servicio instalar
+          & "$env:ProgramFiles\PRISMA\prisma.exe" servicio iniciar
+          sc.exe qc PRISMA | Select-String AUTO_START
+          sc.exe qfailure PRISMA | Select-String RESTART
+          netsh advfirewall firewall show rule name=PRISMA | Select-String 8443
+
+      - name: El panel responde
+        shell: bash
+        run: |
+          for _ in $(seq 1 30); do
+            codigo=$(curl -sk -o /dev/null -w '%{http_code}' https://localhost:8443/admin/ || true)
+            [ "$codigo" = 200 ] && { echo "panel 200"; exit 0; }
+            sleep 2
+          done
+          echo "el panel no respondió (último código: $codigo)"; exit 1
+
+      - name: Estado, reinicio y desinstalación
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = Windows ]; then P="/c/Program Files/PRISMA/prisma.exe"; S=""; else P=prisma; S=sudo; fi
+          "$P" servicio estado | grep "en marcha"
+          $S "$P" servicio reiniciar
+          sleep 3
+          "$P" servicio estado | grep "en marcha"
+          $S "$P" servicio desinstalar
+          "$P" servicio estado | grep "no instalado"
+
+      - name: Bitácora del servicio (si algo falló)
+        if: failure()
+        shell: bash
+        run: |
+          case "$RUNNER_OS" in
+            Linux) sudo journalctl -u prisma --no-pager -n 100 ;;
+            macOS) sudo cat /Library/Logs/PRISMA/prisma.log /Library/Logs/PRISMA/launchd.err 2>/dev/null | tail -100 ;;
+            Windows) tail -100 "/c/ProgramData/PRISMA/logs/prisma.log" ;;
+          esac

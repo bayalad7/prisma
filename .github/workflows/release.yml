@@ -1,0 +1,245 @@
+# Publica una versión al empujar una etiqueta v1.2.3. Secretos (ver docs/publicar.md):
+#   PRISMA_LLAVE_RELEASES   obligatorio: llave privada Ed25519 (PEM) que firma checksums.txt
+#   NPM_TOKEN               opcional: publica el SDK en npm si su versión aún no existe
+#   WINDOWS_PFX_BASE64, WINDOWS_PFX_CLAVE                    opcional: firma de código de Windows
+#   APPLE_CERTIFICADOS_P12_BASE64, APPLE_CERTIFICADOS_CLAVE,
+#   APPLE_FIRMA_APP, APPLE_FIRMA_INSTALADOR                  opcional: firma de macOS
+#   APPLE_ID, APPLE_EQUIPO, APPLE_CLAVE_APP                  opcional: notarización de macOS
+name: Publicar versión
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  binarios:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+      - name: La llave pública de las versiones debe estar en el repositorio
+        run: |
+          test -s empaquetado/llave-releases.pub || {
+            echo "::error::empaquetado/llave-releases.pub está vacío: sin él, «prisma actualizar» no podría verificar esta versión (ver docs/publicar.md)"
+            exit 1
+          }
+      - name: Compila las 6 plataformas
+        run: make build-todo VERSION=${{ steps.version.outputs.version }}
+      - name: El binario lleva la versión
+        run: ./dist/prisma-linux-amd64 version | grep -F "PRISMA ${{ steps.version.outputs.version }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: binarios
+          path: dist/prisma-*
+
+  deb:
+    needs: binarios
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/download-artifact@v4
+        with:
+          name: binarios
+          path: dist
+      - run: chmod +x dist/prisma-linux-*
+      - name: Paquetes .deb
+        run: make deb VERSION=${{ needs.binarios.outputs.version }}
+      - name: Prueba la instalación (amd64)
+        run: |
+          sudo apt-get install -y ./dist/prisma_${{ needs.binarios.outputs.version }}_amd64.deb
+          systemctl is-enabled prisma
+          for _ in $(seq 1 30); do
+            [ "$(curl -sk -o /dev/null -w '%{http_code}' https://localhost:8443/admin/)" = 200 ] && break
+            sleep 2
+          done
+          curl -skf -o /dev/null https://localhost:8443/admin/
+          sudo apt-get purge -y prisma
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deb
+          path: dist/*.deb
+
+  windows:
+    needs: binarios
+    runs-on: windows-latest
+    env:
+      FIRMAR: ${{ secrets.WINDOWS_PFX_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: binarios
+          path: dist
+      - name: Firma los binarios (opcional)
+        if: env.FIRMAR == 'true'
+        env:
+          PFX: ${{ secrets.WINDOWS_PFX_BASE64 }}
+          CLAVE: ${{ secrets.WINDOWS_PFX_CLAVE }}
+        shell: pwsh
+        run: |
+          [IO.File]::WriteAllBytes("$env:RUNNER_TEMP\cert.pfx", [Convert]::FromBase64String($env:PFX))
+          $signtool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" | Sort-Object FullName | Select-Object -Last 1
+          & $signtool sign /fd sha256 /tr http://timestamp.digicert.com /td sha256 /f "$env:RUNNER_TEMP\cert.pfx" /p $env:CLAVE dist\prisma-windows-amd64.exe dist\prisma-windows-386.exe
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+      - name: Instaladores (Inno Setup)
+        shell: pwsh
+        env:
+          PFX: ${{ secrets.WINDOWS_PFX_BASE64 }}
+          CLAVE: ${{ secrets.WINDOWS_PFX_CLAVE }}
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress; if ($LASTEXITCODE -ne 0) { exit 1 } }
+          $version = "${{ needs.binarios.outputs.version }}"
+          foreach ($arq in 'amd64', '386') {
+            $parametros = @("/DVersion=$version", "/DArq=$arq")
+            if ($env:FIRMAR -eq 'true') {
+              $signtool = (Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" | Sort-Object FullName | Select-Object -Last 1).FullName
+              $parametros += '/DFirmar', "/Sfirma=`"$signtool`" sign /fd sha256 /tr http://timestamp.digicert.com /td sha256 /f `"$env:RUNNER_TEMP\cert.pfx`" /p $env:CLAVE `$f"
+            }
+            & $iscc @parametros empaquetado\windows\prisma.iss
+            if ($LASTEXITCODE -ne 0) { exit 1 }
+          }
+      - name: Prueba la instalación silenciosa (amd64)
+        shell: pwsh
+        run: |
+          $setup = Get-Item "dist\PRISMA-${{ needs.binarios.outputs.version }}-windows-amd64-setup.exe"
+          Start-Process $setup.FullName -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/LOG=instalacion.log' -Wait
+          sc.exe qc PRISMA | Select-String AUTO_START
+          if ((Get-Service PRISMA).Status -ne 'Running') { Get-Content instalacion.log -Tail 50; exit 1 }
+          for ($i = 0; $i -lt 30; $i++) {
+            try { Invoke-WebRequest https://localhost:8443/admin/ -SkipCertificateCheck -UseBasicParsing | Out-Null; $ok = $true; break } catch { Start-Sleep 2 }
+          }
+          if (-not $ok) { exit 1 }
+          Start-Process "$env:ProgramFiles\PRISMA\unins000.exe" -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES' -Wait
+          if (Get-Service PRISMA -ErrorAction SilentlyContinue) { 'el servicio sigue instalado'; exit 1 }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: |
+            dist/PRISMA-*-setup.exe
+            dist/prisma-windows-*.exe
+
+  macos:
+    needs: binarios
+    runs-on: macos-latest
+    env:
+      FIRMAR: ${{ secrets.APPLE_CERTIFICADOS_P12_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: binarios
+          path: dist
+      - name: Importa los certificados (opcional)
+        if: env.FIRMAR == 'true'
+        env:
+          P12: ${{ secrets.APPLE_CERTIFICADOS_P12_BASE64 }}
+          CLAVE: ${{ secrets.APPLE_CERTIFICADOS_CLAVE }}
+        run: |
+          echo "$P12" | base64 --decode > "$RUNNER_TEMP/certificados.p12"
+          security create-keychain -p ci "$RUNNER_TEMP/firma.keychain"
+          security set-keychain-settings "$RUNNER_TEMP/firma.keychain"
+          security unlock-keychain -p ci "$RUNNER_TEMP/firma.keychain"
+          security import "$RUNNER_TEMP/certificados.p12" -k "$RUNNER_TEMP/firma.keychain" -P "$CLAVE" -T /usr/bin/codesign -T /usr/bin/productsign -T /usr/bin/pkgbuild
+          security set-key-partition-list -S apple-tool:,apple: -k ci "$RUNNER_TEMP/firma.keychain"
+          security list-keychains -d user -s "$RUNNER_TEMP/firma.keychain" login.keychain
+      - name: Paquete .pkg
+        env:
+          PRISMA_FIRMA_APP: ${{ secrets.APPLE_FIRMA_APP }}
+          PRISMA_FIRMA_INSTALADOR: ${{ secrets.APPLE_FIRMA_INSTALADOR }}
+          PRISMA_APPLE_ID: ${{ secrets.APPLE_ID }}
+          PRISMA_APPLE_EQUIPO: ${{ secrets.APPLE_EQUIPO }}
+          PRISMA_APPLE_CLAVE: ${{ secrets.APPLE_CLAVE_APP }}
+        run: |
+          chmod +x dist/prisma-darwin-* empaquetado/macos/construir-pkg.sh
+          empaquetado/macos/construir-pkg.sh ${{ needs.binarios.outputs.version }}
+      - name: Prueba la instalación
+        run: |
+          sudo installer -pkg dist/PRISMA-${{ needs.binarios.outputs.version }}-macos.pkg -target /
+          lipo -archs /usr/local/bin/prisma
+          sudo launchctl print system/com.github.bayalad7.prisma | grep -E "state|program"
+          for _ in $(seq 1 30); do
+            [ "$(curl -sk -o /dev/null -w '%{http_code}' https://localhost:8443/admin/)" = 200 ] && break
+            sleep 2
+          done
+          curl -skf -o /dev/null https://localhost:8443/admin/
+          sudo prisma servicio desinstalar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: dist/*.pkg
+
+  publicar:
+    needs: [binarios, deb, windows, macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      # Los binarios de Windows del artefacto «windows» están firmados (si hay certificado): se
+      # descargan al final para que reemplacen a los del artefacto «binarios».
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "{binarios,deb,macos}"
+          path: dist
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows
+          path: dist
+      - name: checksums.txt y su firma
+        env:
+          LLAVE: ${{ secrets.PRISMA_LLAVE_RELEASES }}
+        run: |
+          test -n "$LLAVE" || { echo "::error::falta el secreto PRISMA_LLAVE_RELEASES"; exit 1; }
+          cd dist
+          sha256sum prisma-* prisma_*.deb PRISMA-* > checksums.txt
+          printf '%s\n' "$LLAVE" > "$RUNNER_TEMP/llave.pem"
+          openssl pkeyutl -sign -rawin -inkey "$RUNNER_TEMP/llave.pem" -in checksums.txt | base64 -w0 > checksums.txt.sig
+          rm "$RUNNER_TEMP/llave.pem"
+          # La firma debe verificar con la llave pública del repositorio, la misma que llevan los binarios.
+          printf -- '-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA%s\n-----END PUBLIC KEY-----\n' "$(cat ../empaquetado/llave-releases.pub)" > "$RUNNER_TEMP/publica.pem"
+          base64 -d checksums.txt.sig > "$RUNNER_TEMP/firma.bin"
+          openssl pkeyutl -verify -pubin -inkey "$RUNNER_TEMP/publica.pem" -rawin -in checksums.txt -sigfile "$RUNNER_TEMP/firma.bin"
+          cat checksums.txt
+      - name: Crea la versión en GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Una etiqueta como v1.2.0-rc.1 se publica como versión preliminar.
+          preliminar=()
+          case "$GITHUB_REF_NAME" in *-*) preliminar=(--prerelease) ;; esac
+          gh release create "$GITHUB_REF_NAME" --title "PRISMA ${GITHUB_REF_NAME#v}" --generate-notes "${preliminar[@]}" \
+            dist/prisma-* dist/prisma_*.deb dist/PRISMA-* dist/checksums.txt dist/checksums.txt.sig
+
+  npm:
+    needs: publicar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - name: Publica el SDK si su versión es nueva
+        working-directory: sdk/js
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then echo "Sin NPM_TOKEN: no se publica el SDK."; exit 0; fi
+          nombre=$(node -p "require('./package.json').name"); version=$(node -p "require('./package.json').version")
+          if npm view "$nombre@$version" version >/dev/null 2>&1; then echo "$nombre@$version ya está publicado."; exit 0; fi
+          npm test
+          npm publish --access public
