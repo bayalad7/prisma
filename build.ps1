@@ -1,7 +1,7 @@
 ﻿# PRISMA — tareas de desarrollo en Windows (equivalente al Makefile).
-# Uso: .\build.ps1 [test|build|build-todo|lint|limpiar]
+# Uso: .\build.ps1 [test|test-sdk|build|build-todo|lint|limpiar]
 param(
-    [ValidateSet('test', 'build', 'build-todo', 'lint', 'limpiar')]
+    [ValidateSet('test', 'test-sdk', 'build', 'build-todo', 'lint', 'limpiar')]
     [string]$Tarea = 'build'
 )
 
@@ -37,6 +37,14 @@ $env:CGO_ENABLED = '0'
 switch ($Tarea) {
     'test' {
         Invocar 'go' @('test', './...')
+    }
+    'test-sdk' {
+        # SDK JavaScript y firmadores de referencia: requieren Node.js, PHP 8.2 (sodium) y Python con cryptography.
+        Push-Location sdk/js
+        try { Invocar 'npm' @('test') } finally { Pop-Location }
+        Invocar 'node' @('--test', 'sdk/firmadores/node/*.test.mjs')
+        Invocar 'php' @('sdk/firmadores/php/prueba.php')
+        Invocar 'python' @('-m', 'unittest', 'discover', '-s', 'sdk/firmadores/python')
     }
     'build' {
         Invocar 'go' @('build', '-trimpath', '-ldflags', (Obtener-LdFlags), '-o', 'dist/prisma.exe', './cmd/prisma')

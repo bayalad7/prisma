@@ -13,10 +13,17 @@ LDFLAGS      := -s -w \
 
 export CGO_ENABLED := 0
 
-.PHONY: test build build-todo lint limpiar
+.PHONY: test test-sdk build build-todo lint limpiar
 
 test:
 	go test ./...
+
+# SDK JavaScript y firmadores de referencia: requieren Node.js, PHP 8.2 (sodium) y Python con cryptography.
+test-sdk:
+	cd sdk/js && npm test
+	node --test "sdk/firmadores/node/*.test.mjs"
+	php sdk/firmadores/php/prueba.php
+	python3 -m unittest discover -s sdk/firmadores/python
 
 build:
 	go build -trimpath -ldflags "$(LDFLAGS)" -o dist/prisma$(shell go env GOEXE) ./cmd/prisma
