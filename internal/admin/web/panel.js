@@ -387,6 +387,10 @@
         h('div', {}, h('strong', {}, r.solicitudes_pendientes === 1 ? '1 sitio web quiere imprimir' : `${r.solicitudes_pendientes} sitios web quieren imprimir`),
           h('div', { class: 'pequeno' }, 'Intentaron imprimir desde un origen que no está aprobado. No imprimen hasta que los apruebes.')),
         h('a', { class: 'boton primario', href: '#solicitudes' }, 'Revisar solicitudes')),
+      r.actualizacion && h('div', { class: 'aviso-caja', role: 'status' },
+        h('div', {}, h('strong', {}, `Hay una versión nueva de PRISMA: ${r.actualizacion.version}`),
+          h('div', { class: 'pequeno' }, `Tienes la ${r.puente.version}. En el equipo del puente, como administrador, ejecuta «prisma actualizar», o descarga el instalador de la página de la versión.`)),
+        h('a', { class: 'boton', href: r.actualizacion.url, target: '_blank', rel: 'noopener noreferrer' }, 'Ver la versión')),
       h('div', { class: 'rejilla' },
         h('section', { class: 'tarjeta', 'aria-labelledby': 't-puente' }, h('h2', { id: 't-puente' }, 'Puente'),
           h('dl', { class: 'datos' },
@@ -1066,6 +1070,7 @@
     const limCli = num('aj-cliente', a.limite_cliente, 0, 100000);
     const retencion = num('aj-retencion', a.retencion_dias, 1, 3650);
     const privada = h('input', { type: 'checkbox', id: 'aj-privada', checked: a.solo_red_privada });
+    const buscar = h('input', { type: 'checkbox', id: 'aj-actualizaciones', checked: a.buscar_actualizaciones });
     const seccion = (id, titulo, texto, campos, guardar) => {
       const b = h('button', { class: 'boton primario chico', type: 'submit' }, 'Guardar');
       return h('form', { class: 'tarjeta', 'aria-labelledby': id, onsubmit: async (ev) => {
@@ -1120,7 +1125,10 @@
           campo('aj-retencion', 'Días que se conservan', retencion), () => api.put('/ajustes', { retencion_dias: +retencion.value })),
         seccion('aj-a', 'Acceso al panel', null,
           h('label', { class: 'casilla', for: 'aj-privada' }, privada, h('span', {}, 'Solo desde la red local (direcciones privadas). Recomendado.')),
-          () => api.put('/ajustes', { solo_red_privada: privada.checked }))),
+          () => api.put('/ajustes', { solo_red_privada: privada.checked })),
+        seccion('aj-u', 'Actualizaciones', 'Una vez al día, el puente pregunta a GitHub si hay una versión nueva y lo avisa en Inicio. No envía ningún dato del negocio. Nunca se instala nada solo.',
+          h('label', { class: 'casilla', for: 'aj-actualizaciones' }, buscar, h('span', {}, 'Buscar versiones nuevas')),
+          () => api.put('/ajustes', { buscar_actualizaciones: buscar.checked }))),
       tls,
       h('div', { class: 'rejilla' },
         seccion('aj-c', 'Contraseña del panel', 'Al menos 10 caracteres.',

@@ -24,6 +24,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bayalad7/prisma/internal/actualizacion"
 	"github.com/bayalad7/prisma/internal/almacen"
 	"github.com/bayalad7/prisma/internal/cola"
 	"github.com/bayalad7/prisma/internal/config"
@@ -34,11 +35,12 @@ import (
 const contrasenaPrueba = "una contraseña larga"
 
 type banco struct {
-	t   *testing.T
-	alm *almacen.Almacen
-	srv *servidor.Servidor
-	adm *Admin
-	h   http.Handler
+	t     *testing.T
+	alm   *almacen.Almacen
+	srv   *servidor.Servidor
+	adm   *Admin
+	h     http.Handler
+	aviso *actualizacion.Aviso
 
 	mu    sync.Mutex
 	ahora time.Time
@@ -70,7 +72,8 @@ func nuevoBanco(t *testing.T) *banco {
 	cfg.Datos.Ruta = t.TempDir()
 	srv := servidor.Nuevo(servidor.Opciones{Almacen: alm, Cola: q, Limites: config.Limites{}, Version: "prueba", TiempoRespuesta: 10 * time.Second})
 	b := &banco{t: t, alm: alm, srv: srv, ahora: time.Date(2026, 10, 19, 12, 0, 0, 0, time.Local)}
-	b.adm = Nuevo(Opciones{Almacen: alm, Servidor: srv, Cola: q, Config: cfg, Version: "prueba", Ahora: b.reloj})
+	b.aviso = &actualizacion.Aviso{}
+	b.adm = Nuevo(Opciones{Almacen: alm, Servidor: srv, Cola: q, Config: cfg, Version: "prueba", Ahora: b.reloj, Aviso: b.aviso})
 	srv.MontarPanel(b.adm.Handler())
 	b.h = srv.Handler()
 	return b
@@ -736,5 +739,29 @@ func TestDiagnosticoSinQRNiImagenes(t *testing.T) {
 	r := s.exigir("POST", "/admin/api/impresoras/basica/diagnostico", nil, 200)
 	if vista := r.datos["vista"].(string); !strings.Contains(vista, ".........1.........2.........3..") {
 		t.Fatalf("regla de 32 columnas:\n%s", vista)
+	}
+}
+
+func TestAvisoDeVersionNueva(t *testing.T) {
+	b := nuevoBanco(t)
+	s := b.configurado()
+	if r := s.exigir("GET", "/admin/api/resumen", nil, 200); r.datos["actualizacion"] != nil {
+		t.Fatalf("sin versión nueva: %v", r.datos["actualizacion"])
+	}
+	b.aviso.Poner(&actualizacion.Version{Numero: "9.9.9", URL: "https://github.com/bayalad7/prisma/releases/tag/v9.9.9"})
+	r := s.exigir("GET", "/admin/api/resumen", nil, 200)
+	if v, _ := r.datos["actualizacion"].(map[string]any); v["version"] != "9.9.9" || v["url"] == "" {
+		t.Fatalf("aviso: %v", r.datos["actualizacion"])
+	}
+	if r := s.exigir("GET", "/admin/api/ajustes", nil, 200); r.datos["buscar_actualizaciones"] != true {
+		t.Fatalf("por defecto se buscan actualizaciones: %v", r.datos)
+	}
+	// Desactivado en Ajustes: el aviso desaparece.
+	s.exigir("PUT", "/admin/api/ajustes", map[string]any{"buscar_actualizaciones": false}, 200)
+	if r := s.exigir("GET", "/admin/api/resumen", nil, 200); r.datos["actualizacion"] != nil {
+		t.Fatalf("aviso desactivado: %v", r.datos["actualizacion"])
+	}
+	if v, _, _ := b.alm.Ajustes.Obtener(context.Background(), almacen.AjusteBuscarActualizaciones); v != "0" {
+		t.Fatalf("ajuste guardado: %q", v)
 	}
 }

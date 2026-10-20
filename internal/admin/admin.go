@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bayalad7/prisma/internal/actualizacion"
 	"github.com/bayalad7/prisma/internal/almacen"
 	"github.com/bayalad7/prisma/internal/cola"
 	"github.com/bayalad7/prisma/internal/config"
@@ -33,7 +34,8 @@ type Opciones struct {
 	Config   config.Config
 	Version  string
 	Log      *slog.Logger
-	Ahora    func() time.Time // reloj (pruebas)
+	Ahora    func() time.Time     // reloj (pruebas)
+	Aviso    *actualizacion.Aviso // versión nueva disponible (nil = sin aviso)
 }
 
 // Admin es el panel de administración.

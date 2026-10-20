@@ -72,9 +72,14 @@ func (a *Admin) resumen(w http.ResponseWriter, r *http.Request) {
 		a.error(w, r, err)
 		return
 	}
+	var nueva any // null si no hay versión nueva o el aviso está desactivado
+	if v := a.op.Aviso.Disponible(); v != nil && a.buscarActualizaciones(r) {
+		nueva = map[string]string{"version": v.Numero, "url": v.URL, "fecha": fecha(v.Fecha)}
+	}
 	responder(w, map[string]any{
 		"puente": map[string]any{"nombre": a.nombrePuente(r), "version": a.op.Version, "direccion": a.direccion(),
 			"modo_tls": a.op.Config.Servidor.ModoTLS, "iniciado": fecha(a.op.Servidor.Iniciado())},
+		"actualizacion":          nueva,
 		"impresoras":             imps,
 		"solicitudes_pendientes": len(pendientes),
 		"trabajos_hoy":           map[string]int{"completados": conteo[almacen.TrabajoCompletado], "fallidos": conteo[almacen.TrabajoFallido]},
@@ -299,6 +304,12 @@ func (a *Admin) soloRedPrivada(r *http.Request) bool {
 	return v != "0"
 }
 
+// buscarActualizaciones: el puente consulta GitHub una vez al día salvo que el dueño lo desactive.
+func (a *Admin) buscarActualizaciones(r *http.Request) bool {
+	v, _, _ := a.op.Almacen.Ajustes.Obtener(r.Context(), almacen.AjusteBuscarActualizaciones)
+	return v != "0"
+}
+
 func (a *Admin) leerAjustes(w http.ResponseWriter, r *http.Request) {
 	retencion, err := a.op.Almacen.Ajustes.RetencionDias(r.Context())
 	if err != nil {
@@ -306,13 +317,14 @@ func (a *Admin) leerAjustes(w http.ResponseWriter, r *http.Request) {
 	}
 	lim := a.op.Config.Limites
 	resp := map[string]any{
-		"nombre_puente":    a.nombrePuente(r),
-		"limite_ip":        a.entero(r, servidor.AjusteLimiteIP, lim.PorIP),
-		"limite_cliente":   a.entero(r, servidor.AjusteLimiteCliente, lim.PorCliente),
-		"retencion_dias":   retencion,
-		"solo_red_privada": a.soloRedPrivada(r),
-		"direccion":        a.direccion(),
-		"tls":              a.estadoTLS(),
+		"nombre_puente":          a.nombrePuente(r),
+		"limite_ip":              a.entero(r, servidor.AjusteLimiteIP, lim.PorIP),
+		"limite_cliente":         a.entero(r, servidor.AjusteLimiteCliente, lim.PorCliente),
+		"retencion_dias":         retencion,
+		"solo_red_privada":       a.soloRedPrivada(r),
+		"buscar_actualizaciones": a.buscarActualizaciones(r),
+		"direccion":              a.direccion(),
+		"tls":                    a.estadoTLS(),
 	}
 	responder(w, resp)
 }
@@ -353,11 +365,12 @@ func (a *Admin) estadoTLS() map[string]any {
 
 func (a *Admin) guardarAjustes(w http.ResponseWriter, r *http.Request) {
 	var d struct {
-		NombrePuente   *string `json:"nombre_puente"`
-		LimiteIP       *int    `json:"limite_ip"`
-		LimiteCliente  *int    `json:"limite_cliente"`
-		RetencionDias  *int    `json:"retencion_dias"`
-		SoloRedPrivada *bool   `json:"solo_red_privada"`
+		NombrePuente          *string `json:"nombre_puente"`
+		LimiteIP              *int    `json:"limite_ip"`
+		LimiteCliente         *int    `json:"limite_cliente"`
+		RetencionDias         *int    `json:"retencion_dias"`
+		SoloRedPrivada        *bool   `json:"solo_red_privada"`
+		BuscarActualizaciones *bool   `json:"buscar_actualizaciones"`
 	}
 	if err := leerJSON(w, r, &d); err != nil {
 		a.error(w, r, err)
@@ -392,6 +405,9 @@ func (a *Admin) guardarAjustes(w http.ResponseWriter, r *http.Request) {
 	}
 	if d.SoloRedPrivada != nil {
 		cambios[almacen.AjusteSoloRedPrivada] = map[bool]string{true: "1", false: "0"}[*d.SoloRedPrivada]
+	}
+	if d.BuscarActualizaciones != nil {
+		cambios[almacen.AjusteBuscarActualizaciones] = map[bool]string{true: "1", false: "0"}[*d.BuscarActualizaciones]
 	}
 	if err := a.op.Almacen.Ajustes.EstablecerVarios(r.Context(), cambios); err != nil {
 		a.error(w, r, err)

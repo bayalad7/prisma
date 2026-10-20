@@ -148,7 +148,7 @@
     return { prefijo, llave: prefijo + '_' + Array.from({ length: 43 }, () => b64[Math.floor(Math.random() * 64)]).join('') };
   };
   const idCliente = () => 'cli_' + Array.from({ length: 16 }, () => 'abcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random() * 36)]).join('');
-  const ajustes = { nombre_puente: 'Abarrotes La Esperanza', limite_ip: 120, limite_cliente: 60, retencion_dias: 30, solo_red_privada: true };
+  const ajustes = { nombre_puente: 'Abarrotes La Esperanza', limite_ip: 120, limite_cliente: 60, retencion_dias: 30, solo_red_privada: true, buscar_actualizaciones: true };
   const tls = {
     modo: 'autofirmado',
     certificado: { vence: '17 ene 2029', nombres: ['localhost', 'caja-pc', 'caja-pc.local'], ips: ['127.0.0.1', '::1', '192.168.1.10'], ips_sin_cubrir: [],
@@ -185,6 +185,7 @@
       return {
         puente: { nombre: ajustes.nombre_puente, version: '0.6.0', direccion, modo_tls: tls.modo, iniciado: iso(ahora - 3 * dia - 2 * hora) },
         impresoras: impresoras.map(({ alias, nombre, estado, pendientes }) => ({ alias, nombre, estado, pendientes })),
+        actualizacion: ajustes.buscar_actualizaciones ? { version: '0.7.0', url: 'https://github.com/bayalad7/prisma/releases/tag/v0.7.0', fecha: iso(ahora - 2 * dia) } : null,
         solicitudes_pendientes: solicitudes.filter((s) => s.estado === 'pendiente').length,
         trabajos_hoy: { completados: hoy.filter((t) => t.estado === 'completado').length, fallidos: hoy.filter((t) => t.estado === 'fallido').length },
         ultimos_trabajos: trabajos.slice(0, 8),
