@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 
 	"go.bug.st/serial"
 )
@@ -76,6 +77,15 @@ func (s *Serie) traducir(err error) error {
 			return nuevoError(ErrPermisoDenegado, fmt.Sprintf("No hay permiso para abrir %s.", s.Puerto),
 				"En Linux agrega el usuario del servicio al grupo dialout.", err)
 		}
+	}
+	// En Linux y macOS la biblioteca devuelve el error del sistema tal cual al abrir el dispositivo.
+	switch {
+	case errors.Is(err, fs.ErrNotExist):
+		return nuevoError(ErrImpresoraNoEncontrada, fmt.Sprintf("No existe el puerto %s.", s.Puerto),
+			"Empareja la impresora y usa el puerto que asignó el sistema (ver docs/conectores.md).", err)
+	case errors.Is(err, fs.ErrPermission):
+		return nuevoError(ErrPermisoDenegado, fmt.Sprintf("No hay permiso para abrir %s.", s.Puerto),
+			"En Linux agrega el usuario del servicio al grupo dialout.", err)
 	}
 	return nuevoError(ErrImpresoraInalcanzable, fmt.Sprintf("No se pudo comunicar con la impresora en %s.", s.Puerto),
 		"Revisa que esté encendida, emparejada y dentro del alcance del Bluetooth.", err)
