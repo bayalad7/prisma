@@ -1,0 +1,89 @@
+[
+  {
+    "nombre": "vector de firma (testdata/vector-firma)",
+    "entrada": {
+      "cliente_id": "cli_7Hq2MZp4XwR9",
+      "emitido": "2026-10-14T18:30:00Z",
+      "expira": "2026-10-14T18:31:30Z",
+      "id": "780bf0ea-9a33-4add-86f3-9f4f23000fc4",
+      "impresora": "caja",
+      "operaciones": [
+        {
+          "tipo": "texto",
+          "valor": "Pedido en línea #812",
+          "negrita": true
+        },
+        {
+          "tipo": "par",
+          "izquierda": "TOTAL",
+          "derecha": "$249.00"
+        },
+        {
+          "tipo": "cortar"
+        }
+      ],
+      "referencia": "PED-000812",
+      "version": "1"
+    },
+    "canonico": "{\"cliente_id\":\"cli_7Hq2MZp4XwR9\",\"emitido\":\"2026-10-14T18:30:00Z\",\"expira\":\"2026-10-14T18:31:30Z\",\"id\":\"780bf0ea-9a33-4add-86f3-9f4f23000fc4\",\"impresora\":\"caja\",\"operaciones\":[{\"negrita\":true,\"tipo\":\"texto\",\"valor\":\"Pedido en línea #812\"},{\"derecha\":\"$249.00\",\"izquierda\":\"TOTAL\",\"tipo\":\"par\"},{\"tipo\":\"cortar\"}],\"referencia\":\"PED-000812\",\"version\":\"1\"}"
+  },
+  {
+    "nombre": "escapes mínimos de cadenas",
+    "entrada": {
+      "comillas_y_barras": "a\"b\\c/d",
+      "control": "\u0000\u0001\b\t\n\u000b\f\r\u001f",
+      "del_y_c1": "",
+      "separadores_de_linea": "  ",
+      "html": "<a href='x'>&amp;</a>"
+    },
+    "canonico": "{\"comillas_y_barras\":\"a\\\"b\\\\c/d\",\"control\":\"\\u0000\\u0001\\b\\t\\n\\u000b\\f\\r\\u001f\",\"del_y_c1\":\"\",\"html\":\"<a href='x'>&amp;</a>\",\"separadores_de_linea\":\"  \"}"
+  },
+  {
+    "nombre": "claves ordenadas por unidades UTF-16, no por punto de código",
+    "entrada": {
+      "דּ": 1,
+      "😀": 2,
+      "€": 3,
+      "ñ": 4,
+      "a": 5,
+      "B": 6,
+      "": 7,
+      "aa": 8,
+      "a\u0000": 9
+    },
+    "canonico": "{\"\":7,\"B\":6,\"a\":5,\"a\\u0000\":9,\"aa\":8,\"ñ\":4,\"€\":3,\"😀\":2,\"דּ\":1}"
+  },
+  {
+    "nombre": "números enteros, literales y anidados",
+    "entrada": {
+      "cero": 0,
+      "negativo": -17,
+      "grande": 9007199254740991,
+      "verdadero": true,
+      "falso": false,
+      "nulo": null,
+      "anidado": [
+        [],
+        {},
+        [
+          1,
+          [
+            2,
+            {
+              "z": 1,
+              "a": 2
+            }
+          ]
+        ]
+      ]
+    },
+    "canonico": "{\"anidado\":[[],{},[1,[2,{\"a\":2,\"z\":1}]]],\"cero\":0,\"falso\":false,\"grande\":9007199254740991,\"negativo\":-17,\"nulo\":null,\"verdadero\":true}"
+  },
+  {
+    "nombre": "texto no ASCII en UTF-8 directo",
+    "entrada": {
+      "texto": "Pedido en línea #812 · ¿Mañana? 😀 €"
+    },
+    "canonico": "{\"texto\":\"Pedido en línea #812 · ¿Mañana? 😀 €\"}"
+  }
+]
