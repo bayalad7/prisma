@@ -1,7 +1,7 @@
 ﻿# PRISMA — tareas de desarrollo en Windows (equivalente al Makefile).
-# Uso: .\build.ps1 [test|test-sdk|build|build-todo|lint|limpiar]
+# Uso: .\build.ps1 [test|test-sdk|build|build-todo|deb|instalador|checksums|lint|limpiar]
 param(
-    [ValidateSet('test', 'test-sdk', 'build', 'build-todo', 'lint', 'limpiar')]
+    [ValidateSet('test', 'test-sdk', 'build', 'build-todo', 'deb', 'instalador', 'checksums', 'lint', 'limpiar')]
     [string]$Tarea = 'build'
 )
 
@@ -10,6 +10,7 @@ Set-Location $PSScriptRoot
 
 $Modulo = 'github.com/bayalad7/prisma'
 $Staticcheck = 'honnef.co/go/tools/cmd/staticcheck@v0.8.2'
+$Nfpm = 'github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.48.0'
 $Plataformas = @('windows/amd64', 'windows/386', 'linux/amd64', 'linux/arm64', 'darwin/amd64', 'darwin/arm64')
 
 function Invocar([string]$Programa, [string[]]$Argumentos) {
@@ -25,11 +26,19 @@ function Obtener-Git([string[]]$Argumentos, [string]$PorDefecto) {
     return $PorDefecto
 }
 
-function Obtener-LdFlags {
+# Versión sin la «v» de la etiqueta: 1.2.3.
+function Obtener-Version {
     $version = if ($env:VERSION) { $env:VERSION } else { Obtener-Git @('describe', '--tags', '--always', '--dirty') '0.0.0-dev' }
+    return $version -replace '^v', ''
+}
+
+function Obtener-LdFlags {
+    $version = Obtener-Version
     $commit = Obtener-Git @('rev-parse', '--short', 'HEAD') 'desconocido'
     $fecha = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
-    return "-s -w -X $Modulo/internal/version.Version=$version -X $Modulo/internal/version.Commit=$commit -X $Modulo/internal/version.Fecha=$fecha"
+    # Llave pública con la que «prisma actualizar» verifica las versiones (ver docs/publicar.md).
+    $llave = if (Test-Path empaquetado/llave-releases.pub) { "$(Get-Content -Raw empaquetado/llave-releases.pub)".Trim() } else { '' }
+    return "-s -w -X $Modulo/internal/version.Version=$version -X $Modulo/internal/version.Commit=$commit -X $Modulo/internal/version.Fecha=$fecha -X $Modulo/internal/actualizacion.LlavePublica=$llave"
 }
 
 $env:CGO_ENABLED = '0'
@@ -64,6 +73,37 @@ switch ($Tarea) {
         } finally {
             $env:GOOS = $goosAnterior; $env:GOARCH = $goarchAnterior
         }
+    }
+    'deb' {
+        # Paquetes .deb a partir de los binarios de build-todo. VERSION debe empezar con un dígito.
+        # nfpm no expande variables en todas las rutas: se genera la configuración de cada arquitectura.
+        $version = Obtener-Version
+        foreach ($arq in @('amd64', 'arm64')) {
+            $config = "dist/nfpm-$arq.yaml"
+            (Get-Content -Raw empaquetado/linux/nfpm.yaml).Replace('${ARQ}', $arq).Replace('${VERSION}', $version) |
+                Set-Content -Encoding utf8 -NoNewline $config
+            Invocar 'go' @('run', $Nfpm, 'package', '-f', $config, '-p', 'deb', '-t', 'dist/')
+        }
+    }
+    'instalador' {
+        # Instaladores de Windows con Inno Setup 6 (ISCC.exe), a partir de los binarios de build-todo.
+        $iscc = @("${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe", "$env:ProgramFiles\Inno Setup 6\ISCC.exe", "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe") |
+            Where-Object { Test-Path $_ } | Select-Object -First 1
+        if (-not $iscc) { throw 'No se encontró Inno Setup 6. Instálalo con «winget install JRSoftware.InnoSetup».' }
+        $version = Obtener-Version
+        foreach ($arq in @('amd64', '386')) {
+            Invocar $iscc @("/DVersion=$version", "/DArq=$arq", 'empaquetado\windows\prisma.iss')
+        }
+    }
+    'checksums' {
+        # Formato de sha256sum; la firma (checksums.txt.sig) la agrega el CI, ver docs/publicar.md.
+        Push-Location dist
+        try {
+            Get-ChildItem -File -Include 'prisma-*', 'prisma_*.deb', 'PRISMA-*' -Path * | Sort-Object Name | ForEach-Object {
+                '{0}  {1}' -f (Get-FileHash -Algorithm SHA256 $_.FullName).Hash.ToLower(), $_.Name
+            } | Set-Content -Encoding ascii checksums.txt
+            Get-Content checksums.txt
+        } finally { Pop-Location }
     }
     'lint' {
         Invocar 'go' @('vet', './...')

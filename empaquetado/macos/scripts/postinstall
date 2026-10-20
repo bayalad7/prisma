@@ -1,0 +1,6 @@
+#!/bin/sh
+# Crea el usuario _prisma, las carpetas y el LaunchDaemon (arranca con el equipo), y lo inicia.
+set -e
+/usr/local/bin/prisma servicio instalar
+/usr/local/bin/prisma servicio iniciar
+exit 0
