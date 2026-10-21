@@ -3,21 +3,27 @@ package admin
 import (
 	"bytes"
 	"context"
+	"crypto/ecdsa"
 	"crypto/ed25519"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"image"
 	"image/color"
 	"image/png"
 	"io"
 	"log/slog"
+	"math/big"
 	"mime/multipart"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -763,5 +769,30 @@ func TestAvisoDeVersionNueva(t *testing.T) {
 	}
 	if v, _, _ := b.alm.Ajustes.Obtener(context.Background(), almacen.AjusteBuscarActualizaciones); v != "0" {
 		t.Fatalf("ajuste guardado: %q", v)
+	}
+}
+
+func TestAvisoDeCertificadoVencido(t *testing.T) {
+	b := nuevoBanco(t)
+	s := b.configurado()
+	if r := s.exigir("GET", "/admin/api/resumen", nil, 200); r.datos["certificado"] != nil {
+		t.Fatalf("sin certificado no hay aviso: %v", r.datos["certificado"])
+	}
+	// Certificado autofirmado vencido en la carpeta de datos.
+	llave, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	plantilla := &x509.Certificate{SerialNumber: big.NewInt(1), NotBefore: b.reloj().Add(-48 * time.Hour), NotAfter: b.reloj().Add(-24 * time.Hour)}
+	der, _ := x509.CreateCertificate(rand.Reader, plantilla, plantilla, &llave.PublicKey, llave)
+	ruta, _ := servidor.RutasAutofirmado(b.adm.op.Config.DirDatos())
+	os.MkdirAll(filepath.Dir(ruta), 0o700)
+	os.WriteFile(ruta, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}), 0o644)
+
+	r := s.exigir("GET", "/admin/api/resumen", nil, 200)
+	aviso, _ := r.datos["certificado"].(map[string]any)
+	if aviso["estado"] != servidor.CertificadoVencido || aviso["autofirmado"] != true {
+		t.Fatalf("aviso: %v", r.datos["certificado"])
+	}
+	tls := s.exigir("GET", "/admin/api/ajustes", nil, 200).datos["tls"].(map[string]any)
+	if tls["certificado"].(map[string]any)["estado"] != servidor.CertificadoVencido {
+		t.Fatalf("ajustes: %v", tls)
 	}
 }

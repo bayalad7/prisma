@@ -80,6 +80,7 @@ func (a *Admin) resumen(w http.ResponseWriter, r *http.Request) {
 		"puente": map[string]any{"nombre": a.nombrePuente(r), "version": a.op.Version, "direccion": a.direccion(),
 			"modo_tls": a.op.Config.Servidor.ModoTLS, "iniciado": fecha(a.op.Servidor.Iniciado())},
 		"actualizacion":          nueva,
+		"certificado":            a.avisoCertificado(),
 		"impresoras":             imps,
 		"solicitudes_pendientes": len(pendientes),
 		"trabajos_hoy":           map[string]int{"completados": conteo[almacen.TrabajoCompletado], "fallidos": conteo[almacen.TrabajoFallido]},
@@ -358,9 +359,20 @@ func (a *Admin) estadoTLS() map[string]any {
 	for _, ip := range servidor.IPsSinCubrir(c) {
 		sinCubrir = append(sinCubrir, ip.String())
 	}
+	estado, dias := servidor.Vencimiento(c, a.op.Ahora())
 	resp["certificado"] = map[string]any{"vence": c.NotAfter.Format("02/01/2006"), "nombres": c.DNSNames, "ips": ips,
-		"ips_sin_cubrir": sinCubrir, "huella": servidor.Huella(c)}
+		"ips_sin_cubrir": sinCubrir, "huella": servidor.Huella(c), "estado": estado, "dias_restantes": dias}
 	return resp
+}
+
+// avisoCertificado resume el vencimiento para Inicio: nil si el certificado está vigente.
+func (a *Admin) avisoCertificado() any {
+	cert, ok := a.estadoTLS()["certificado"].(map[string]any)
+	if !ok || cert["estado"] == servidor.CertificadoVigente {
+		return nil
+	}
+	return map[string]any{"estado": cert["estado"], "vence": cert["vence"], "dias_restantes": cert["dias_restantes"],
+		"autofirmado": a.op.Config.Servidor.ModoTLS == config.TLSAutofirmado}
 }
 
 func (a *Admin) guardarAjustes(w http.ResponseWriter, r *http.Request) {

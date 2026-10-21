@@ -387,6 +387,15 @@
         h('div', {}, h('strong', {}, r.solicitudes_pendientes === 1 ? '1 sitio web quiere imprimir' : `${r.solicitudes_pendientes} sitios web quieren imprimir`),
           h('div', { class: 'pequeno' }, 'Intentaron imprimir desde un origen que no está aprobado. No imprimen hasta que los apruebes.')),
         h('a', { class: 'boton primario', href: '#solicitudes' }, 'Revisar solicitudes')),
+      r.certificado && h('div', { class: 'aviso-caja', role: 'alert' },
+        h('div', {},
+          h('strong', {}, r.certificado.estado === 'vencido'
+            ? `El certificado HTTPS venció el ${r.certificado.vence}: las aplicaciones no pueden imprimir`
+            : `El certificado HTTPS vence en ${r.certificado.dias_restantes} días (${r.certificado.vence})`),
+          h('div', { class: 'pequeno' }, r.certificado.autofirmado
+            ? 'Regenéralo en Ajustes → HTTPS y vuelve a instalarlo en cada equipo que imprime.'
+            : 'Renueva los archivos del certificado configurados en config.toml; el puente los toma sin reiniciar.')),
+        h('a', { class: 'boton primario', href: '#ajustes' }, 'Ir a Ajustes')),
       r.actualizacion && h('div', { class: 'aviso-caja', role: 'status' },
         h('div', {}, h('strong', {}, `Hay una versión nueva de PRISMA: ${r.actualizacion.version}`),
           h('div', { class: 'pequeno' }, `Tienes la ${r.puente.version}. En el equipo del puente, como administrador, ejecuta «prisma actualizar», o descarga el instalador de la página de la versión.`)),
@@ -456,7 +465,8 @@
     const bDiag = h('button', { class: 'boton chico', type: 'button', onclick: async () => {
       try {
         const r = await conEspera(bDiag, () => api.post(`${ruta}/diagnostico`));
-        mostrar(`Ticket de diagnóstico enviado (trabajo ${r.trabajo_id}).`, 'ok');
+        if (r.aviso) mostrar(`Ticket de diagnóstico enviado (trabajo ${r.trabajo_id}), con un aviso: ${r.aviso}`, 'aviso');
+        else mostrar(`Ticket de diagnóstico enviado (trabajo ${r.trabajo_id}).`, 'ok');
         dialogo({ titulo: 'Ticket de diagnóstico', ancho: 460, cuerpo: h('div', { class: 'pila' },
           h('p', { class: 'tenue pequeno' }, 'Así se ve el ticket que se acaba de imprimir. Compara la regla de columnas y los acentos con el papel.'),
           h('pre', { class: 'papel' }, r.vista)) });
@@ -467,6 +477,7 @@
     const capacidades = [
       imp.soporta_corte ? 'cuchilla' : 'sin cuchilla', imp.soporta_cajon && 'cajón',
       imp.soporta_qr_nativo ? 'QR nativo' : 'QR como imagen', !imp.soporta_imagen && 'sin imágenes',
+      imp.confirmar_impresion && 'confirma la impresión',
     ].filter(Boolean).join(' · ');
     return h('article', { class: 'tarjeta' },
       h('div', { class: 'tarjeta-cabeza' },
@@ -570,6 +581,7 @@
       alias: '', nombre: '', tipo: borrador.tipo, destino: borrador.destino, ancho_mm: 80, ...PERFILES[80],
       pagina_codigos: 'CP858', comando_pagina_codigos: 19, soporta_corte: true, soporta_cajon: false, soporta_qr_nativo: true,
       soporta_codigo_barras_nativo: true, soporta_imagen: true, baudios: borrador.baudios || 0, activa: true,
+      confirmar_impresion: false,
     };
     const campo = (id, etiqueta, control, ayuda) => h('label', { class: 'campo', for: id }, h('span', {}, etiqueta), control, ayuda && h('span', { class: 'ayuda' }, ayuda));
     const alias = h('input', { type: 'text', id: 'alias', class: 'mono', value: i.alias, required: true, pattern: '[a-z0-9][a-z0-9_\\-]{0,31}', autocomplete: 'off', placeholder: 'caja' });
@@ -594,13 +606,21 @@
       imagen: casilla('cap-imagen', 'Imprime imágenes (logos)', i.soporta_imagen),
       activa: casilla('activa', 'Activa (las aplicaciones pueden usarla)', i.activa),
     };
+    const confirmarImp = casilla('confirmar', 'Confirmar impresión: preguntar a la impresora si recibió cada ticket', i.confirmar_impresion);
+    const filaConfirmar = h('div', { class: 'pila' }, confirmarImp, h('p', { class: 'ayuda' },
+      'Sin esto, un ticket corto se da por impreso aunque la impresora se haya apagado mientras lo recibía. ',
+      'Actívalo si la impresora responde a la consulta de estado (casi todas las ESC/POS): pruébalo con «Ticket de diagnóstico». ',
+      'Si el diagnóstico falla con TIEMPO_AGOTADO, tu impresora no la admite: desactívalo.'));
     const ancho = h('div', { class: 'segmentos', role: 'group', 'aria-label': 'Ancho del papel' }, [58, 80].map((mm) =>
       h('button', { type: 'button', 'aria-pressed': String(i.ancho_mm === mm), onclick: (ev) => {
         i.ancho_mm = mm;
         for (const b of ancho.children) b.setAttribute('aria-pressed', String(b === ev.currentTarget));
         columnas.value = PERFILES[mm].columnas; columnasB.value = PERFILES[mm].columnas_fuente_b; anchoPx.value = PERFILES[mm].ancho_px;
       } }, `${mm} mm`)));
-    const actualizarTipo = () => { filaBaudios.hidden = tipo.value !== 'bluetooth'; };
+    const actualizarTipo = () => {
+      filaBaudios.hidden = tipo.value !== 'bluetooth';
+      filaConfirmar.hidden = tipo.value !== 'red' && tipo.value !== 'bluetooth';
+    };
     tipo.addEventListener('change', actualizarTipo);
     actualizarTipo();
 
@@ -612,6 +632,7 @@
       soporta_qr_nativo: caps.qr.querySelector('input').checked, soporta_codigo_barras_nativo: caps.barras.querySelector('input').checked,
       soporta_imagen: caps.imagen.querySelector('input').checked, activa: caps.activa.querySelector('input').checked,
       baudios: tipo.value === 'bluetooth' ? +baudios.value : 0,
+      confirmar_impresion: (tipo.value === 'red' || tipo.value === 'bluetooth') && confirmarImp.querySelector('input').checked,
     });
     const resultado = h('p', { class: 'resultado', hidden: true });
     const bProbar = h('button', { class: 'boton', type: 'button', onclick: async () => {
@@ -646,7 +667,7 @@
           h('div', { class: 'campos' }, campo('columnas', 'Columnas (fuente A)', columnas), campo('columnas-b', 'Columnas (fuente B)', columnasB), campo('ancho-px', 'Puntos por línea', anchoPx))))),
     h('section', { class: 'tarjeta' }, h('h2', {}, 'Capacidades'),
       h('fieldset', {}, h('legend', { class: 'tenue pequeno' }, 'Lo que no tenga, PRISMA lo resuelve de otra forma o lo omite con un aviso.'),
-        caps.corte, caps.cajon, caps.qr, caps.barras, caps.imagen, caps.activa)),
+        caps.corte, caps.cajon, caps.qr, caps.barras, caps.imagen, caps.activa), filaConfirmar),
     resultado,
     h('div', { class: 'acciones' }, bProbar, bGuardar));
 
@@ -915,6 +936,9 @@
             } }, 'Olvidar'))))))));
     agregar(vista,
       encabezado('Solicitudes de origen', 'Páginas web que intentaron imprimir sin estar aprobadas. No imprimen hasta que las apruebes.'),
+      // El puente recuerda hasta 200; más de 150 suele indicar que alguien de la red registra orígenes inventados.
+      solicitudes.length >= 150 && h('p', { class: 'nota aviso' },
+        `Hay ${solicitudes.length} solicitudes guardadas (el máximo es 200). Muchas solicitudes de orígenes desconocidos pueden indicar que un equipo de la red intenta imprimir sin permiso. Al llegar al máximo, cada solicitud nueva reemplaza a la pendiente más antigua; las que no tienen actividad se olvidan solas a los 30 días.`),
       h('section', { class: 'pila' }, h('h2', {}, `Pendientes (${pendientes.length})`), tabla(pendientes, false)),
       h('section', { class: 'pila' }, h('h2', {}, `Rechazadas (${rechazadas.length})`), tabla(rechazadas, true)));
   }
@@ -1086,7 +1110,9 @@
         h('dt', {}, 'Modo'), h('dd', {}, { autofirmado: 'Certificado autofirmado', archivos: 'Certificado propio (archivos)', solo_localhost_http: 'HTTP solo en este equipo' }[a.tls.modo]),
         h('dt', {}, 'Dirección'), h('dd', { class: 'mono' }, a.direccion),
         cert && [
-          h('dt', {}, 'Vence'), h('dd', {}, cert.vence),
+          h('dt', {}, 'Vence'), h('dd', {}, cert.vence,
+            cert.estado === 'vencido' ? h('span', { class: 'pastilla error' }, 'Vencido')
+              : cert.estado === 'por_vencer' ? h('span', { class: 'pastilla aviso' }, `Vence en ${cert.dias_restantes} días`) : null),
           h('dt', {}, 'Nombres'), h('dd', {}, cert.nombres.map((n) => h('span', { class: 'chip' }, n))),
           h('dt', {}, 'IPs'), h('dd', {}, cert.ips.map((n) => h('span', { class: 'chip' }, n))),
           h('dt', {}, 'Huella SHA-256'), h('dd', { class: 'mono pequeno' }, cert.huella)]),

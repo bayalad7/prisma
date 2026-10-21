@@ -14,13 +14,13 @@
   const impresoras = [
     { alias: 'caja', nombre: 'Caja principal', tipo: 'red', destino: '192.168.1.50:9100', ancho_mm: 80, columnas: 48, columnas_fuente_b: 64, ancho_px: 576,
       pagina_codigos: 'CP858', comando_pagina_codigos: 19, soporta_qr_nativo: true, soporta_corte: true, soporta_cajon: true, soporta_imagen: true,
-      soporta_codigo_barras_nativo: true, baudios: 0, activa: true, estado: 'en_linea', pendientes: 0 },
+      soporta_codigo_barras_nativo: true, confirmar_impresion: true, baudios: 0, activa: true, estado: 'en_linea', pendientes: 0 },
     { alias: 'cocina', nombre: 'Cocina', tipo: 'usb', destino: 'POS-80C', ancho_mm: 80, columnas: 48, columnas_fuente_b: 64, ancho_px: 576,
       pagina_codigos: 'CP850', comando_pagina_codigos: 2, soporta_qr_nativo: false, soporta_corte: true, soporta_cajon: false, soporta_imagen: true,
-      soporta_codigo_barras_nativo: true, baudios: 0, activa: true, estado: 'ocupada', pendientes: 2 },
+      soporta_codigo_barras_nativo: true, confirmar_impresion: false, baudios: 0, activa: true, estado: 'ocupada', pendientes: 2 },
     { alias: 'barra', nombre: 'Barra de bebidas', tipo: 'bluetooth', destino: 'COM5', ancho_mm: 58, columnas: 32, columnas_fuente_b: 42, ancho_px: 384,
       pagina_codigos: 'CP858', comando_pagina_codigos: 19, soporta_qr_nativo: true, soporta_corte: false, soporta_cajon: false, soporta_imagen: true,
-      soporta_codigo_barras_nativo: true, baudios: 9600, activa: true, estado: 'fuera_de_linea', ultimo_error: 'IMPRESORA_INALCANZABLE', pendientes: 0 },
+      soporta_codigo_barras_nativo: true, confirmar_impresion: false, baudios: 9600, activa: true, estado: 'fuera_de_linea', ultimo_error: 'IMPRESORA_INALCANZABLE', pendientes: 0 },
   ];
   const clientes = [
     { id: 'cli_znkoec7rsug3dioh', nombre: 'Punto de venta web', nivel: 2, llave_prefijo: 'pk_7ax6nj4r4a', exigir_llave: false,
@@ -151,7 +151,7 @@
   const ajustes = { nombre_puente: 'Abarrotes La Esperanza', limite_ip: 120, limite_cliente: 60, retencion_dias: 30, solo_red_privada: true, buscar_actualizaciones: true };
   const tls = {
     modo: 'autofirmado',
-    certificado: { vence: '17 ene 2029', nombres: ['localhost', 'caja-pc', 'caja-pc.local'], ips: ['127.0.0.1', '::1', '192.168.1.10'], ips_sin_cubrir: [],
+    certificado: { vence: '17 ene 2029', estado: 'vigente', dias_restantes: 820, nombres: ['localhost', 'caja-pc', 'caja-pc.local'], ips: ['127.0.0.1', '::1', '192.168.1.10'], ips_sin_cubrir: [],
       huella: '86:D5:2D:B3:E6:F2:DF:D6:2C:4A:17:8F:25:D6:00:48:F0:94:01:D3:4B:83:41:4D:8C:D9:E9:5B:E5:71:25:16' },
   };
   const direccion = 'https://192.168.1.10:8443';
@@ -185,6 +185,7 @@
       return {
         puente: { nombre: ajustes.nombre_puente, version: '0.6.0', direccion, modo_tls: tls.modo, iniciado: iso(ahora - 3 * dia - 2 * hora) },
         impresoras: impresoras.map(({ alias, nombre, estado, pendientes }) => ({ alias, nombre, estado, pendientes })),
+        certificado: null,
         actualizacion: ajustes.buscar_actualizaciones ? { version: '0.7.0', url: 'https://github.com/bayalad7/prisma/releases/tag/v0.7.0', fecha: iso(ahora - 2 * dia) } : null,
         solicitudes_pendientes: solicitudes.filter((s) => s.estado === 'pendiente').length,
         trabajos_hoy: { completados: hoy.filter((t) => t.estado === 'completado').length, fallidos: hoy.filter((t) => t.estado === 'fallido').length },

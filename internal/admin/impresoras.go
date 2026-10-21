@@ -40,6 +40,7 @@ type impresoraJSON struct {
 	SoportaCajon              bool        `json:"soporta_cajon"`
 	SoportaImagen             bool        `json:"soporta_imagen"`
 	SoportaCodigoBarrasNativo bool        `json:"soporta_codigo_barras_nativo"`
+	ConfirmarImpresion        bool        `json:"confirmar_impresion"`
 	Baudios                   int         `json:"baudios"`
 	Activa                    bool        `json:"activa"`
 	Estado                    cola.Estado `json:"estado,omitempty"`
@@ -54,7 +55,7 @@ func (a *Admin) aJSON(imp almacen.Impresora) impresoraJSON {
 		PaginaCodigos: imp.PaginaCodigos, ComandoPaginaCodigos: imp.ComandoPaginaCodigos,
 		SoportaQRNativo: imp.SoportaQRNativo, SoportaCorte: imp.SoportaCorte, SoportaCajon: imp.SoportaCajon,
 		SoportaImagen: imp.SoportaImagen, SoportaCodigoBarrasNativo: imp.SoportaCodigoBarrasNativo,
-		Baudios: imp.Baudios, Activa: imp.Activa, Estado: cola.Desconocido,
+		ConfirmarImpresion: imp.ConfirmarImpresion, Baudios: imp.Baudios, Activa: imp.Activa, Estado: cola.Desconocido,
 	}
 	if !imp.Activa {
 		j.Estado = "inactiva"
@@ -73,7 +74,7 @@ func (j impresoraJSON) aImpresora() (almacen.Impresora, error) {
 		PaginaCodigos: strings.ToUpper(j.PaginaCodigos), ComandoPaginaCodigos: j.ComandoPaginaCodigos,
 		SoportaQRNativo: j.SoportaQRNativo, SoportaCorte: j.SoportaCorte, SoportaCajon: j.SoportaCajon,
 		SoportaImagen: j.SoportaImagen, SoportaCodigoBarrasNativo: j.SoportaCodigoBarrasNativo,
-		Baudios: j.Baudios, Activa: j.Activa,
+		ConfirmarImpresion: j.ConfirmarImpresion, Baudios: j.Baudios, Activa: j.Activa,
 	}
 	if imp.Nombre == "" {
 		imp.Nombre = imp.Alias
@@ -105,6 +106,10 @@ func (j impresoraJSON) aImpresora() (almacen.Impresora, error) {
 		}
 	} else {
 		imp.Baudios = 0
+	}
+	// Solo los conectores de red y Bluetooth pueden leer la respuesta de la impresora.
+	if imp.Tipo != almacen.ConexionRed && imp.Tipo != almacen.ConexionBluetooth {
+		imp.ConfirmarImpresion = false
 	}
 	return imp, nil
 }
@@ -311,7 +316,11 @@ func (a *Admin) imprimirPrueba(w http.ResponseWriter, r *http.Request, imp *alma
 			codigo = "ERROR_INTERNO"
 		}
 	}
-	if err := a.op.Almacen.Trabajos.Finalizar(context.WithoutCancel(ctx), id, estado, codigo, nil, res.Duracion); err != nil {
+	var advertencias []string
+	if res.Aviso != nil {
+		advertencias = []string{res.Aviso.Codigo}
+	}
+	if err := a.op.Almacen.Trabajos.Finalizar(context.WithoutCancel(ctx), id, estado, codigo, advertencias, res.Duracion); err != nil {
 		a.op.Log.Error("no se pudo guardar el resultado del trabajo", "trabajo", id, "error", err.Error())
 	}
 	a.op.Log.Info("trabajo", "trabajo", id, "cliente", ClientePanel, "impresora", imp.Alias, "estado", estado,
@@ -320,7 +329,11 @@ func (a *Admin) imprimirPrueba(w http.ResponseWriter, r *http.Request, imp *alma
 		servidor.ResponderError(w, r, res.Err, id, a.op.Log)
 		return
 	}
-	responder(w, map[string]any{"ok": true, "trabajo_id": id, "vista": dev.VistaTexto(dev.Simular(datos, *imp), false)})
+	resp := map[string]any{"ok": true, "trabajo_id": id, "vista": dev.VistaTexto(dev.Simular(datos, *imp), false)}
+	if res.Aviso != nil {
+		resp["aviso"] = res.Aviso.Mensaje
+	}
+	responder(w, resp)
 }
 
 func (a *Admin) diagnostico(w http.ResponseWriter, r *http.Request) {

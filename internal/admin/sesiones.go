@@ -179,9 +179,10 @@ func (a *Admin) sesionValida(r *http.Request) (*sesion, string) {
 	return ses, token
 }
 
+// debeCambiar falla cerrado: si no se puede leer el ajuste, se exige el cambio de contraseña.
 func (a *Admin) debeCambiar(ctx context.Context) bool {
-	v, _, _ := a.op.Almacen.Ajustes.Obtener(ctx, almacen.AjusteDebeCambiar)
-	return v == "1"
+	v, _, err := a.op.Almacen.Ajustes.Obtener(ctx, almacen.AjusteDebeCambiar)
+	return err != nil || v == "1"
 }
 
 // conSesion exige una sesión válida y, en las peticiones que modifican, el token CSRF y el mismo
