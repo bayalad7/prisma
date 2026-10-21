@@ -20,8 +20,8 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
       - id: version
@@ -36,7 +36,7 @@ jobs:
         run: make build-todo VERSION=${{ steps.version.outputs.version }}
       - name: El binario lleva la versión
         run: ./dist/prisma-linux-amd64 version | grep -F "PRISMA ${{ steps.version.outputs.version }}"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: binarios
           path: dist/prisma-*
@@ -45,11 +45,11 @@ jobs:
     needs: binarios
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: binarios
           path: dist
@@ -66,7 +66,7 @@ jobs:
           done
           curl -skf -o /dev/null https://localhost:8443/admin/
           sudo apt-get purge -y prisma
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: deb
           path: dist/*.deb
@@ -77,8 +77,8 @@ jobs:
     env:
       FIRMAR: ${{ secrets.WINDOWS_PFX_BASE64 != '' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: binarios
           path: dist
@@ -124,7 +124,7 @@ jobs:
           if (-not $ok) { exit 1 }
           Start-Process "$env:ProgramFiles\PRISMA\unins000.exe" -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES' -Wait
           if (Get-Service PRISMA -ErrorAction SilentlyContinue) { 'el servicio sigue instalado'; exit 1 }
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: windows
           path: |
@@ -137,8 +137,8 @@ jobs:
     env:
       FIRMAR: ${{ secrets.APPLE_CERTIFICADOS_P12_BASE64 != '' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: binarios
           path: dist
@@ -176,7 +176,7 @@ jobs:
           done
           curl -skf -o /dev/null https://localhost:8443/admin/
           sudo prisma servicio desinstalar
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: macos
           path: dist/*.pkg
@@ -187,15 +187,15 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # Los binarios de Windows del artefacto «windows» están firmados (si hay certificado): se
       # descargan al final para que reemplacen a los del artefacto «binarios».
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: "{binarios,deb,macos}"
           path: dist
           merge-multiple: true
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: windows
           path: dist
@@ -228,8 +228,8 @@ jobs:
     needs: publicar
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
