@@ -186,9 +186,13 @@ describe('diagnóstico', () => {
     await assert.rejects(prisma.salud(), { codigo: 'PERMISO_RED_LOCAL_DENEGADO' });
   }));
 
-  test('navegador: primera conexión fallida → certificado o puente apagado', () => enNavegador({}, async () => {
-    const prisma = new Prisma({ url: 'https://10.0.0.3:8443', reintentos: 0, fetch: fetchNavegador({ responde: false }) });
+  test('navegador: primera conexión fallida → certificado o puente apagado, sin reintentar', () => enNavegador({}, async () => {
+    let intentos = 0;
+    const fetchContado = async (url, init) => { if (init.mode !== 'no-cors') intentos++; return fetchNavegador({ responde: false })(url, init); };
+    const prisma = new Prisma({ url: 'https://10.0.0.3:8443', espera_reintento_ms: 5, fetch: fetchContado });
     await assert.rejects(prisma.salud(), (e) => {
+      assert.equal(intentos, 1, 'no reintenta: el certificado no se arregla esperando');
+      assert.equal(e.reintentable, false);
       assert.equal(e.codigo, 'PUENTE_INALCANZABLE');
       assert.deepEqual(e.causas_posibles, ['CERTIFICADO_NO_CONFIABLE', 'PUENTE_APAGADO_O_FUERA_DE_RED']);
       assert.match(e.sugerencia, /https:\/\/10\.0\.0\.3:8443\/v1\/salud/);

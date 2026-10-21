@@ -16,6 +16,9 @@ SDK para imprimir tickets en un puente [PRISMA](https://github.com/bayalad7/pris
 </script>
 ```
 
+> ⏳ Mientras el paquete no esté publicado en npm, esa dirección responde 404. Usa
+> `https://cdn.jsdelivr.net/gh/bayalad7/prisma@develop/sdk/js/dist/prisma.umd.js`.
+
 ```sh
 npm install @bayalad7/prisma
 ```

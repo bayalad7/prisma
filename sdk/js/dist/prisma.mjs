@@ -721,7 +721,8 @@ export class Prisma {
     const error = this._inalcanzable(e, `No se pudo conectar con el puente en ${this.url}. Si es la primera vez desde este equipo, lo más probable es que el navegador no confíe en su certificado.`,
       `Abre ${this.url}/v1/salud en una pestaña: si aparece una advertencia de certificado, instala el certificado del puente (docs/tls.md); si la página no carga, revisa que el puente esté encendido y en la misma red.`,
       ['CERTIFICADO_NO_CONFIABLE', 'PUENTE_APAGADO_O_FUERA_DE_RED']);
-    error.reintentable = true;
+    // Sin reintentos: lo más probable es el certificado, que no se arregla esperando, y así la
+    // persona ve el diagnóstico de inmediato en vez de tras unos segundos.
     return error;
   }
 
