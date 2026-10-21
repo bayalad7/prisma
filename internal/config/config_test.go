@@ -220,3 +220,18 @@ func TestLimites(t *testing.T) {
 		t.Fatalf("esperaba error de límite negativo: %v", err)
 	}
 }
+
+// La configuración que copian los instaladores (Inno Setup y el .deb) es válida y nunca activa
+// el modo de desarrollo, que habilita «prisma imprimir» sin autorización.
+func TestConfiguracionDeLosInstaladores(t *testing.T) {
+	cfg, origen, err := Cargar("../../empaquetado/config.toml")
+	if err != nil {
+		t.Fatalf("%s: %v", origen.Ruta, err)
+	}
+	if cfg.Dev.ModoDesarrollo {
+		t.Fatal("empaquetado/config.toml activa modo_desarrollo")
+	}
+	if cfg.Servidor.ModoTLS != TLSAutofirmado || cfg.Servidor.Puerto != 8443 {
+		t.Fatalf("los instaladores asumen HTTPS autofirmado en el puerto 8443: %+v", cfg.Servidor)
+	}
+}
