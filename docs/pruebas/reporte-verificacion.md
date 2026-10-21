@@ -2,7 +2,7 @@
 
 - **Fecha:** 21 de octubre de 2026
 - **Versión revisada:** `develop` en `9872a39`, más las correcciones de este reporte.
-- **Alcance:** código, seguridad, resiliencia y la experiencia del integrador. La matriz manual con hardware real está en [matriz.md](matriz.md).
+- **Alcance:** código, seguridad, resiliencia y la experiencia del integrador. La matriz manual con hardware real está en [matriz.md](matriz.md); el dueño del proyecto la ejecutó completa y **todos los casos pasaron** (21 de octubre de 2026).
 
 ## Resumen
 
@@ -26,6 +26,7 @@ Lo que se ejecutó:
 | Contenido de tickets, llaves o contraseñas en los logs | ✅ Ninguno (revisadas las 44 llamadas a `slog`). |
 | Resiliencia (6 escenarios contra el binario real) | ✅ con C2, M6 y A2 corregidos; M3 cubierto con *Confirmar impresión*. |
 | Inicio rápido del integrador, al pie de la letra | ✅ Con A1 y B6 corregidos. |
+| Matriz manual con hardware real ([matriz.md](matriz.md)) | ✅ Todos los casos pasaron. |
 
 ---
 
@@ -139,7 +140,7 @@ Quien sigue la guía obtiene `Prisma is not defined` y el botón no hace nada, s
   - La impresora virtual responde a la consulta.
 - **Documentado:** [conectores.md](../conectores.md#confirmar-impresión), [problemas-comunes.md](../integradores/problemas-comunes.md#impreso-pero-no-salió) y [panel.md](../panel.md).
 - **Pruebas:** `TestRedConfirmarImpresion` (responde, fuera de línea, sin respuesta, cierra), `TestConfirmarConImpresoraVirtual`, `TestAvisoDelConectorEsExito` y `TestConfirmarImpresionFueraDeLinea`.
-- **Pendiente:** probar con impresoras reales (matriz R1 y R1b).
+- **✅ Probado con impresoras reales:** los casos R1 y R1b de la matriz pasaron.
 
 ### M4. Al superar el límite por IP, el SDK diagnostica mal el problema
 
@@ -180,7 +181,7 @@ Todos ✅ **corregidos**.
 | B6 | Inicio rápido, pasos confusos (además de A1): ver la [sección siguiente](#experiencia-del-integrador-inicio-rápido-al-pie-de-la-letra). | Ajustar la guía. |
 | B7 | En la primera conexión fallida desde el navegador (por ejemplo, un certificado no confiable), el SDK reintenta 2 veces antes de explicar: unos 4 s sin respuesta. | No reintentar cuando `causas_posibles` incluye `CERTIFICADO_NO_CONFIABLE`, o mostrar el diagnóstico desde el primer fallo. |
 | B8 | `debeCambiar` falla abierto si la base da error al leer el ajuste. Requiere una sesión ya válida. | Tratar el error como «debe cambiar». |
-| B9 | macOS: `prisma servicio estado` sin `sudo` decía «detenido» con el servicio en marcha. kardianos usa `launchctl list`, que sin root consulta el dominio del usuario y no ve el LaunchDaemon del sistema. Lo detectó el CI. | Sin root, consultar `launchctl print system/<label>`. ✅ Corregido (`TestLaunchdEnMarcha`); se confirma en el próximo CI. |
+| B9 | macOS: `prisma servicio estado` sin `sudo` decía «detenido» con el servicio en marcha. kardianos usa `launchctl list`, que sin root consulta el dominio del usuario y no ve el LaunchDaemon del sistema. Lo detectó el CI. | Sin root, consultar `launchctl print system/<label>`. ✅ Corregido (`TestLaunchdEnMarcha`) y confirmado en el CI (`39695928022`, todos los jobs en verde). |
 
 ---
 
