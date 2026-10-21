@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -211,6 +212,20 @@ func TestErrorDelConectorLlegaAlResultado(t *testing.T) {
 	}
 }
 
+func TestAvisoDelConectorEsExito(t *testing.T) {
+	c := Nueva(Opciones{})
+	defer c.Cerrar()
+	aviso := &conector.Aviso{Codigo: conector.AvisoFueraDeLinea, Mensaje: "tapa abierta"}
+	c.Registrar("caja", &falso{falla: aviso})
+	r := esperar(t, mustEncolar(t, c, "caja", "t1"))
+	if !r.OK || r.Err != nil || r.Aviso != aviso {
+		t.Fatalf("un aviso no es un fallo: %+v", r)
+	}
+	if info, _ := c.EstadoDe("caja"); info.Estado != FueraDeLinea || info.UltimoError != conector.AvisoFueraDeLinea {
+		t.Fatalf("estado: %+v", info)
+	}
+}
+
 func TestQuitarYCerrarRespondenALosPendientes(t *testing.T) {
 	c := Nueva(Opciones{})
 	f := &falso{liberar: make(chan struct{})}
@@ -247,5 +262,41 @@ func TestRegistrarDeNuevoCambiaElConector(t *testing.T) {
 	}
 	if len(c.Estados()) != 1 {
 		t.Fatal("no debe duplicarse la impresora")
+	}
+}
+
+// Ninguna goroutine sobrevive a Quitar ni a Cerrar, tampoco con trabajos en espera.
+func TestSinFugasDeGoroutines(t *testing.T) {
+	antes := runtime.NumGoroutine()
+	c := Nueva(Opciones{IntervaloPrueba: time.Hour})
+	var canales []<-chan Resultado
+	for i := range 8 {
+		alias := fmt.Sprintf("imp%d", i)
+		c.Registrar(alias, &falso{demora: 20 * time.Millisecond})
+		for j := range 5 {
+			r, err := c.Encolar(alias, fmt.Sprintf("t%d-%d", i, j), []byte("x"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			canales = append(canales, r)
+		}
+	}
+	c.Quitar("imp0")
+	c.Registrar("imp0", &falso{}) // volver a registrar tras quitar
+	c.Cerrar()
+	// Todos los trabajos reciben respuesta: impresos o ErrCerrada.
+	for _, r := range canales {
+		select {
+		case <-r:
+		case <-time.After(5 * time.Second):
+			t.Fatal("un trabajo quedó sin respuesta")
+		}
+	}
+	limite := time.Now().Add(5 * time.Second)
+	for runtime.NumGoroutine() > antes {
+		if time.Now().After(limite) {
+			t.Fatalf("goroutines: %d antes, %d después", antes, runtime.NumGoroutine())
+		}
+		time.Sleep(10 * time.Millisecond)
 	}
 }

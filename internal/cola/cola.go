@@ -32,7 +32,8 @@ type Resultado struct {
 	TrabajoID string
 	OK        bool
 	Duracion  time.Duration
-	Err       error // *conector.Error, ErrCerrada u otro
+	Err       error           // *conector.Error, ErrCerrada u otro
+	Aviso     *conector.Aviso // el trabajo llegó a la impresora, pero ella informó un problema
 }
 
 // Opciones de la cola. Los valores cero usan los valores por defecto.
@@ -264,10 +265,17 @@ func (c *Cola) imprimir(ctx context.Context, imp *impresora, t *trabajo) {
 	inicio := time.Now()
 	err := imp.conectorActual().Enviar(ctx, t.datos)
 	fin()
-	r := Resultado{TrabajoID: t.id, OK: err == nil, Duracion: time.Since(inicio), Err: err}
-	if err != nil {
+	var aviso *conector.Aviso
+	if errors.As(err, &aviso) {
+		err = nil
+	}
+	r := Resultado{TrabajoID: t.id, OK: err == nil, Duracion: time.Since(inicio), Err: err, Aviso: aviso}
+	switch {
+	case err != nil:
 		c.cambiar(imp, FueraDeLinea, err)
-	} else {
+	case aviso != nil:
+		c.cambiar(imp, FueraDeLinea, aviso)
+	default:
 		c.cambiar(imp, EnLinea, nil)
 	}
 	c.terminar(imp, t, r)
