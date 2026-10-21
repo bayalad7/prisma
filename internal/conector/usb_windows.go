@@ -18,6 +18,7 @@ var (
 	procStartDocPrinterW = winspool.NewProc("StartDocPrinterW")
 	procStartPagePrinter = winspool.NewProc("StartPagePrinter")
 	procWritePrinter     = winspool.NewProc("WritePrinter")
+	procAbortPrinter     = winspool.NewProc("AbortPrinter")
 	procEndPagePrinter   = winspool.NewProc("EndPagePrinter")
 	procEndDocPrinter    = winspool.NewProc("EndDocPrinter")
 	procGetPrinterW      = winspool.NewProc("GetPrinterW")
@@ -104,7 +105,11 @@ func (w *Winspool) Enviar(ctx context.Context, datos []byte) error {
 			datos = datos[escritos:]
 		}
 		return nil
-	}, nil)
+	}, func() {
+		// AbortPrinter borra el trabajo de la cola de Windows y desbloquea un WritePrinter colgado
+		// (por ejemplo, con el spooler detenido).
+		procAbortPrinter.Call(uintptr(h))
+	})
 }
 
 // Probar abre la impresora y revisa su estado en la cola de Windows.

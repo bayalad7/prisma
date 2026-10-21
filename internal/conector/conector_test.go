@@ -3,6 +3,7 @@ package conector
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -15,6 +16,7 @@ import (
 	"time"
 
 	"github.com/bayalad7/prisma/internal/almacen"
+	"github.com/bayalad7/prisma/internal/dev"
 )
 
 // servidorTCP acepta conexiones y entrega lo recibido en cada una por el canal.
@@ -221,5 +223,140 @@ func TestHostsYEscaneo(t *testing.T) {
 	ds := EscanearRed(context.Background(), OpcionesDeteccion{Subredes: []*net.IPNet{red}, Puerto: puerto, TiempoHost: time.Second})
 	if len(ds) != 1 || ds[0].Destino != ln.Addr().String() || ds[0].Tipo != "red" {
 		t.Fatalf("escaneo: %+v", ds)
+	}
+}
+
+// Una escritura que no se puede interrumpir (por ejemplo, WritePrinter con el spooler colgado)
+// no bloquea para siempre: conPlazo la abandona poco después de cancelarla.
+func TestConPlazoAbandonaLoQueNoSeDesbloquea(t *testing.T) {
+	anterior := esperaTrasCancelar
+	esperaTrasCancelar = 100 * time.Millisecond
+	defer func() { esperaTrasCancelar = anterior }()
+	colgada := make(chan struct{})
+	defer close(colgada)
+	cancelada := false
+	inicio := time.Now()
+	err := conPlazo(context.Background(), 50*time.Millisecond, func() error { <-colgada; return nil }, func() { cancelada = true })
+	if !errors.Is(err, context.DeadlineExceeded) || !cancelada {
+		t.Fatalf("err %v, cancelada %v", err, cancelada)
+	}
+	if d := time.Since(inicio); d > 2*time.Second {
+		t.Fatalf("tardó %s", d)
+	}
+}
+
+// impresoraConEstado lee hasta la consulta DLE EOT 1 y responde con estado (o no responde si
+// estado es negativo). Entrega por el canal lo que recibió antes de la consulta.
+func impresoraConEstado(t *testing.T, estado int) (string, <-chan []byte) {
+	t.Helper()
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { ln.Close() })
+	recibido := make(chan []byte, 1)
+	go func() {
+		c, err := ln.Accept()
+		if err != nil {
+			return
+		}
+		defer c.Close()
+		var datos []byte
+		buf := make([]byte, 4096)
+		for !bytes.HasSuffix(datos, consultaEstado) {
+			n, err := c.Read(buf)
+			datos = append(datos, buf[:n]...)
+			if err != nil {
+				return
+			}
+		}
+		recibido <- bytes.TrimSuffix(datos, consultaEstado)
+		if estado >= 0 {
+			c.Write([]byte{byte(estado)})
+		}
+		io.Copy(io.Discard, c)
+	}()
+	return ln.Addr().String(), recibido
+}
+
+func TestRedConfirmarImpresion(t *testing.T) {
+	ticket := []byte("\x1b@Hola\n\x1dVA\x00")
+	t.Run("en línea", func(t *testing.T) {
+		dir, recibido := impresoraConEstado(t, 0x12)
+		r := NuevoRed(dir)
+		r.Confirmar = true
+		if err := r.Enviar(context.Background(), ticket); err != nil {
+			t.Fatal(err)
+		}
+		if got := <-recibido; !bytes.Equal(got, ticket) {
+			t.Fatalf("recibido %q", got)
+		}
+	})
+	t.Run("fuera de línea", func(t *testing.T) {
+		dir, _ := impresoraConEstado(t, 0x1A) // bit 3: tapa abierta o sin papel
+		r := NuevoRed(dir)
+		r.Confirmar = true
+		err := r.Enviar(context.Background(), ticket)
+		var aviso *Aviso
+		if !errors.As(err, &aviso) || aviso.Codigo != AvisoFueraDeLinea || Codigo(err) != AvisoFueraDeLinea {
+			t.Fatalf("esperaba el aviso %s, obtuve %v", AvisoFueraDeLinea, err)
+		}
+	})
+	t.Run("sin respuesta", func(t *testing.T) {
+		dir, recibido := impresoraConEstado(t, -1)
+		r := NuevoRed(dir)
+		r.Confirmar, r.TiempoConfirmacion = true, 200*time.Millisecond
+		inicio := time.Now()
+		exigirCodigo(t, r.Enviar(context.Background(), ticket), ErrTiempoAgotado)
+		if d := time.Since(inicio); d > 3*time.Second {
+			t.Fatalf("tardó %v: no debe reintentar un envío que ya escribió", d)
+		}
+		<-recibido
+	})
+	t.Run("cierra sin responder", func(t *testing.T) {
+		dir, recibido := servidorTCP(t) // lee hasta el final y cierra: una impresora sin DLE EOT
+		r := NuevoRed(dir)
+		r.Confirmar, r.TiempoConfirmacion = true, 200*time.Millisecond
+		err := r.Enviar(context.Background(), ticket)
+		if c := Codigo(err); c != ErrTiempoAgotado && c != ErrImpresoraInalcanzable {
+			t.Fatalf("esperaba un fallo sin confirmación, obtuve %v", err)
+		}
+		<-recibido
+	})
+}
+
+func TestInterpretarEstado(t *testing.T) {
+	for b, quiero := range map[byte]string{0x12: "", 0x16: "", 0x1A: AvisoFueraDeLinea, 0x1E: AvisoFueraDeLinea, 0xFF: "", 0x00: ""} {
+		if got := Codigo(interpretarEstado(b)); got != quiero {
+			t.Errorf("0x%02X: %q, quiero %q", b, got, quiero)
+		}
+	}
+}
+
+func TestNuevoPasaConfirmar(t *testing.T) {
+	c, _ := Nuevo(almacen.Impresora{Tipo: almacen.ConexionRed, Destino: "10.0.0.1", ConfirmarImpresion: true})
+	if !c.(*Red).Confirmar {
+		t.Error("red: no pasó ConfirmarImpresion")
+	}
+	c, _ = Nuevo(almacen.Impresora{Tipo: almacen.ConexionBluetooth, Destino: "COM3", ConfirmarImpresion: true})
+	if !c.(*Serie).Confirmar {
+		t.Error("bluetooth: no pasó ConfirmarImpresion")
+	}
+}
+
+func TestConfirmarConImpresoraVirtual(t *testing.T) {
+	perfil, _ := dev.PerfilPrueba(80)
+	v := &dev.ImpresoraVirtual{Perfil: perfil, Directorio: t.TempDir(), Salida: io.Discard}
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancelar := context.WithCancel(context.Background())
+	defer cancelar()
+	go v.Servir(ctx, ln)
+	r := NuevoRed(ln.Addr().String())
+	r.Confirmar, r.TiempoConfirmacion = true, 2*time.Second
+	if err := r.Enviar(context.Background(), []byte("\x1b@Hola\n")); err != nil {
+		t.Fatalf("la impresora virtual debe confirmar: %v", err)
 	}
 }

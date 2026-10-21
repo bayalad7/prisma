@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"os"
+	"time"
 
 	"go.bug.st/serial"
 )
@@ -14,6 +16,9 @@ import (
 type Serie struct {
 	Puerto  string
 	Baudios int
+	// Confirmar consulta el estado después del ticket (DLE EOT 1) y espera la respuesta: en
+	// Bluetooth, Drain termina cuando los datos salieron del equipo, no cuando llegaron.
+	Confirmar bool
 }
 
 func NuevoSerie(puerto string, baudios int) *Serie {
@@ -34,6 +39,10 @@ func (s *Serie) Enviar(ctx context.Context, datos []byte) error {
 		return err
 	}
 	defer p.Close()
+	if s.Confirmar {
+		// Descarta lo que la impresora haya enviado antes, para no tomarlo como respuesta.
+		p.ResetInputBuffer()
+	}
 	err = conPlazo(ctx, TiempoEscritura, func() error {
 		for len(datos) > 0 {
 			n, err := p.Write(datos)
@@ -46,11 +55,36 @@ func (s *Serie) Enviar(ctx context.Context, datos []byte) error {
 	}, func() { p.Close() })
 	switch {
 	case err == nil:
+		if s.Confirmar {
+			return s.confirmar(ctx, p)
+		}
 		return nil
 	case errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled):
 		return errorTiempo("recibir los datos", err)
 	}
 	return s.traducir(err)
+}
+
+// confirmar envía la consulta de estado y espera un byte de respuesta.
+func (s *Serie) confirmar(ctx context.Context, p serial.Port) error {
+	var b [1]byte
+	err := conPlazo(ctx, TiempoConfirmacion+time.Second, func() error {
+		if _, err := p.Write(consultaEstado); err != nil {
+			return err
+		}
+		if err := p.SetReadTimeout(TiempoConfirmacion); err != nil {
+			return err
+		}
+		n, err := p.Read(b[:])
+		if err == nil && n == 0 {
+			err = os.ErrDeadlineExceeded
+		}
+		return err
+	}, func() { p.Close() })
+	if err != nil {
+		return errorSinConfirmacion(s.Puerto, err)
+	}
+	return interpretarEstado(b[0])
 }
 
 // Probar abre y cierra el puerto. En Bluetooth esto establece la conexión con la impresora,

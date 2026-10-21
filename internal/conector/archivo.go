@@ -38,11 +38,11 @@ func (a *Archivo) Enviar(ctx context.Context, datos []byte) error {
 		id = hex.EncodeToString(b)
 	}
 	base := filepath.Join(a.Directorio, a.ahora().Format("20060102-150405.000")+"-"+id)
-	if err := os.WriteFile(base+".bin", datos, 0o644); err != nil {
+	if err := os.WriteFile(base+".bin", datos, 0o640); err != nil {
 		return a.traducir(err)
 	}
 	vista := dev.VistaTexto(dev.Simular(datos, a.Perfil), false)
-	if err := os.WriteFile(base+".txt", []byte(vista), 0o644); err != nil {
+	if err := os.WriteFile(base+".txt", []byte(vista), 0o640); err != nil {
 		return a.traducir(err)
 	}
 	return nil

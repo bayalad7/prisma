@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"time"
@@ -14,6 +15,11 @@ type Red struct {
 	Direccion       string // host:puerto; sin puerto se usa 9100
 	TiempoConexion  time.Duration
 	TiempoEscritura time.Duration
+	// Confirmar consulta el estado después del ticket (DLE EOT 1) y espera la respuesta hasta
+	// TiempoConfirmacion: sin ella, Write termina cuando los datos están en el búfer del sistema,
+	// no en la impresora.
+	Confirmar          bool
+	TiempoConfirmacion time.Duration
 }
 
 // NuevoRed crea un conector TCP con los tiempos por defecto (3 s de conexión, 10 s de escritura).
@@ -21,7 +27,8 @@ func NuevoRed(direccion string) *Red {
 	if _, _, err := net.SplitHostPort(direccion); err != nil {
 		direccion = net.JoinHostPort(direccion, "9100")
 	}
-	return &Red{Direccion: direccion, TiempoConexion: TiempoConexion, TiempoEscritura: TiempoEscritura}
+	return &Red{Direccion: direccion, TiempoConexion: TiempoConexion, TiempoEscritura: TiempoEscritura,
+		TiempoConfirmacion: TiempoConfirmacion}
 }
 
 func (r *Red) conectar(ctx context.Context) (net.Conn, error) {
@@ -73,11 +80,32 @@ func (r *Red) enviarUnaVez(ctx context.Context, datos []byte) (int, error) {
 	if err != nil {
 		return n, r.traducir("enviar los datos", err)
 	}
+	if r.Confirmar {
+		return n, r.confirmar(ctx, c)
+	}
 	// Cerrar la escritura de forma ordenada asegura que la impresora reciba todo antes del cierre.
 	if tcp, ok := c.(*net.TCPConn); ok {
 		tcp.CloseWrite()
 	}
 	return n, nil
+}
+
+// confirmar envía la consulta de estado y espera un byte de respuesta. Se lee antes de cerrar la
+// escritura porque algunas impresoras cierran la conexión al recibir el FIN.
+func (r *Red) confirmar(ctx context.Context, c net.Conn) error {
+	if _, err := c.Write(consultaEstado); err != nil {
+		return r.traducir("enviar los datos", err)
+	}
+	plazo := time.Now().Add(r.TiempoConfirmacion)
+	if d, ok := ctx.Deadline(); ok && d.Before(plazo) {
+		plazo = d
+	}
+	c.SetReadDeadline(plazo)
+	var b [1]byte
+	if _, err := io.ReadFull(c, b[:]); err != nil {
+		return errorSinConfirmacion(r.Direccion, err)
+	}
+	return interpretarEstado(b[0])
 }
 
 // Probar abre y cierra una conexión.
