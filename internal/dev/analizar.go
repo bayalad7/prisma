@@ -114,6 +114,8 @@ func analizarUno(d []byte, i int) Comando {
 		default:
 			return tomar(2, fmt.Sprintf("GS 0x%02X", c))
 		}
+	case b == 0x10 && len(resto) > 1 && resto[1] == 0x04:
+		return tomar(3, "DLE EOT", arg(2))
 	case b == lf:
 		return tomar(1, "LF")
 	case b == 0x0D:
@@ -185,6 +187,8 @@ func describir(c Comando, pagina *string) string {
 		return "salto de línea"
 	case "ESC @":
 		return "inicializar impresora"
+	case "DLE EOT":
+		return fmt.Sprintf("consultar estado %d (no imprime)", a(0))
 	case "ESC t":
 		*pagina = escpos.PaginaPorComando(a(0))
 		return fmt.Sprintf("página de códigos %d (%s)", a(0), *pagina)

@@ -81,3 +81,15 @@ func TestImpresoraVirtual(t *testing.T) {
 		t.Errorf("el .bin no tiene los datos: %q", datos)
 	}
 }
+
+func TestConsultasEstado(t *testing.T) {
+	casos := map[string]int{"": 0, "\x10\x04": 0, "\x10\x04\x01": 1, "a\x10\x04\x04b\x10\x04\x02": 2, "\x10\x04\x05": 0}
+	for d, quiero := range casos {
+		if got := consultasEstado([]byte(d)); got != quiero {
+			t.Errorf("%q: %d, quiero %d", d, got, quiero)
+		}
+	}
+	if traza := Traza([]byte("\x1b@\x10\x04\x01")); !strings.Contains(traza, "consultar estado 1") {
+		t.Errorf("la traza no reconoce DLE EOT:\n%s", traza)
+	}
+}

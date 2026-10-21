@@ -16,7 +16,8 @@ import (
 
 // ImpresoraVirtual escucha por TCP como una impresora de red (puerto 9100): guarda cada trabajo
 // recibido como .bin y muestra su traza decodificada y la previsualización. Atiende una conexión
-// a la vez, como las impresoras reales.
+// a la vez, como las impresoras reales, y responde a la consulta de estado DLE EOT como una
+// impresora en línea (así se puede probar «Confirmar impresión»).
 type ImpresoraVirtual struct {
 	Perfil     almacen.Impresora
 	Directorio string    // dónde guardar los .bin
@@ -64,7 +65,12 @@ func (v *ImpresoraVirtual) atender(c net.Conn) {
 	for {
 		c.SetReadDeadline(time.Now().Add(5 * time.Second))
 		n, err := c.Read(buf)
+		previos := len(datos)
 		datos = append(datos, buf[:n]...)
+		// Se busca desde 2 bytes antes por si la consulta llegó partida entre dos lecturas.
+		for range consultasEstado(datos[max(0, previos-2):]) {
+			c.Write([]byte{EstadoEnLinea})
+		}
 		if err != nil {
 			var ne net.Error
 			if !errors.Is(err, io.EOF) && !(errors.As(err, &ne) && ne.Timeout()) {
@@ -93,4 +99,19 @@ func (v *ImpresoraVirtual) atender(c net.Conn) {
 		fmt.Fprintln(v.Salida)
 	}
 	fmt.Fprint(v.Salida, VistaTexto(Simular(datos, v.Perfil), v.Color))
+}
+
+// EstadoEnLinea es la respuesta a DLE EOT n de una impresora sin problemas: los bits fijos 1 y 4.
+const EstadoEnLinea = 0x12
+
+// consultasEstado cuenta las consultas DLE EOT n (10 04 n, n de 1 a 4) completas en d.
+func consultasEstado(d []byte) int {
+	n := 0
+	for i := 0; i+2 < len(d); i++ {
+		if d[i] == 0x10 && d[i+1] == 0x04 && d[i+2] >= 1 && d[i+2] <= 4 {
+			n++
+			i += 2
+		}
+	}
+	return n
 }
