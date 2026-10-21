@@ -32,7 +32,8 @@ type Impresora struct {
 	SoportaCajon              bool
 	SoportaImagen             bool
 	SoportaCodigoBarrasNativo bool
-	Baudios                   int // 0 = no aplica (solo bluetooth / serie)
+	ConfirmarImpresion        bool // consultar el estado tras cada ticket (solo red y bluetooth)
+	Baudios                   int  // 0 = no aplica (solo bluetooth / serie)
 	Activa                    bool
 	Creada                    time.Time
 	Actualizada               time.Time
@@ -42,18 +43,19 @@ type RepoImpresoras struct{ a *Almacen }
 
 const columnasImpresora = `id, alias, nombre, tipo, destino, ancho_mm, columnas, columnas_fuente_b, ancho_px,
 	pagina_codigos, comando_pagina_codigos, soporta_qr_nativo, soporta_corte, soporta_cajon, soporta_imagen,
-	soporta_codigo_barras_nativo, baudios, activa, creada, actualizada`
+	soporta_codigo_barras_nativo, confirmar_impresion, baudios, activa, creada, actualizada`
 
 // Crear inserta la impresora y completa ID, Creada y Actualizada.
 func (r *RepoImpresoras) Crear(ctx context.Context, imp *Impresora) error {
 	ahora := r.a.ahora()
 	res, err := r.a.bd().ExecContext(ctx, `INSERT INTO impresoras (alias, nombre, tipo, destino, ancho_mm, columnas,
 		columnas_fuente_b, ancho_px, pagina_codigos, comando_pagina_codigos, soporta_qr_nativo, soporta_corte,
-		soporta_cajon, soporta_imagen, soporta_codigo_barras_nativo, baudios, activa, creada, actualizada)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		soporta_cajon, soporta_imagen, soporta_codigo_barras_nativo, confirmar_impresion, baudios, activa, creada,
+		actualizada) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		imp.Alias, imp.Nombre, imp.Tipo, imp.Destino, imp.AnchoMM, imp.Columnas, imp.ColumnasFuenteB, imp.AnchoPx,
 		imp.PaginaCodigos, imp.ComandoPaginaCodigos, bit(imp.SoportaQRNativo), bit(imp.SoportaCorte),
-		bit(imp.SoportaCajon), bit(imp.SoportaImagen), bit(imp.SoportaCodigoBarrasNativo), baudiosNulo(imp.Baudios),
+		bit(imp.SoportaCajon), bit(imp.SoportaImagen), bit(imp.SoportaCodigoBarrasNativo), bit(imp.ConfirmarImpresion),
+		baudiosNulo(imp.Baudios),
 		bit(imp.Activa), ms(ahora), ms(ahora))
 	if err != nil {
 		return traducirError(err, "impresora "+imp.Alias)
@@ -94,11 +96,13 @@ func (r *RepoImpresoras) Actualizar(ctx context.Context, imp *Impresora) error {
 	res, err := r.a.bd().ExecContext(ctx, `UPDATE impresoras SET alias = ?, nombre = ?, tipo = ?, destino = ?,
 		ancho_mm = ?, columnas = ?, columnas_fuente_b = ?, ancho_px = ?, pagina_codigos = ?,
 		comando_pagina_codigos = ?, soporta_qr_nativo = ?, soporta_corte = ?, soporta_cajon = ?,
-		soporta_imagen = ?, soporta_codigo_barras_nativo = ?, baudios = ?, activa = ?, actualizada = ?
+		soporta_imagen = ?, soporta_codigo_barras_nativo = ?, confirmar_impresion = ?, baudios = ?, activa = ?,
+		actualizada = ?
 		WHERE id = ?`,
 		imp.Alias, imp.Nombre, imp.Tipo, imp.Destino, imp.AnchoMM, imp.Columnas, imp.ColumnasFuenteB, imp.AnchoPx,
 		imp.PaginaCodigos, imp.ComandoPaginaCodigos, bit(imp.SoportaQRNativo), bit(imp.SoportaCorte),
-		bit(imp.SoportaCajon), bit(imp.SoportaImagen), bit(imp.SoportaCodigoBarrasNativo), baudiosNulo(imp.Baudios),
+		bit(imp.SoportaCajon), bit(imp.SoportaImagen), bit(imp.SoportaCodigoBarrasNativo), bit(imp.ConfirmarImpresion),
+		baudiosNulo(imp.Baudios),
 		bit(imp.Activa), ms(ahora), imp.ID)
 	if err := exigirUnaFila(res, err, "impresora "+imp.Alias); err != nil {
 		return err
@@ -115,17 +119,18 @@ func (r *RepoImpresoras) Eliminar(ctx context.Context, alias string) error {
 
 func escanearImpresora(f filaEscaneable) (*Impresora, error) {
 	var imp Impresora
-	var qr, corte, cajon, imagen, barras, activa int
+	var qr, corte, cajon, imagen, barras, confirmar, activa int
 	var baudios sql.NullInt64
 	var creada, actualizada int64
 	err := f.Scan(&imp.ID, &imp.Alias, &imp.Nombre, &imp.Tipo, &imp.Destino, &imp.AnchoMM, &imp.Columnas,
 		&imp.ColumnasFuenteB, &imp.AnchoPx, &imp.PaginaCodigos, &imp.ComandoPaginaCodigos, &qr, &corte, &cajon,
-		&imagen, &barras, &baudios, &activa, &creada, &actualizada)
+		&imagen, &barras, &confirmar, &baudios, &activa, &creada, &actualizada)
 	if err != nil {
 		return nil, err
 	}
 	imp.SoportaQRNativo, imp.SoportaCorte, imp.SoportaCajon = qr == 1, corte == 1, cajon == 1
 	imp.SoportaImagen, imp.SoportaCodigoBarrasNativo, imp.Activa = imagen == 1, barras == 1, activa == 1
+	imp.ConfirmarImpresion = confirmar == 1
 	imp.Baudios = int(baudios.Int64)
 	imp.Creada, imp.Actualizada = desdeMs(creada), desdeMs(actualizada)
 	return &imp, nil

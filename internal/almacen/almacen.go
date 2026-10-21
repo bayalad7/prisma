@@ -176,6 +176,17 @@ func traducirError(err error, que string) error {
 	return fmt.Errorf("%s: %w", que, err)
 }
 
+// EsOcupada indica que la base estaba bloqueada por otra conexión o por otro proceso más allá
+// del busy_timeout (SQLITE_BUSY o SQLITE_LOCKED): un estado transitorio, no un error del puente.
+func EsOcupada(err error) bool {
+	var se *sqlite.Error
+	if !errors.As(err, &se) {
+		return false
+	}
+	codigo := se.Code() & 0xff // código primario, sin la parte extendida
+	return codigo == sqlite3.SQLITE_BUSY || codigo == sqlite3.SQLITE_LOCKED
+}
+
 // Conversión de tipos para columnas INTEGER.
 
 func ms(t time.Time) int64 { return t.UnixMilli() }

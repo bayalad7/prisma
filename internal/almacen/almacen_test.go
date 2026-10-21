@@ -2,7 +2,9 @@ package almacen
 
 import (
 	"context"
+	"database/sql"
 	"errors"
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -59,3 +61,27 @@ var ctx = context.Background()
 
 // hashPrueba tiene forma de PHC argon2id; las pruebas del almacén no lo verifican.
 const hashPrueba = "$argon2id$v=19$m=8,t=1,p=1$c2Fs$aGFzaA"
+
+// Una base bloqueada por otro proceso se reconoce como ocupada (estado transitorio).
+func TestEsOcupada(t *testing.T) {
+	ruta := filepath.Join(t.TempDir(), "prisma.db")
+	a, err := Abrir(ctx, ruta)
+	exigirSinError(t, err)
+	defer a.Cerrar()
+	otro, err := sql.Open("sqlite", ruta+"?_pragma=busy_timeout(0)")
+	exigirSinError(t, err)
+	defer otro.Close()
+	tx, err := otro.BeginTx(ctx, nil)
+	exigirSinError(t, err)
+	_, err = tx.ExecContext(ctx, "INSERT INTO ajustes (clave, valor, actualizado) VALUES ('bloqueo', '1', 0)")
+	exigirSinError(t, err)
+	defer tx.Rollback()
+
+	err = a.Ajustes.Establecer(ctx, "x", "y") // espera busy_timeout (5 s) y falla
+	if !EsOcupada(err) {
+		t.Fatalf("se esperaba base ocupada: %v", err)
+	}
+	if EsOcupada(ErrNoEncontrado) || EsOcupada(nil) {
+		t.Fatal("solo los errores de bloqueo de SQLite son «ocupada»")
+	}
+}

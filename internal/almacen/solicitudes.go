@@ -52,7 +52,17 @@ func (r *RepoSolicitudes) Registrar(ctx context.Context, origen string) (*Solici
 			return err
 		}
 		if total >= MaxSolicitudes {
-			return ErrLimiteSolicitudes
+			// Lleno (por ejemplo, alguien de la red registró orígenes inventados): el origen nuevo
+			// reemplaza a la pendiente con la actividad más antigua, para que los reales sigan
+			// llegando al panel. Las rechazadas no se tocan.
+			res, err := tx.ExecContext(ctx, `DELETE FROM solicitudes_origen WHERE origen =
+				(SELECT origen FROM solicitudes_origen WHERE estado = 'pendiente' ORDER BY ultima_vez LIMIT 1)`)
+			if err != nil {
+				return err
+			}
+			if n, _ := res.RowsAffected(); n == 0 {
+				return ErrLimiteSolicitudes
+			}
 		}
 		_, err = tx.ExecContext(ctx, `INSERT INTO solicitudes_origen (origen, primera_vez, ultima_vez) VALUES (?, ?, ?)`,
 			norm, ahora, ahora)
@@ -136,4 +146,30 @@ func escanearSolicitud(f filaEscaneable) (*Solicitud, error) {
 	}
 	s.PrimeraVez, s.UltimaVez = desdeMs(primera), desdeMs(ultima)
 	return &s, nil
+}
+
+// Cuánto se recuerdan las solicitudes sin actividad.
+const (
+	VidaSolicitudPendiente = 30 * 24 * time.Hour
+	VidaSolicitudRechazada = 90 * 24 * time.Hour
+)
+
+// Purgar olvida las solicitudes pendientes sin intentos en 30 días y las rechazadas sin intentos
+// en 90. Si el origen vuelve a intentar, aparece otra vez como pendiente.
+func (r *RepoSolicitudes) Purgar(ctx context.Context) (int64, error) {
+	ahora := r.a.ahora()
+	res, err := r.a.bd().ExecContext(ctx, `DELETE FROM solicitudes_origen
+		WHERE (estado = 'pendiente' AND ultima_vez < ?) OR (estado = 'rechazada' AND ultima_vez < ?)`,
+		ms(ahora.Add(-VidaSolicitudPendiente)), ms(ahora.Add(-VidaSolicitudRechazada)))
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
+}
+
+// Contar devuelve cuántas solicitudes hay guardadas (pendientes y rechazadas).
+func (r *RepoSolicitudes) Contar(ctx context.Context) (int, error) {
+	var n int
+	err := r.a.bd().QueryRowContext(ctx, `SELECT count(*) FROM solicitudes_origen`).Scan(&n)
+	return n, err
 }

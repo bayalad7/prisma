@@ -80,12 +80,23 @@ func (r *RepoTrabajos) Finalizar(ctx context.Context, id, estado, codigoError st
 
 // MarcarInterrumpidos cierra como fallidos los trabajos que quedaron pendientes al detenerse el puente.
 func (r *RepoTrabajos) MarcarInterrumpidos(ctx context.Context) (int64, error) {
-	res, err := r.a.bd().ExecContext(ctx, `UPDATE trabajos SET estado = 'fallido', codigo_error = ?, finalizado = ?
-		WHERE estado IN ('encolado', 'imprimiendo')`, CodigoPuenteReiniciado, ms(r.a.ahora()))
-	if err != nil {
-		return 0, err
-	}
-	return res.RowsAffected()
+	var n int64
+	err := r.a.enTransaccion(ctx, func(tx *sql.Tx) error {
+		// Como cualquier trabajo fallido, libera el id del documento: si no, el reintento del
+		// cliente se respondería como repetido («ok», duplicado) y el ticket nunca se imprimiría.
+		if _, err := tx.ExecContext(ctx, `DELETE FROM ids_recientes WHERE trabajo_id IN
+			(SELECT id FROM trabajos WHERE estado IN ('encolado', 'imprimiendo'))`); err != nil {
+			return err
+		}
+		res, err := tx.ExecContext(ctx, `UPDATE trabajos SET estado = 'fallido', codigo_error = ?, finalizado = ?
+			WHERE estado IN ('encolado', 'imprimiendo')`, CodigoPuenteReiniciado, ms(r.a.ahora()))
+		if err != nil {
+			return err
+		}
+		n, err = res.RowsAffected()
+		return err
+	})
+	return n, err
 }
 
 func (r *RepoTrabajos) Obtener(ctx context.Context, id string) (*Trabajo, error) {

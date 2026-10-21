@@ -144,8 +144,13 @@ func (a *Almacen) Restaurar(ctx context.Context, origen string) error {
 	}
 	os.Remove(anterior)
 	if err := os.Rename(a.ruta, anterior); err != nil {
-		db, _ := abrirArchivo(ctx, a.ruta)
-		a.db = db
+		// Si tampoco se puede reabrir, a.db queda con la conexión cerrada (las consultas fallan con
+		// error) en lugar de nil (pánico); el administrador debe reiniciar el servicio.
+		if db, errAbrir := abrirArchivo(ctx, a.ruta); errAbrir == nil {
+			a.db = db
+		} else {
+			return fmt.Errorf("%w; además, no se pudo reabrir la base (%v): reinicia el servicio", err, errAbrir)
+		}
 		return err
 	}
 	// Los archivos -wal y -shm pertenecen a la base anterior; la copia de VACUUM INTO no los usa.
