@@ -72,6 +72,9 @@ func crearCarpetas(op Opciones) error {
 	return nil
 }
 
+// estadoSistema: el estado de kardianos ya es correcto sin permisos de administrador.
+func estadoSistema(e Estado) Estado { return e }
+
 func limpiarSistema(Opciones) {}
 
 func esAccesoDenegado(error) bool { return false }

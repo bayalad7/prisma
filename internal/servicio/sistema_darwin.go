@@ -109,4 +109,18 @@ func idLibre() (int, error) {
 
 func limpiarSistema(Opciones) {}
 
+// estadoSistema corrige el estado sin permisos de administrador. kardianos consulta
+// «launchctl list», que sin root mira el dominio del usuario y no ve el LaunchDaemon del sistema:
+// el servicio en marcha aparecía como detenido. «launchctl print system/…» sí lo ve.
+func estadoSistema(e Estado) Estado {
+	if !e.Instalado || e.EnMarcha || os.Geteuid() == 0 {
+		return e
+	}
+	salida, err := exec.Command("launchctl", "print", "system/"+NombreMacOS).Output()
+	if err == nil && launchdEnMarcha(string(salida)) {
+		e.EnMarcha = true
+	}
+	return e
+}
+
 func esAccesoDenegado(error) bool { return false }

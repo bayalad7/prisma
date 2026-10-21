@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"time"
 
@@ -125,8 +126,13 @@ func ConsultarEstado(op Opciones) (Estado, error) {
 	if err != nil {
 		return Estado{}, err
 	}
-	return Estado{Instalado: true, EnMarcha: st == service.StatusRunning}, nil
+	return estadoSistema(Estado{Instalado: true, EnMarcha: st == service.StatusRunning}), nil
 }
+
+var reEstadoLaunchd = regexp.MustCompile(`(?m)^\s*state = running\s*$`)
+
+// launchdEnMarcha interpreta la salida de «launchctl print system/<label>».
+func launchdEnMarcha(salida string) bool { return reEstadoLaunchd.MatchString(salida) }
 
 // Instalar prepara el sistema (usuario, carpetas, firewall) y registra el servicio. Si ya estaba
 // instalado, lo vuelve a registrar con la configuración actual (por ejemplo, tras mover el binario).

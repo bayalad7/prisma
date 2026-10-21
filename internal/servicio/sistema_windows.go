@@ -53,6 +53,9 @@ func prepararSistema(op Opciones) error {
 	return nil
 }
 
+// estadoSistema: el estado de kardianos ya es correcto sin permisos de administrador.
+func estadoSistema(e Estado) Estado { return e }
+
 func limpiarSistema(Opciones) {
 	exec.Command("netsh", "advfirewall", "firewall", "delete", "rule", "name="+ReglaFirewall).Run()
 }

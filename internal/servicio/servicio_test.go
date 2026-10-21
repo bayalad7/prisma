@@ -67,6 +67,21 @@ func TestPlistLaunchd(t *testing.T) {
 	}
 }
 
+func TestLaunchdEnMarcha(t *testing.T) {
+	// Salida real de «launchctl print system/com.github.bayalad7.prisma» en el CI de macOS.
+	enMarcha := "system/com.github.bayalad7.prisma = {\n\tactive count = 1\n\tpath = /Library/LaunchDaemons/" +
+		"com.github.bayalad7.prisma.plist\n\ttype = LaunchDaemon\n\tstate = running\n\n\tprogram = /usr/local/bin/prisma\n"
+	if !launchdEnMarcha(enMarcha) {
+		t.Error("no reconoce el servicio en marcha")
+	}
+	for _, salida := range []string{"", strings.Replace(enMarcha, "state = running", "state = not running", 1),
+		strings.Replace(enMarcha, "state = running", "state = spawn scheduled", 1)} {
+		if launchdEnMarcha(salida) {
+			t.Errorf("no está en marcha: %q", salida)
+		}
+	}
+}
+
 func TestArgumentosYEstado(t *testing.T) {
 	if got := Argumentos(""); strings.Join(got, " ") != "servicio ejecutar" {
 		t.Errorf("Argumentos = %v", got)
