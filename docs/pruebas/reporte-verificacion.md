@@ -11,7 +11,7 @@
 | 🔴 Crítico | 2 | **Corregidos**, con pruebas nuevas |
 | 🟠 Alto | 2 | **Corregidos** |
 | 🟡 Medio | 6 | **Corregidos**; M3 con una opción nueva del perfil y documentado |
-| 🔵 Bajo | 8 | **Corregidos** |
+| 🔵 Bajo | 9 | **Corregidos** |
 
 Lo que se ejecutó:
 
@@ -21,7 +21,7 @@ Lo que se ejecutó:
 | `go test ./...` en Windows y Linux | ✅ |
 | `go vet` y staticcheck | ✅ |
 | `errcheck` (errores ignorados) | ✅ Ninguno crítico; ver B1, B4 y B8. |
-| CI en GitHub (primera ejecución) | ✅ Go y SDK en los 3 sistemas, y firmadores. ✅ **Servicio de Windows instalado, iniciado, reiniciado y desinstalado en el runner real.** ✅ Servicio en Ubuntu. ❌ Servicio en macOS: hallazgo C1, ya corregido; se confirma en el próximo CI. |
+| CI en GitHub | ✅ Go y SDK en los 3 sistemas, y firmadores. ✅ **Servicio de Windows instalado, iniciado, reiniciado y desinstalado en el runner real.** ✅ Servicio en Ubuntu. Servicio en macOS: ❌ en la primera ejecución (C1). ✅ En la segunda (`39671479591`), con C1 corregido, arranca como `_prisma` y el panel responde; esa ejecución reveló B9. |
 | Fugas de goroutines en la cola | ✅ Prueba nueva `TestSinFugasDeGoroutines`. |
 | Contenido de tickets, llaves o contraseñas en los logs | ✅ Ninguno (revisadas las 44 llamadas a `slog`). |
 | Resiliencia (6 escenarios contra el binario real) | ✅ con C2, M6 y A2 corregidos; M3 cubierto con *Confirmar impresión*. |
@@ -36,7 +36,7 @@ Lo que se ejecutó:
 - **Evidencia:** CI *Servicio (macos-latest)*. El LaunchDaemon queda en `spawn scheduled` y el panel no responde. La bitácora repite: `stat /Library/Application Support/PRISMA/config.toml: permission denied`.
 - **Causa:** `servicio instalar` creaba la carpeta de datos con `MkdirAll(…, 0750)`, y eso creaba también su carpeta padre, `/Library/Application Support/PRISMA`, como root con 0750. El usuario `_prisma` no podía entrar ni a leer `config.toml`. En Linux no pasa porque `/var/lib` ya existe con 0755.
 - **Corrección:** [`internal/servicio/sistema_darwin.go`](../../internal/servicio/sistema_darwin.go) crea la carpeta padre con 0755 (de root; solo contiene `config.toml`) y la repara si una instalación anterior la dejó en 0750. La carpeta de datos sigue en 0750 para `_prisma`.
-- **Verificación pendiente:** el job *Servicio (macos-latest)* del CI. No hay una Mac disponible aquí.
+- **✅ Confirmado en el CI** (ejecución `39671479591`): el LaunchDaemon queda `state = running` con el usuario `_prisma` y el panel responde 200.
 
 ### C2. Tickets perdidos en silencio después de un reinicio con trabajos en cola
 
@@ -180,6 +180,7 @@ Todos ✅ **corregidos**.
 | B6 | Inicio rápido, pasos confusos (además de A1): ver la [sección siguiente](#experiencia-del-integrador-inicio-rápido-al-pie-de-la-letra). | Ajustar la guía. |
 | B7 | En la primera conexión fallida desde el navegador (por ejemplo, un certificado no confiable), el SDK reintenta 2 veces antes de explicar: unos 4 s sin respuesta. | No reintentar cuando `causas_posibles` incluye `CERTIFICADO_NO_CONFIABLE`, o mostrar el diagnóstico desde el primer fallo. |
 | B8 | `debeCambiar` falla abierto si la base da error al leer el ajuste. Requiere una sesión ya válida. | Tratar el error como «debe cambiar». |
+| B9 | macOS: `prisma servicio estado` sin `sudo` decía «detenido» con el servicio en marcha. kardianos usa `launchctl list`, que sin root consulta el dominio del usuario y no ve el LaunchDaemon del sistema. Lo detectó el CI. | Sin root, consultar `launchctl print system/<label>`. ✅ Corregido (`TestLaunchdEnMarcha`); se confirma en el próximo CI. |
 
 ---
 
