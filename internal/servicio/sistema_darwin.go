@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -25,6 +26,18 @@ func prepararSistema(op Opciones) error {
 	}
 	uid, _ := strconv.Atoi(u.Uid)
 	gid, _ := strconv.Atoi(u.Gid)
+	// La carpeta que contiene a datos (y a config.toml) debe poder recorrerla _prisma: MkdirAll
+	// la crearía con los permisos de datos (0750, de root) y el servicio no podría ni leer su
+	// configuración. Se corrige también si una instalación anterior la dejó así.
+	if op.Datos != "" {
+		padre := filepath.Dir(op.Datos)
+		if err := os.MkdirAll(padre, 0o755); err != nil {
+			return err
+		}
+		if err := os.Chmod(padre, 0o755); err != nil {
+			return err
+		}
+	}
 	for _, dir := range []string{op.Datos, op.Logs} {
 		if dir == "" {
 			continue

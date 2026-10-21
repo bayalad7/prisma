@@ -25,11 +25,15 @@ func prepararSistema(op Opciones) error {
 		}
 	}
 	// ProgramData deja leer a todos los usuarios. Los datos (hashes de llaves, llave privada del
-	// certificado) quedan solo para SYSTEM (S-1-5-18) y Administradores (S-1-5-32-544).
-	if op.Datos != "" {
-		if out, err := exec.Command("icacls", op.Datos, "/inheritance:r", "/grant:r",
+	// certificado) y las bitácoras (IPs, aplicaciones) quedan solo para SYSTEM (S-1-5-18) y
+	// Administradores (S-1-5-32-544).
+	for _, dir := range []string{op.Datos, op.Logs} {
+		if dir == "" {
+			continue
+		}
+		if out, err := exec.Command("icacls", dir, "/inheritance:r", "/grant:r",
 			"*S-1-5-18:(OI)(CI)F", "*S-1-5-32-544:(OI)(CI)F").CombinedOutput(); err != nil {
-			return fmt.Errorf("no se pudieron restringir los permisos de %s: %v: %s", op.Datos, err, out)
+			return fmt.Errorf("no se pudieron restringir los permisos de %s: %v: %s", dir, err, out)
 		}
 	}
 	if op.Puerto > 0 {
