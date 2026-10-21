@@ -100,9 +100,18 @@ func RutasAutofirmado(dirDatos string) (certificado, llave string) {
 }
 
 // CargarAutofirmado usa el certificado autofirmado de la carpeta de datos; lo genera la primera vez.
+// Si el que hay ya venció, genera otro: uno vencido no le sirve a ningún cliente (habrá que volver
+// a instalarlo en las cajas, y el panel lo avisa).
 func CargarAutofirmado(dirDatos string) (*Archivos, error) {
 	cert, llave := RutasAutofirmado(dirDatos)
-	if _, err := os.Stat(cert); errors.Is(err, fs.ErrNotExist) {
+	_, err := os.Stat(cert)
+	generar := errors.Is(err, fs.ErrNotExist)
+	if c, err := LeerCertificado(cert); err == nil {
+		if estado, _ := Vencimiento(c, time.Now()); estado == CertificadoVencido {
+			generar = true
+		}
+	}
+	if generar {
 		if _, err := GenerarAutofirmado(dirDatos); err != nil {
 			return nil, err
 		}
@@ -225,4 +234,27 @@ func IPsSinCubrir(c *x509.Certificate) []net.IP {
 		}
 	}
 	return faltan
+}
+
+// Estados de vencimiento de un certificado.
+const (
+	CertificadoVigente   = "vigente"
+	CertificadoPorVencer = "por_vencer" // vence en menos de AvisoVencimiento
+	CertificadoVencido   = "vencido"
+)
+
+// AvisoVencimiento es cuánto antes del vencimiento se avisa en la bitácora y en el panel.
+const AvisoVencimiento = 60 * 24 * time.Hour
+
+// Vencimiento devuelve el estado del certificado y los días que le quedan (negativos si venció).
+func Vencimiento(c *x509.Certificate, ahora time.Time) (estado string, dias int) {
+	resta := c.NotAfter.Sub(ahora)
+	dias = int(resta.Hours() / 24)
+	switch {
+	case resta <= 0:
+		return CertificadoVencido, dias
+	case resta < AvisoVencimiento:
+		return CertificadoPorVencer, dias
+	}
+	return CertificadoVigente, dias
 }

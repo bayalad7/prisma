@@ -258,6 +258,9 @@ func ipDe(r *http.Request) string {
 func (s *Servidor) limitarIP(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if ok, espera := s.porIP.Permitir(ipDe(r)); !ok {
+			// Sin cabeceras CORS, el navegador lo vería como un error de red y el SDK diría «origen
+			// no autorizado». La respuesta solo lleva el error, así que puede leerla cualquier origen.
+			permitirCORS(w, r.Header.Get("Origin"))
 			s.demasiadas(w, r, espera)
 			return
 		}
@@ -433,6 +436,13 @@ func ResponderError(w http.ResponseWriter, r *http.Request, err error, trabajoID
 	case errors.Is(err, cola.ErrCerrada):
 		estado, resp.Codigo = http.StatusServiceUnavailable, "PUENTE_NO_DISPONIBLE"
 		resp.Mensaje, resp.Sugerencia = "El puente se está deteniendo.", "Vuelve a intentarlo en unos segundos."
+	case almacen.EsOcupada(err):
+		// Otro proceso (un respaldo manual, un visor de SQLite) tiene la base bloqueada.
+		estado, resp.Codigo = http.StatusServiceUnavailable, "PUENTE_OCUPADO"
+		w.Header().Set("Retry-After", "2")
+		resp.Mensaje = "La base de datos del puente está ocupada por otro programa."
+		resp.Sugerencia = "Vuelve a intentarlo en unos segundos; si persiste, cierra el programa que tiene abierto prisma.db."
+		log.Warn("base de datos ocupada", "metodo", r.Method, "ruta", r.URL.Path)
 	default:
 		log.Error("error interno", "metodo", r.Method, "ruta", r.URL.Path, "error", err.Error())
 		resp.Codigo, resp.Mensaje = "ERROR_INTERNO", "Ocurrió un error interno en el puente."

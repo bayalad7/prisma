@@ -3,22 +3,32 @@ package servidor
 import (
 	"bytes"
 	"context"
+	"crypto/ecdsa"
 	"crypto/ed25519"
+	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"database/sql"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io"
+	"log/slog"
+	"math/big"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/bayalad7/prisma/internal/almacen"
 	"github.com/bayalad7/prisma/internal/cola"
+	"github.com/bayalad7/prisma/internal/conector"
 	"github.com/bayalad7/prisma/internal/config"
 	"github.com/bayalad7/prisma/internal/seguridad"
 )
@@ -429,6 +439,12 @@ func TestLimitePorIPYPorCliente(t *testing.T) {
 	if r.estado != 429 || r.codigo() != "DEMASIADAS_PETICIONES" || r.cab.Get("Retry-After") == "" {
 		t.Fatalf("límite por IP: %d %s %v", r.estado, r.crudo, r.cab)
 	}
+	// El 429 lleva CORS: el navegador deja leerlo y el SDK no lo confunde con un origen no autorizado.
+	r = e.pedir(http.MethodGet, "/v1/salud", nil, map[string]string{"Origin": "https://cualquiera.example"})
+	if r.estado != 429 || r.cab.Get("Access-Control-Allow-Origin") != "https://cualquiera.example" ||
+		!strings.Contains(r.cab.Get("Access-Control-Expose-Headers"), "Retry-After") {
+		t.Fatalf("CORS en el 429: %d %v", r.estado, r.cab)
+	}
 
 	e = nuevoEntorno(t, config.Limites{PorCliente: 2})
 	c := e.niveles[2]
@@ -642,4 +658,178 @@ func puertoLibre(t *testing.T) int {
 	}
 	defer ln.Close()
 	return ln.Addr().(*net.TCPAddr).Port
+}
+
+// Un trabajo que quedó en cola cuando el puente se reinició no se imprimió: al reintentar el mismo
+// documento debe imprimirse, no responderse como repetido.
+func TestReintentoDespuesDeReiniciarConTrabajosEnCola(t *testing.T) {
+	e := nuevoEntorno(t, config.Limites{})
+	c := e.niveles[2]
+	ctx := context.Background()
+	doc := documento("caja")
+	datos := cuerpo(t, doc)
+	hash, err := seguridad.HashContenido(datos)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Estado que deja un corte de luz: el id reservado y el trabajo encolado, sin imprimir.
+	if _, _, err := e.alm.IDsRecientes.Reservar(ctx, almacen.IDReciente{ClienteID: c.id, DocumentoID: doc["id"].(string),
+		HashContenido: hash, TrabajoID: "trb_antes_del_corte"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := e.alm.Trabajos.Crear(ctx, &almacen.Trabajo{ID: "trb_antes_del_corte", DocumentoID: doc["id"].(string),
+		ClienteID: c.id, ImpresoraAlias: "caja"}); err != nil {
+		t.Fatal(err)
+	}
+	// Al arrancar, el puente marca los trabajos interrumpidos.
+	if n, err := e.alm.Trabajos.MarcarInterrumpidos(ctx); err != nil || n != 1 {
+		t.Fatalf("MarcarInterrumpidos: %d, %v", n, err)
+	}
+	r := e.imprimir(datos, c.origen, c.llave)
+	if r.estado != 200 || r.cuerpo["duplicado"] == true {
+		t.Fatalf("el reintento debe imprimir: %d %s", r.estado, r.crudo)
+	}
+	if n := contarImpresos(t, e.dirCaja); n != 1 {
+		t.Fatalf("impresos: %d", n)
+	}
+}
+
+// Si la liberación del id de un trabajo fallido no llegó a hacerse, el reintento igual se imprime:
+// nunca se responde «ok» por un ticket que no salió.
+func TestDuplicadoDeUnTrabajoFallidoSeImprime(t *testing.T) {
+	e := nuevoEntorno(t, config.Limites{})
+	c := e.niveles[2]
+	ctx := context.Background()
+	doc := documento("caja")
+	datos := cuerpo(t, doc)
+	hash, _ := seguridad.HashContenido(datos)
+	e.alm.IDsRecientes.Reservar(ctx, almacen.IDReciente{ClienteID: c.id, DocumentoID: doc["id"].(string), HashContenido: hash, TrabajoID: "trb_fallido"})
+	e.alm.Trabajos.Crear(ctx, &almacen.Trabajo{ID: "trb_fallido", DocumentoID: doc["id"].(string), ClienteID: c.id, ImpresoraAlias: "caja"})
+	e.alm.Trabajos.Finalizar(ctx, "trb_fallido", almacen.TrabajoFallido, "IMPRESORA_INALCANZABLE", nil, 0)
+	r := e.imprimir(datos, c.origen, c.llave)
+	if r.estado != 200 || r.cuerpo["duplicado"] == true || contarImpresos(t, e.dirCaja) != 1 {
+		t.Fatalf("el reintento de un trabajo fallido debe imprimirse: %d %s", r.estado, r.crudo)
+	}
+	// Ahora sí es un repetido de algo que salió.
+	if r := e.imprimir(datos, c.origen, c.llave); r.cuerpo["duplicado"] != true || contarImpresos(t, e.dirCaja) != 1 {
+		t.Fatalf("segundo envío: %d %s", r.estado, r.crudo)
+	}
+}
+
+// Con la base bloqueada por otro proceso, el puente responde 503 PUENTE_OCUPADO (y no 500).
+func TestBaseOcupadaResponde503(t *testing.T) {
+	ruta := filepath.Join(t.TempDir(), "prisma.db")
+	alm, err := almacen.Abrir(context.Background(), ruta)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer alm.Cerrar()
+	otro, _ := sql.Open("sqlite", ruta+"?_pragma=busy_timeout(0)")
+	defer otro.Close()
+	tx, _ := otro.Begin()
+	if _, err := tx.Exec("INSERT INTO ajustes (clave, valor, actualizado) VALUES ('bloqueo', '1', 0)"); err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	errOcupada := alm.Ajustes.Establecer(context.Background(), "x", "y")
+
+	w := httptest.NewRecorder()
+	ResponderError(w, httptest.NewRequest(http.MethodPost, "/v1/imprimir", nil), errOcupada, "", slog.New(slog.DiscardHandler))
+	var r map[string]any
+	json.Unmarshal(w.Body.Bytes(), &r)
+	if w.Code != 503 || r["codigo"] != "PUENTE_OCUPADO" || w.Header().Get("Retry-After") != "2" {
+		t.Fatalf("%d %v %v", w.Code, r, w.Header())
+	}
+}
+
+// escribirCertificadoVencido deja en la carpeta de datos un autofirmado vencido (con su llave).
+func escribirCertificadoVencido(t *testing.T, dir string) {
+	t.Helper()
+	llave, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	plantilla := &x509.Certificate{SerialNumber: big.NewInt(1), Subject: pkix.Name{CommonName: "vencido"},
+		NotBefore: time.Now().Add(-48 * time.Hour), NotAfter: time.Now().Add(-24 * time.Hour), IPAddresses: []net.IP{net.IPv4(127, 0, 0, 1)}}
+	der, err := x509.CreateCertificate(rand.Reader, plantilla, plantilla, &llave.PublicKey, llave)
+	if err != nil {
+		t.Fatal(err)
+	}
+	llaveDER, _ := x509.MarshalPKCS8PrivateKey(llave)
+	rutaCert, rutaLlave := RutasAutofirmado(dir)
+	os.MkdirAll(filepath.Dir(rutaCert), 0o700)
+	os.WriteFile(rutaCert, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}), 0o644)
+	os.WriteFile(rutaLlave, pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: llaveDER}), 0o600)
+}
+
+func TestVencimientoDelCertificado(t *testing.T) {
+	ahora := time.Now()
+	for _, c := range []struct {
+		vence  time.Duration
+		estado string
+	}{{400 * 24 * time.Hour, CertificadoVigente}, {30 * 24 * time.Hour, CertificadoPorVencer}, {-time.Hour, CertificadoVencido}} {
+		if estado, _ := Vencimiento(&x509.Certificate{NotAfter: ahora.Add(c.vence)}, ahora); estado != c.estado {
+			t.Errorf("vence en %s: %s, se esperaba %s", c.vence, estado, c.estado)
+		}
+	}
+	// Un autofirmado vencido se regenera al arrancar.
+	dir := t.TempDir()
+	escribirCertificadoVencido(t, dir)
+	if _, err := CargarAutofirmado(dir); err != nil {
+		t.Fatal(err)
+	}
+	ruta, _ := RutasAutofirmado(dir)
+	c, err := LeerCertificado(ruta)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if estado, _ := Vencimiento(c, time.Now()); estado != CertificadoVigente {
+		t.Fatalf("el autofirmado vencido debía regenerarse: %s (vence %s)", estado, c.NotAfter)
+	}
+}
+
+// Con «Confirmar impresión», una impresora que recibe el ticket pero informa que está fuera de
+// línea (tapa abierta) no es un fallo: el ticket saldrá al cerrarla, y fallar provocaría un
+// reintento que lo imprimiría dos veces. Se responde ok con la advertencia.
+func TestConfirmarImpresionFueraDeLinea(t *testing.T) {
+	e := nuevoEntorno(t, config.Limites{})
+	c := e.niveles[2]
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { ln.Close() })
+	go func() {
+		for {
+			con, err := ln.Accept() // la primera conexión es la prueba de la cola, sin datos
+			if err != nil {
+				return
+			}
+			go func() {
+				defer con.Close()
+				var datos []byte
+				buf := make([]byte, 4096)
+				for !bytes.HasSuffix(datos, []byte{0x10, 0x04, 0x01}) {
+					n, err := con.Read(buf)
+					if err != nil {
+						return
+					}
+					datos = append(datos, buf[:n]...)
+				}
+				con.Write([]byte{0x1A}) // bit 3: fuera de línea
+				io.Copy(io.Discard, con)
+			}()
+		}
+	}()
+	imp := &almacen.Impresora{Alias: "tapa", Nombre: "Tapa abierta", Tipo: almacen.ConexionRed, Destino: ln.Addr().String(),
+		AnchoMM: 80, Columnas: 48, ColumnasFuenteB: 64, AnchoPx: 576, PaginaCodigos: "CP858", ComandoPaginaCodigos: 19,
+		SoportaCorte: true, ConfirmarImpresion: true, Activa: true}
+	if err := e.alm.Impresoras.Crear(context.Background(), imp); err != nil {
+		t.Fatal(err)
+	}
+	r := e.imprimir(cuerpo(t, documento("tapa")), c.origen, c.llave)
+	if r.estado != 200 || !strings.Contains(string(r.crudo), conector.AvisoFueraDeLinea) {
+		t.Fatalf("esperaba 200 con la advertencia %s: %d %s", conector.AvisoFueraDeLinea, r.estado, r.crudo)
+	}
+	trb, err := e.alm.Trabajos.Obtener(context.Background(), r.cuerpo["trabajo_id"].(string))
+	if err != nil || trb.Estado != almacen.TrabajoCompletado || !slices.Contains(trb.Advertencias, conector.AvisoFueraDeLinea) {
+		t.Fatalf("trabajo: %+v, %v", trb, err)
+	}
 }

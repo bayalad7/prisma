@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/bayalad7/prisma/internal/almacen"
@@ -146,8 +147,21 @@ func (s *Servidor) responderSiRepetido(w http.ResponseWriter, r *http.Request, c
 		s.responderError(w, r, err)
 		return true
 	}
+	if s.liberarSiFallo(r.Context(), previo) {
+		return false // el original no se imprimió: se procesa como nuevo
+	}
 	s.responderDuplicado(w, r, previo, sobre.Crudo)
 	return true
+}
+
+// liberarSiFallo libera el id si su trabajo falló. Normalmente ya lo liberó finalizar; esto cubre
+// el caso de que esa liberación haya fallado: un reintento nunca recibe «ok» por algo que no salió.
+func (s *Servidor) liberarSiFallo(ctx context.Context, previo *almacen.IDReciente) bool {
+	t, err := s.op.Almacen.Trabajos.Obtener(ctx, previo.TrabajoID)
+	if err != nil || t.Estado != almacen.TrabajoFallido {
+		return false
+	}
+	return s.op.Almacen.IDsRecientes.Liberar(ctx, previo.ClienteID, previo.DocumentoID, previo.TrabajoID) == nil
 }
 
 func (s *Servidor) responderDuplicado(w http.ResponseWriter, r *http.Request, previo *almacen.IDReciente, crudo []byte) {
@@ -237,8 +251,11 @@ func (s *Servidor) imprimir(w http.ResponseWriter, r *http.Request) {
 	}
 	trabajoID := NuevoTrabajoID()
 	// La reserva es atómica: si otra petición con el mismo id ganó la carrera, se responde como repetido.
-	res, previo, err := s.op.Almacen.IDsRecientes.Reservar(ctx, almacen.IDReciente{
-		ClienteID: cli.ID, DocumentoID: doc.ID, HashContenido: hash, TrabajoID: trabajoID})
+	reserva := almacen.IDReciente{ClienteID: cli.ID, DocumentoID: doc.ID, HashContenido: hash, TrabajoID: trabajoID}
+	res, previo, err := s.op.Almacen.IDsRecientes.Reservar(ctx, reserva)
+	if err == nil && res != almacen.ReservaNueva && s.liberarSiFallo(ctx, previo) {
+		res, previo, err = s.op.Almacen.IDsRecientes.Reservar(ctx, reserva)
+	}
 	if err != nil {
 		s.responderError(w, r, err)
 		return
@@ -282,6 +299,9 @@ func (s *Servidor) imprimir(w http.ResponseWriter, r *http.Request) {
 		if advs == nil {
 			advs = []escpos.Advertencia{}
 		}
+		if res.Aviso != nil {
+			advs = append(advs, escpos.Advertencia{Codigo: res.Aviso.Codigo, Mensaje: res.Aviso.Mensaje})
+		}
 		responderJSON(w, http.StatusOK, map[string]any{"ok": true, "trabajo_id": trabajoID, "impresora": imp.Alias,
 			"duracion_ms": res.Duracion.Milliseconds(), "advertencias": advs})
 	case <-time.After(s.op.TiempoRespuesta):
@@ -301,7 +321,13 @@ func (s *Servidor) finalizar(t *almacen.Trabajo, res cola.Resultado, codigos []s
 		if codigo == "" {
 			codigo = "ERROR_INTERNO"
 		}
-		s.op.Almacen.IDsRecientes.Liberar(ctx, t.ClienteID, t.DocumentoID, t.ID)
+		if err := s.op.Almacen.IDsRecientes.Liberar(ctx, t.ClienteID, t.DocumentoID, t.ID); err != nil {
+			// El reintento igual se imprime: un duplicado de un trabajo fallido se procesa como nuevo.
+			s.op.Log.Error("no se pudo liberar el id del trabajo fallido", "trabajo", t.ID, "error", err.Error())
+		}
+	}
+	if res.Aviso != nil {
+		codigos = append(slices.Clip(codigos), res.Aviso.Codigo)
 	}
 	if err := s.op.Almacen.Trabajos.Finalizar(ctx, t.ID, estado, codigo, codigos, res.Duracion); err != nil {
 		s.op.Log.Error("no se pudo guardar el resultado del trabajo", "trabajo", t.ID, "error", err.Error())
