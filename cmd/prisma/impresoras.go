@@ -176,6 +176,9 @@ func nuevoComandoAgregarImpresora(op *opciones) *cobra.Command {
 			imp.AnchoMM, imp.PaginaCodigos = ancho, strings.ToUpper(imp.PaginaCodigos)
 			imp.SoportaCajon, imp.SoportaCorte, imp.SoportaQRNativo = cajon, !sinCorte, !sinQR
 			imp.SoportaCodigoBarrasNativo, imp.SoportaImagen, imp.Activa = !sinBarras, !sinImagen, !inactiva
+			if imp.ConfirmarImpresion && imp.Tipo != almacen.ConexionRed && imp.Tipo != almacen.ConexionBluetooth {
+				return fmt.Errorf("--confirmar solo funciona con impresoras de red o bluetooth")
+			}
 
 			alm, _, err := abrirAlmacen(c.Context(), op)
 			if err != nil {
@@ -211,6 +214,7 @@ func nuevoComandoAgregarImpresora(op *opciones) *cobra.Command {
 	f.BoolVar(&sinBarras, "sin-barras-nativo", false, "no imprime códigos de barras por comando (se envían como imagen)")
 	f.BoolVar(&sinImagen, "sin-imagen", false, "no imprime imágenes")
 	f.BoolVar(&inactiva, "inactiva", false, "la agrega desactivada")
+	f.BoolVar(&imp.ConfirmarImpresion, "confirmar", false, "consulta el estado tras cada ticket (DLE EOT) y falla si la impresora no responde; solo red y bluetooth")
 	for _, obligatoria := range []string{"alias", "tipo", "destino"} {
 		cmd.MarkFlagRequired(obligatoria)
 	}

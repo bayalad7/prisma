@@ -149,8 +149,13 @@ func mantenimiento(ctx context.Context, alm *almacen.Almacen, log *slog.Logger) 
 	if err != nil {
 		return err
 	}
-	if trabajos+ids > 0 {
-		log.Info("mantenimiento de la base de datos", "trabajos_purgados", trabajos, "ids_purgados", ids, "retencion_dias", dias)
+	solicitudes, err := alm.Solicitudes.Purgar(ctx)
+	if err != nil {
+		return err
+	}
+	if trabajos+ids+solicitudes > 0 {
+		log.Info("mantenimiento de la base de datos", "trabajos_purgados", trabajos, "ids_purgados", ids,
+			"solicitudes_purgadas", solicitudes, "retencion_dias", dias)
 	}
 	return nil
 }
