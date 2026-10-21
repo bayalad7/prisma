@@ -85,8 +85,17 @@ Los otros errores de impresora llegan igual, con `trabajo_id`, y también libera
 | Código | Significado |
 |---|---|
 | `IMPRESORA_INALCANZABLE` | Apagada, sin red o fuera del alcance del Bluetooth. |
-| `TIEMPO_AGOTADO` | Dejó de recibir datos a mitad del ticket: papel atascado, tapa abierta o Bluetooth fuera de alcance. |
+| `TIEMPO_AGOTADO` | Dejó de recibir datos a mitad del ticket (papel atascado, tapa abierta o Bluetooth fuera de alcance) o, si el perfil tiene *Confirmar impresión*, no confirmó que lo recibió. |
 | `COLA_LLENA` | Tiene 20 trabajos esperando; espera `Retry-After` segundos. |
+| `PUENTE_OCUPADO` | Otro programa tiene bloqueada la base de datos del puente. Nada se imprimió ni quedó reservado; espera `Retry-After` segundos y reenvía. |
+
+## «Impreso», pero no salió
+
+Con impresoras de red, el puente da un ticket por impreso cuando lo entregó al sistema, no cuando la impresora lo recibió (así funciona el puerto 9100). Si la impresora se apaga justo mientras recibe un ticket corto, la respuesta es `ok` y el papel no sale.
+
+- **Solución:** el dueño activa *Confirmar impresión* en el perfil de la impresora (ver [conectores.md](../conectores.md#confirmar-impresión)). Con ella, el puente pregunta a la impresora si recibió el ticket y, si no responde, falla con `TIEMPO_AGOTADO` para que reintentes.
+- **Advertencia `IMPRESORA_FUERA_DE_LINEA`:** solo aparece con esa opción. Llega en `advertencias` de una respuesta `ok`: la impresora tiene el ticket, pero está con la tapa abierta o sin papel, y lo imprimirá al resolverlo. Muéstraselo a la persona y **no reenvíes** el ticket.
+- **USB y CUPS:** no admiten la confirmación. Con USB por winspool, Windows informa el error si el spooler no puede entregar el trabajo.
 
 ## Llaves y firmas
 

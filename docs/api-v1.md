@@ -174,8 +174,9 @@ Los códigos del documento (`DOCUMENTO_INVALIDO`, `FIRMA_INVALIDA`, `FILA_NO_CAB
 | `RUTA_NO_ENCONTRADA` · `METODO_NO_PERMITIDO` | 404 · 405 | Ruta o método inexistente. |
 | `DEMASIADAS_PETICIONES` | 429 | Se superó el límite de peticiones. |
 | `IMPRESORA_INALCANZABLE` · `PUERTO_OCUPADO` · `PERMISO_DENEGADO` · `COLA_LLENA` | 503 | La impresora no pudo imprimir; ver [conectores.md](conectores.md#errores-de-conexión). |
-| `TIEMPO_AGOTADO` | 504 | La impresora dejó de recibir datos. |
+| `TIEMPO_AGOTADO` | 504 | La impresora dejó de recibir datos, o no respondió a la consulta de estado de [Confirmar impresión](conectores.md#confirmar-impresión). |
 | `PUENTE_NO_DISPONIBLE` | 503 | El puente se está deteniendo. |
+| `PUENTE_OCUPADO` | 503 | La base de datos está bloqueada por otro proceso (`SQLITE_BUSY` o `SQLITE_LOCKED` tras 5 s de espera). Lleva `Retry-After: 2`. No se imprimió ni se reservó nada. |
 | `ERROR_INTERNO` | 500 | Error inesperado. El detalle queda solo en la bitácora del puente. |
 
 ---

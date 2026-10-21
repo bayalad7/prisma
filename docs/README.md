@@ -15,6 +15,7 @@ PRISMA es un puente de impresión. Se instala en un equipo de la red local de un
 | Saber cómo está construido por dentro | [arquitectura.md](arquitectura.md) |
 | Contribuir al código | [desarrollo.md](desarrollo.md) |
 | Publicar una versión (llaves, CI, instaladores) | [publicar.md](publicar.md) |
+| Probar antes de publicar (matriz manual y último reporte) | [pruebas/](pruebas/README.md) |
 | Integrar PRISMA en tu aplicación (SDK, niveles, firmas) | [integradores/](integradores/README.md) |
 | Generar documentos JSON desde tu aplicación | [contrato-documento-v1.md](contrato-documento-v1.md) |
 | Imprimir desde tu aplicación (endpoints, autorización, CORS, errores) | [api-v1.md](api-v1.md) |
@@ -39,6 +40,7 @@ PRISMA está en desarrollo. Esto es lo que ya funciona y lo que falta:
 | Panel de administración web en `/admin` ([panel.md](panel.md)) | ✅ Listo |
 | SDK JavaScript, firmadores de nivel 3 (PHP, Node.js, Python) y guías para integradores ([integradores/](integradores/README.md)) | ✅ Listo |
 | Servicio del sistema (`prisma servicio`), instaladores (Inno Setup, .deb, .pkg), `prisma actualizar` y CI | ✅ Listo |
+| Verificación integral previa a la publicación ([reporte](pruebas/reporte-verificacion.md)) | ✅ Hecha; críticos corregidos, el resto pendiente de decisión |
 | Primera versión publicada en GitHub Releases y SDK en npm | ⏳ Pendiente |
 
 Las aplicaciones ya pueden imprimir por la red con la [API v1](api-v1.md), y el dueño configura todo desde el [panel](panel.md) sin usar la CLI. La documentación marca con **⏳** lo que todavía no existe.

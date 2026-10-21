@@ -18,7 +18,7 @@ PRISMA es un servicio que se instala en una PC, Raspberry Pi o Mac dentro de la 
 }
 ```
 
-> **Estado: en desarrollo.** Ya funcionan el contrato del documento con su validación, el renderizador ESC/POS con su previsualización, los conectores (red, USB, Bluetooth y archivo), la cola por impresora, la configuración, la base de datos y la CLI; las aplicaciones ya imprimen por la [API v1](docs/api-v1.md) con HTTPS y autorización por niveles, el dueño configura todo desde el [panel de administración](docs/panel.md), los integradores tienen un [SDK JavaScript](sdk/js/) con [guías](docs/integradores/README.md) y firmadores de nivel 3 para PHP, Node.js y Python, y se instala como servicio en Windows, Linux/Raspberry Pi y macOS ([instalación](docs/instalacion.md)). Todavía no hay una versión publicada. Consulta la [hoja de ruta](#hoja-de-ruta).
+> **Estado: en desarrollo.** Ya funcionan el contrato del documento con su validación, el renderizador ESC/POS con su previsualización, los conectores (red, USB, Bluetooth y archivo), la cola por impresora, la configuración, la base de datos y la CLI; las aplicaciones ya imprimen por la [API v1](docs/api-v1.md) con HTTPS y autorización por niveles, el dueño configura todo desde el [panel de administración](docs/panel.md), los integradores tienen un [SDK JavaScript](sdk/js/) con [guías](docs/integradores/README.md) y firmadores de nivel 3 para PHP, Node.js y Python, y se instala como servicio en Windows, Linux/Raspberry Pi y macOS ([instalación](docs/instalacion.md)). Todavía no hay una versión publicada: está en verificación previa ([reporte](docs/pruebas/reporte-verificacion.md) y [matriz de pruebas](docs/pruebas/matriz.md)). Consulta la [hoja de ruta](#hoja-de-ruta).
 
 ## Principios
 
@@ -64,6 +64,8 @@ En Windows:
 .\build.ps1 build        # dist\prisma.exe
 .\build.ps1 build-todo   # binarios para las 6 plataformas en dist\
 .\build.ps1 lint         # go vet + staticcheck
+.\build.ps1 test-sdk     # SDK JavaScript y firmadores (Node.js, PHP, Python)
+.\build.ps1 deb          # paquetes .deb; también: instalador (Inno Setup), checksums
 ```
 
 En Linux y macOS:
@@ -73,7 +75,11 @@ make test
 make build
 make build-todo
 make lint
+make test-sdk
+make deb                 # también: pkg (solo en macOS), checksums
 ```
+
+El CI ([`.github/workflows`](.github/workflows/)) corre `go test -race`, las pruebas del SDK y la instalación real del servicio en Windows, Ubuntu y macOS. Las versiones se publican con una etiqueta `v*` ([docs/publicar.md](docs/publicar.md)).
 
 ## Documentación
 
@@ -82,12 +88,15 @@ make lint
 | [Primeros pasos](docs/primeros-pasos.md) | Compilar e imprimir en una impresora virtual en 5 minutos. |
 | [Instalación](docs/instalacion.md) | Producción en Windows, Linux, Raspberry Pi y macOS: servicio, respaldo y actualización. |
 | [Conectores](docs/conectores.md) | Impresoras de red, USB y Bluetooth en cada sistema. |
+| [Panel de administración](docs/panel.md) | Impresoras, aplicaciones, solicitudes, trabajos y ajustes desde el navegador. |
 | [CLI](docs/cli.md) · [Configuración](docs/configuracion.md) | Referencia de comandos y de `config.toml`. |
 | [Arquitectura](docs/arquitectura.md) | Cómo viaja un documento hasta la impresora. |
 | [Desarrollo](docs/desarrollo.md) | Pruebas, golden, convenciones y ramas. |
 | [Solución de problemas](docs/solucion-de-problemas.md) | Errores frecuentes, acentos y columnas. |
 | [Contrato documento v1](docs/contrato-documento-v1.md) | El JSON que envían las aplicaciones. |
 | [API v1](docs/api-v1.md) · [HTTPS y certificados](docs/tls.md) | Endpoints, autorización, CORS, errores y cómo confiar en el certificado. |
+| [Integradores](docs/integradores/README.md) | SDK JavaScript, niveles de seguridad, firmas y problemas comunes. |
+| [Publicar](docs/publicar.md) · [Pruebas](docs/pruebas/README.md) | Llave de las versiones, CI e instaladores; matriz manual y reporte de verificación. |
 
 El índice completo está en [docs/README.md](docs/README.md).
 
@@ -193,6 +202,7 @@ internal/actualizacion/ versiones nuevas: firma, checksums y reemplazo del binar
 internal/version/     versión del binario
 sdk/js/               SDK JavaScript público
 sdk/firmadores/       firmadores de nivel 3 (PHP, Node.js, Python)
+testdata/             vector de firma público
 schema/               JSON Schema publicados (embebidos en el binario)
 docs/                 especificaciones
 ejemplos/             documentos de ejemplo válidos e inválidos

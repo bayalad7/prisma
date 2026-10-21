@@ -27,6 +27,27 @@ PRISMA envía los bytes por TCP al puerto **9100** (modo «raw» o JetDirect), q
 - **Tiempos:** 3 s para conectar y 10 s para enviar.
 - **Reintento:** si la conexión falla, PRISMA reintenta una vez. Si ya se habían enviado datos, no reintenta, para no imprimir el ticket dos veces.
 
+### Confirmar impresión
+
+En modo «raw», enviar termina cuando el ticket está en el búfer de red del equipo, **no cuando la impresora lo recibió**. Un ticket normal (5 a 20 KB) siempre cabe en ese búfer. Si la impresora se apaga o se desconecta justo mientras lo recibe, el puente lo da por impreso y la aplicación no se entera.
+
+La opción **Confirmar impresión** del perfil (casilla en el panel, o `--confirmar` en `prisma impresoras agregar`) lo resuelve:
+
+1. Después de cada ticket, el puente envía la consulta de estado `DLE EOT 1` (`10 04 01`). Es un comando de tiempo real: no imprime nada y la impresora lo contesta al recibirlo.
+2. Como la consulta viaja detrás del ticket, la respuesta confirma que el ticket completo llegó.
+
+| Respuesta | Resultado |
+|---|---|
+| En línea | Trabajo completado. |
+| Fuera de línea: tapa abierta, sin papel o en error | Trabajo **completado** con la advertencia `IMPRESORA_FUERA_DE_LINEA`. La impresora ya tiene el ticket y lo imprimirá al resolverlo. Si el trabajo fallara, el reintento de la aplicación saldría dos veces. |
+| Ninguna en 10 s, o la impresora cerró la conexión | `TIEMPO_AGOTADO` («no confirmó que recibió el ticket»). El trabajo falla y su `id` queda libre para reintentar. |
+
+- **Funciona con:** red (puerto 9100) y Bluetooth o serie. Casi todas las impresoras ESC/POS responden a `DLE EOT`.
+- **No funciona con:** USB por winspool (Windows), CUPS ni `/dev/usb/lp*`, porque esos caminos no devuelven la respuesta de la impresora. Para ellas la casilla no aparece.
+- **Está desactivada por defecto.** Algunas impresoras económicas no responden a la consulta, y con ella activada todos sus trabajos fallarían.
+- **Cómo probarlo:** actívala y usa *Ticket de diagnóstico*. Si falla con `TIEMPO_AGOTADO` aunque el ticket salió, la impresora no admite la consulta: desactívala.
+- La impresora virtual (`prisma dev impresora-virtual`) responde como una impresora en línea.
+
 ### Darle una IP fija (imprescindible)
 
 Si la impresora recibe una IP distinta cada vez que se enciende, el puente deja de encontrarla. Hay dos formas de fijarla; elige una:
@@ -68,6 +89,8 @@ PRISMA usa la cola de Windows (winspool) con un documento RAW. Si `probar` indic
 - revisa el cable y que esté encendida;
 - abre la cola de la impresora en Windows y desmarca *Impresora > Usar impresora sin conexión*;
 - elimina los trabajos atascados.
+
+Si el spooler no acepta el trabajo en 60 s, PRISMA lo cancela en la cola de Windows (`AbortPrinter`) y responde `TIEMPO_AGOTADO`. Así una cola bloqueada no detiene los demás trabajos ni impide detener el servicio.
 
 El usuario con el que corre el servicio PRISMA necesita permiso de *Imprimir* sobre la impresora. Lo tiene por defecto.
 
@@ -208,8 +231,10 @@ prisma imprimir --impresora virtual ejemplos/validos/venta-simple.json   # requi
 | `IMPRESORA_NO_ENCONTRADA` | El alias, el nombre, la cola o el puerto no existe. | El destino exacto en `prisma impresoras detectar`. |
 | `IMPRESORA_INALCANZABLE` | Existe, pero no respondió o está marcada sin conexión. | Encendido, cable o red, papel y tapa. |
 | `PUERTO_OCUPADO` | Otro programa tiene abierto el puerto o el dispositivo. | Cierra ese programa, o en Linux usa la cola de CUPS. |
-| `TIEMPO_AGOTADO` | La impresora dejó de recibir datos a mitad del trabajo. | Papel atascado, tapa abierta o Bluetooth fuera de alcance. |
+| `TIEMPO_AGOTADO` | La impresora dejó de recibir datos a mitad del trabajo o, con [Confirmar impresión](#confirmar-impresión), no confirmó que lo recibió. | Papel atascado, tapa abierta o Bluetooth fuera de alcance. Si pasa con todos los tickets, la impresora no admite la confirmación. |
 | `PERMISO_DENEGADO` | El usuario del servicio no puede abrir el destino. | Los grupos `lp` y `dialout` (Linux) o los permisos de la impresora (Windows). |
 | `COLA_LLENA` | La impresora ya tiene 20 trabajos pendientes. | Que la impresora esté avanzando; si está detenida, el primer trabajo dirá por qué. |
+
+**Advertencia `IMPRESORA_FUERA_DE_LINEA`:** solo con Confirmar impresión. El ticket llegó, pero la impresora informó tapa abierta, falta de papel o un error; saldrá al resolverlo. No reenvíes el ticket.
 
 El puente prueba cada impresora cada 30 s y el panel muestra su estado: *en línea*, *fuera de línea* u *ocupada*. Si la impresora está imprimiendo, el puente no la prueba.

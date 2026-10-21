@@ -166,7 +166,7 @@ Cada error visible lleva un **código estable en MAYÚSCULAS**, un **mensaje** y
 
 - **Documento:** `contrato.Error`, con los códigos del contrato (§9), por ejemplo `FILA_NO_CABE`.
 - **Impresión:** `conector.Error`, por ejemplo `IMPRESORA_INALCANZABLE` o `COLA_LLENA`.
-- **Advertencias:** no impiden imprimir y quedan en el trabajo (`CARACTER_SUSTITUIDO`, `SIN_CUCHILLA`, `SIN_CAJON`, `QR_REDUCIDO`).
+- **Advertencias:** no impiden imprimir y quedan en el trabajo (`CARACTER_SUSTITUIDO`, `SIN_CUCHILLA`, `SIN_CAJON`, `QR_REDUCIDO`). El conector puede añadir `IMPRESORA_FUERA_DE_LINEA` (con Confirmar impresión, ver [conectores.md](conectores.md#confirmar-impresión)).
 
 ## Herramientas de desarrollo
 

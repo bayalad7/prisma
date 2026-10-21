@@ -31,6 +31,11 @@ prisma tls regenerar   # uno nuevo con el nombre y las IPs actuales
 - **Sin reiniciar:** el puente en marcha toma el certificado nuevo en unos segundos.
 - **Después de regenerar:** hay que volver a confiar en él en cada equipo.
 
+### Vencimiento
+
+- **Desde 60 días antes:** la bitácora lo avisa en cada arranque, *Inicio* del panel muestra un aviso con el botón *Ir a Ajustes*, y la fila *Vence* lo marca como «Vence en N días». Regenéralo con tiempo y vuelve a instalarlo en cada caja.
+- **Si ya venció:** con `modo_tls = "autofirmado"`, el puente genera uno nuevo al arrancar, porque con el vencido ningún cliente podría conectarse. Hay que volver a confiar en él en cada equipo. Con `modo_tls = "archivos"` el puente no puede renovarlo: lo avisa en la bitácora y en el panel, y hay que reemplazar los archivos.
+
 > Conviene que el equipo del puente tenga **IP fija**: el certificado nombra sus IPs, y las aplicaciones lo buscan por su dirección.
 
 ### Confiar en el certificado

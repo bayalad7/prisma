@@ -31,7 +31,7 @@ const { Prisma } = require("@bayalad7/prisma");   // CommonJS
 
 - También funciona desde unpkg: `https://unpkg.com/@bayalad7/prisma@0.1/dist/prisma.umd.js`.
 - Fija al menos la versión menor (`@0.1`) para que una versión nueva no cambie tu página sin aviso.
-- ⏳ Mientras el paquete no esté en npm, usa jsDelivr sobre GitHub: `https://cdn.jsdelivr.net/gh/bayalad7/prisma@main/sdk/js/dist/prisma.umd.js`.
+- ⏳ Mientras el paquete no esté en npm, las direcciones `/npm/` y `unpkg` responden 404. Usa jsDelivr sobre la rama `develop` del repositorio: `https://cdn.jsdelivr.net/gh/bayalad7/prisma@develop/sdk/js/dist/prisma.umd.js` (o `…/prisma.mjs` como módulo ES). Esa dirección sigue a la rama, así que cámbiala por la de npm en cuanto exista.
 
 ## `new Prisma(opciones)`
 
@@ -191,7 +191,7 @@ Lo que depende de la impresora (que una fila quepa en sus columnas, que tenga cu
 
 - **Solo errores de red:** no hubo respuesta, se cortó la conexión o se agotó el tiempo. Un error con código del puente (`IMPRESORA_INALCANZABLE`, `DEMASIADAS_PETICIONES`…) nunca se reintenta solo.
 - **Mismo documento:** cada reintento envía exactamente el mismo cuerpo, con el **mismo `id`**. Si el primer envío sí llegó, el puente responde `duplicado: true` en lugar de imprimir otra vez.
-- **Sin reintento cuando no sirve:** `CERTIFICADO_NO_CONFIABLE`, `ORIGEN_NO_AUTORIZADO`, `PERMISO_RED_LOCAL_DENEGADO` y `CONTENIDO_MIXTO` se reportan al primer intento.
+- **Sin reintento cuando no sirve:** `CERTIFICADO_NO_CONFIABLE`, `ORIGEN_NO_AUTORIZADO`, `PERMISO_RED_LOCAL_DENEGADO` y `CONTENIDO_MIXTO` se reportan al primer intento. En el navegador, tampoco se reintenta la primera conexión fallida con un puente que nunca respondió (paso 4 de [la sección siguiente](#por-qué-el-navegador-no-siempre-distingue-el-certificado)): lo más probable es el certificado, que no se arregla esperando.
 
 Si reintentas tú, por ejemplo tras un botón «Reintentar», reutiliza el mismo documento: `prisma.imprimir("caja", doc)`, con el `Documento` original.
 
@@ -244,7 +244,7 @@ Ante un certificado no confiable, un equipo apagado o una IP equivocada, el nave
 1. Si la red local está bloqueada por permiso, responde `PERMISO_RED_LOCAL_DENEGADO`.
 2. Si una petición sin CORS a `/v1/salud` sí llega, el puente está bien y lo que falta es autorizar el origen: `ORIGEN_NO_AUTORIZADO`.
 3. Si ese puente ya respondió antes desde la página, ahora está apagado o fuera de la red: `PUENTE_INALCANZABLE` con `causas_posibles: ["PUENTE_APAGADO_O_FUERA_DE_RED"]`.
-4. Si no, es la primera conexión, y la causa más común es el certificado: `PUENTE_INALCANZABLE` con `causas_posibles: ["CERTIFICADO_NO_CONFIABLE", "PUENTE_APAGADO_O_FUERA_DE_RED"]`. La sugerencia indica abrir `/v1/salud` en una pestaña: si aparece una advertencia de certificado, es eso.
+4. Si no, es la primera conexión, y la causa más común es el certificado: `PUENTE_INALCANZABLE` con `causas_posibles: ["CERTIFICADO_NO_CONFIABLE", "PUENTE_APAGADO_O_FUERA_DE_RED"]`. La sugerencia indica abrir `/v1/salud` en una pestaña: si aparece una advertencia de certificado, es eso. Este error llega de inmediato, sin reintentos (`reintentable: false`).
 
 En Node.js el error sí trae la causa, y el SDK responde `CERTIFICADO_NO_CONFIABLE` o `PUENTE_INALCANZABLE` con certeza.
 

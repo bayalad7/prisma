@@ -45,7 +45,7 @@ La respuesta llega cuando la impresora terminó.
 | 202 | `{"ok": true, "trabajo_id": "trb_…", "estado": "encolado", …}` | La impresora tardó más de 60 s en atenderlo (tenía trabajos por delante). Se imprimirá. |
 | 4xx/5xx | `{"ok": false, "codigo": "…", "mensaje": "…", "sugerencia": "…", "trabajo_id"?: "…"}` | Error. Ver la tabla de códigos. |
 
-Las `advertencias` no impiden imprimir. Por ejemplo, `CARACTER_SUSTITUIDO` indica que un carácter no existía en la página de códigos de la impresora, y `SIN_CUCHILLA` que la impresora no corta.
+Las `advertencias` no impiden imprimir. Por ejemplo, `CARACTER_SUSTITUIDO` indica que un carácter no existía en la página de códigos de la impresora, y `SIN_CUCHILLA` que la impresora no corta. `IMPRESORA_FUERA_DE_LINEA` (solo en impresoras con *Confirmar impresión*) indica que la impresora recibió el ticket pero tiene la tapa abierta o no tiene papel: saldrá al resolverlo, así que **no lo reenvíes**.
 
 ### Reintentos e idempotencia
 
@@ -125,8 +125,9 @@ Programa contra `codigo`, que es estable. `mensaje` y `sugerencia` están en esp
 | `IMPRESORA_NO_ENCONTRADA` | 404 | No hay ninguna impresora activa con ese alias. |
 | `DEMASIADAS_PETICIONES` | 429 | Límite de peticiones; espera `Retry-After` segundos. |
 | `IMPRESORA_INALCANZABLE` · `PUERTO_OCUPADO` · `PERMISO_DENEGADO` · `COLA_LLENA` | 503 | La impresora no pudo imprimir. Incluye `trabajo_id`. |
-| `TIEMPO_AGOTADO` | 504 | La impresora dejó de recibir datos a mitad del ticket. |
+| `TIEMPO_AGOTADO` | 504 | La impresora dejó de recibir datos a mitad del ticket o no confirmó que lo recibió. Incluye `trabajo_id`. |
 | `PUENTE_NO_DISPONIBLE` | 503 | El puente se está deteniendo. |
+| `PUENTE_OCUPADO` | 503 | Otro programa tiene bloqueada la base de datos del puente. No se imprimió nada; reintenta tras `Retry-After` (2 s). |
 | `RUTA_NO_ENCONTRADA` · `METODO_NO_PERMITIDO` | 404 · 405 | Ruta o método inexistente. |
 | `ERROR_INTERNO` | 500 | Error inesperado; el detalle queda en la bitácora del puente. |
 

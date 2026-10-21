@@ -4,7 +4,10 @@ Al terminar tendrás una página HTML, sin backend ni compilación, que imprime 
 
 ## Lo que necesitas
 
-1. **Un puente PRISMA en marcha** en la red, con una impresora configurada. Para probar sin hardware, la impresora puede ser de tipo *Archivo* (guarda cada ticket en una carpeta) o la impresora virtual de `prisma dev impresora-virtual`.
+1. **Un puente PRISMA en marcha** en la red, con una impresora configurada.
+   - Si el negocio ya tiene uno, pide al dueño su IP y el alias de la impresora.
+   - Si no, instálalo en tu propia PC ([instalacion.md](../instalacion.md)) o compílalo y ejecútalo desde el código ([primeros-pasos.md](../primeros-pasos.md)).
+   - Para probar sin hardware, usa la impresora virtual: ejecuta `prisma dev impresora-virtual --puerto 9100` en el mismo equipo del puente y, en el panel, *Impresoras → Agregar* con alias `caja`, tipo **Red** y destino `127.0.0.1:9100`. Cada ticket aparece en esa terminal. También sirve una impresora de tipo *Archivo*, que guarda cada ticket en una carpeta.
 2. **Un equipo de esa misma red que confíe en el certificado del puente.** Para comprobarlo, abre `https://<ip-del-puente>:8443/v1/salud` en ese equipo: debe responder `{"ok":true,…}` sin advertencia de seguridad. Si aparece una advertencia, instala el certificado como explica [tls.md](../tls.md#confiar-en-el-certificado).
 3. **Node.js**, solo para servir la página con `npx serve`. Sirve cualquier otro servidor estático.
 
@@ -16,7 +19,7 @@ Guarda esto como `index.html` en una carpeta vacía:
 <!doctype html>
 <meta charset="utf-8">
 <button id="imprimir">Imprimir</button>
-<script src="https://cdn.jsdelivr.net/npm/@bayalad7/prisma@0.1/dist/prisma.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/bayalad7/prisma@develop/sdk/js/dist/prisma.umd.js"></script>
 <script>
   const prisma = new Prisma({ url: "https://192.168.1.10:8443", llave: "pk_..." });
   document.getElementById("imprimir").onclick = () => prisma
@@ -26,9 +29,9 @@ Guarda esto como `index.html` en una carpeta vacía:
 </script>
 ```
 
-Cambia `192.168.1.10` por la IP del puente. Por ahora deja `pk_...` tal cual: la llave real llega en el paso 3.
+Cambia `192.168.1.10` por la IP del puente y `"caja"` por el alias de tu impresora: es el que aparece en el panel, en *Impresoras* (también lo lista `await prisma.impresoras()` una vez que tengas la llave). Por ahora deja `pk_...` tal cual: la llave real llega en el paso 3.
 
-> ⏳ Mientras el paquete no esté publicado en npm, usa el archivo del repositorio a través de jsDelivr: `https://cdn.jsdelivr.net/gh/bayalad7/prisma@main/sdk/js/dist/prisma.umd.js`.
+> ⏳ Mientras no haya una versión publicada en npm, el SDK se sirve desde la rama `develop` del repositorio. Cuando exista, cambia la dirección por `https://cdn.jsdelivr.net/npm/@bayalad7/prisma@0.1/dist/prisma.umd.js` (fija la versión y no cambia sin aviso).
 
 ## 2. Sírvela
 
@@ -38,11 +41,16 @@ npx serve -l 3000
 
 Abre `http://localhost:3000` y pulsa **Imprimir**. La primera vez verás:
 
-> El puente responde, pero no ha autorizado el origen http://localhost:3000. El dueño del puente debe aprobar este origen en el panel (Solicitudes): ya quedó registrado como pendiente.
+> El puente responde, pero no ha autorizado el origen http://localhost:3000.
+> El dueño del puente debe aprobar este origen en el panel (Solicitudes): ya quedó registrado como pendiente. Si la aplicación ya estaba aprobada, puede estar desactivada.
 
 Es lo esperado: ninguna página puede imprimir sin que el dueño del puente la autorice.
 
+Si en cambio ves **«No se pudo conectar con el puente en https://…»**, el navegador todavía no confía en el certificado del puente (punto 2 de [Lo que necesitas](#lo-que-necesitas)) o el puente no está encendido o en la misma red.
+
 ## 3. Pide la autorización
+
+> Si eres tú quien abre el panel por primera vez desde otro equipo, te pedirá un código de configuración que se obtiene en el equipo del puente. Ver [panel.md, Primer acceso](../panel.md#primer-acceso).
 
 En el panel del puente (`https://<ip-del-puente>:8443/admin`), el dueño:
 

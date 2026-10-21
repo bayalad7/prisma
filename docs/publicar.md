@@ -48,6 +48,13 @@ Sin firma de código, todo funciona igual, pero Windows muestra SmartScreen y ma
    ```
 
    Una etiqueta con guion (`v1.2.0-rc.1`) se publica como versión preliminar. `prisma actualizar` y el aviso del panel no la ofrecen, porque consultan solo la última versión estable.
+4. **Solo la primera vez que el SDK llegue a npm:** cambia la dirección del SDK de
+   `https://cdn.jsdelivr.net/gh/bayalad7/prisma@develop/sdk/js/dist/prisma.umd.js` a
+   `https://cdn.jsdelivr.net/npm/@bayalad7/prisma@0.1/dist/prisma.umd.js` en
+   `docs/integradores/inicio-rapido.md`, `docs/integradores/ejemplos/pagina-simple.html` y
+   `docs/integradores/ejemplos/backend-php-firmado/index.php`, y quita las notas «⏳» de
+   `inicio-rapido.md`, `referencia-sdk.md` y `sdk/js/README.md`. Comprueba antes que la dirección de
+   npm responda 200.
 
 El workflow publica:
 
