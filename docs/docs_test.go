@@ -135,6 +135,12 @@ func TestFormatoDeLosDiagramas(t *testing.T) {
 	for _, ruta := range archivos {
 		nombre := filepath.Base(ruta)
 		texto := leer(t, filepath.ToSlash(filepath.Join("docs", "diagramas", nombre)))
+		if meta, resto, ok := frontMatter(texto); ok {
+			for _, e := range revisarFrontMatter(meta) {
+				t.Errorf("%s: front-matter: %s", nombre, e)
+			}
+			texto = resto
+		}
 		for _, seccion := range []string{"\n```mermaid\n", "**Fuentes en el código:**", "**Última verificación:**"} {
 			if !strings.Contains(texto, seccion) {
 				t.Errorf("%s: falta %q", nombre, strings.TrimSpace(seccion))
@@ -171,6 +177,50 @@ func TestFormatoDeLosDiagramas(t *testing.T) {
 			t.Errorf("%s no cita ningún archivo del código", nombre)
 		}
 	}
+}
+
+// frontMatter separa el bloque YAML opcional del principio (entre líneas «---»). GitHub lo muestra
+// como tabla; el panel lo leerá para la galería de diagramas (Fase 5 de 0.2.0).
+func frontMatter(texto string) (meta, resto string, ok bool) {
+	if !strings.HasPrefix(texto, "---\n") {
+		return "", texto, false
+	}
+	meta, resto, ok = strings.Cut(texto[4:], "\n---\n")
+	if !ok {
+		return "", texto, false
+	}
+	return meta, strings.TrimLeft(resto, "\n"), true
+}
+
+// audienciasDiagramas son los públicos que admite el campo audiencia.
+var audienciasDiagramas = []string{"usuario", "instalador", "integrador", "desarrollador"}
+
+// revisarFrontMatter exige los campos de los diagramas: titulo, descripcion, audiencia (con valores
+// conocidos), pantallas y secciones_manual. Las listas se escriben en una línea: [a, b].
+func revisarFrontMatter(meta string) []string {
+	campos := map[string]string{}
+	for _, linea := range strings.Split(meta, "\n") {
+		if clave, valor, ok := strings.Cut(linea, ":"); ok && !strings.HasPrefix(linea, " ") && !strings.HasPrefix(linea, "#") {
+			campos[strings.TrimSpace(clave)] = strings.TrimSpace(valor)
+		}
+	}
+	var errores []string
+	for _, c := range []string{"titulo", "descripcion", "audiencia", "pantallas", "secciones_manual"} {
+		if campos[c] == "" {
+			errores = append(errores, "falta "+c)
+		}
+	}
+	for _, c := range []string{"audiencia", "pantallas", "secciones_manual"} {
+		if v := campos[c]; v != "" && !(strings.HasPrefix(v, "[") && strings.HasSuffix(v, "]")) {
+			errores = append(errores, c+" debe ser una lista [a, b]")
+		}
+	}
+	for _, a := range strings.Split(strings.Trim(campos["audiencia"], "[]"), ",") {
+		if a = strings.TrimSpace(a); a != "" && !slices.Contains(audienciasDiagramas, a) {
+			errores = append(errores, "audiencia desconocida: "+a)
+		}
+	}
+	return errores
 }
 
 var (

@@ -10,7 +10,7 @@ Tu aplicación no conoce IPs ni modelos de impresora. Solo usa:
 
 El dueño del negocio te entrega esos datos desde el panel de su puente.
 
-**¿Sin impresora?** Pide (o crea, si tienes acceso al panel) una **impresora virtual**: se usa igual que una física, el ticket se ve en el panel del puente y puede simular fallas (`IMPRESORA_INALCANZABLE`, lentitud) para probar tu manejo de errores. En `GET /v1/impresoras` aparece con `"virtual": true`. Ver [administracion/impresoras.md](../administracion/impresoras.md#impresora-virtual).
+**¿Sin impresora?** Pide (o crea, si tienes acceso al panel) una **impresora virtual**: se usa igual que una física, el ticket se ve en el panel del puente y puede simular fallas (`IMPRESORA_INALCANZABLE`, lentitud) para probar tu manejo de errores. En `GET /v1/impresoras` aparece con `"virtual": true`. Paso a paso, con el rollo en vivo y el comprobador de permisos: [administracion/probar-sin-impresora.md](../administracion/probar-sin-impresora.md).
 
 | Si quieres… | Lee |
 |---|---|

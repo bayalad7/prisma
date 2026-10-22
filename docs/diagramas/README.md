@@ -41,6 +41,7 @@ Los diagramas de secuencia no admiten clases: usan cajas con los mismos colores.
 | 26 | [Estados de una impresora](26-estados-impresora.md) | `stateDiagram-v2` | administradores, integradores |
 | 27 | [Qué nivel de seguridad elegir](27-elegir-nivel.md) | `flowchart` | integradores |
 | 28 | [Actualización](28-actualizacion.md) | `sequenceDiagram` | administradores, auditores |
+| 29 | [Impresora virtual](29-impresora-virtual.md) | `flowchart` | dueños, instaladores, integradores |
 
 ## Diagramas que no existen en 0.1.0
 
@@ -53,6 +54,10 @@ La lista original incluía tres diagramas sin base en el código. Como cada diag
 | 22 | Integración TEDYC → PIAA → navegador → PRISMA | El repositorio no contiene ni menciona esas aplicaciones. El flujo genérico de una aplicación que firma en su backend está en [06-secuencia-nivel-3.md](06-secuencia-nivel-3.md). |
 
 Si alguno se implementa, su diagrama se agrega con ese número.
+
+## Metadatos
+
+Un diagrama puede empezar con un bloque YAML (front-matter) que el panel usará para la galería y la ayuda de cada pantalla: `titulo`, `descripcion`, `audiencia` (`usuario`, `instalador`, `integrador`, `desarrollador`), `pantallas` y `secciones_manual`, con las listas en una línea (`[a, b]`). GitHub lo muestra como una tabla. `go test ./docs` revisa esos campos cuando el bloque existe.
 
 ## Validación
 
