@@ -1,0 +1,32 @@
+{
+  "axe": {
+    "constructor-escritorio": [],
+    "editar-escritorio": [],
+    "fila-escritorio": [],
+    "constructor-celular": [],
+    "editar-celular": []
+  },
+  "desborde": {
+    "constructor-escritorio": 0,
+    "editar-escritorio": 0,
+    "fila-escritorio": 0,
+    "constructor-celular": 0,
+    "editar-celular": 0
+  },
+  "consola": [],
+  "comprobaciones": [
+    "ok    escritorio: el constructor muestra las operaciones de la plantilla 12",
+    "ok    editar un campo cambia el JSON y la vista previa ",
+    "ok    tamaño «Normal» quita el campo (valor por defecto) ",
+    "ok    agregar pone la operación al final, abierta y con foco ",
+    "ok    subir mueve la operación y conserva el foco ",
+    "ok    eliminar quita la operación separador",
+    "ok    la vista previa sigue válida ",
+    "ok    fila: columnas agregadas y con ancho ",
+    "ok    fila: la vista previa sigue válida ",
+    "ok    cambiar de modo conserva el documento en ambos sentidos ",
+    "ok    con el JSON roto, el constructor lo explica ",
+    "ok    «Ir a JSON» abre la pestaña ",
+    "ok    celular: el constructor muestra las operaciones de la plantilla 12"
+  ]
+}
