@@ -16,6 +16,16 @@ Para quien mantiene PRISMA. Una etiqueta `v*` dispara [`.github/workflows/releas
    openssl pkey -in llave-releases.pem -pubout -outform DER | tail -c 32 | base64 > empaquetado/llave-releases.pub
    ```
 
+   **En Windows (cmd):** `openssl`, `tail` y `base64` no están en el `PATH`. Usa el OpenSSL que trae Git para Windows y extrae la llave pública con PowerShell:
+
+   ```bat
+   "C:\Program Files\Git\usr\bin\openssl.exe" genpkey -algorithm ed25519 -out llave-releases.pem
+   "C:\Program Files\Git\usr\bin\openssl.exe" pkey -in llave-releases.pem -pubout -outform DER -out publica.der
+   powershell -NoProfile -Command "$b=[IO.File]::ReadAllBytes('publica.der'); [Convert]::ToBase64String($b[-32..-1])"
+   ```
+
+   El último comando imprime la llave pública: 44 caracteres que terminan en `=`. Cópiala a `empaquetado/llave-releases.pub` y borra `publica.der`. Nunca generes la llave en `dist/`, porque `limpiar` borra esa carpeta; dentro del repositorio, Git ignora `key/private/` y `key/public/`.
+
 2. Pon la misma llave pública en el instalador de Linux, en `LLAVE_RELEASES="…"` de [`empaquetado/linux/instalar.sh`](../empaquetado/linux/instalar.sh). Una prueba de `internal/actualizacion` comprueba que coincidan.
 3. En GitHub, *Settings → Secrets and variables → Actions*, crea el secreto `PRISMA_LLAVE_RELEASES` con el contenido completo de `llave-releases.pem`.
 4. Guarda `llave-releases.pem` fuera del repositorio, en un gestor de contraseñas y con una copia de respaldo. **Si se pierde,** las versiones nuevas no se podrán instalar con `prisma actualizar` desde las ya instaladas: habrá que reinstalar con el instalador. **Si se filtra,** cualquiera podría publicar una actualización que los puentes aceptarían.

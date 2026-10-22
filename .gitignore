@@ -1,3 +1,5 @@
+key/private/
+key/public/
 /dist/
 *.db
 *.db-wal
