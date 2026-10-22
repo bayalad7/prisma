@@ -119,6 +119,8 @@ export interface Impresora {
   nombre: string;
   ancho_mm: number;
   estado: 'en_linea' | 'fuera_de_linea' | 'ocupada' | 'desconocido';
+  /** Impresora virtual del puente: el ticket se ve en el panel, no sale en papel (desde 0.2.0). */
+  virtual: boolean;
 }
 
 export interface Advertencia { codigo: string; mensaje?: string }
