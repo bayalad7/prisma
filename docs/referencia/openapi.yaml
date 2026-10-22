@@ -191,12 +191,15 @@ components:
 
     Impresora:
       type: object
-      required: [alias, nombre, ancho_mm, estado]
+      required: [alias, nombre, ancho_mm, estado, virtual]
       properties:
         alias: { type: string, pattern: "^[a-z0-9][a-z0-9_-]{0,31}$" }
         nombre: { type: string }
         ancho_mm: { type: integer, enum: [58, 80] }
         estado: { type: string, enum: [desconocido, en_linea, fuera_de_linea, ocupada] }
+        virtual:
+          type: boolean
+          description: "Impresora virtual del puente: recibe los mismos bytes que una física, pero el ticket se ve en el panel en lugar de salir en papel. Campo agregado en 0.2.0."
 
     Advertencia:
       type: object

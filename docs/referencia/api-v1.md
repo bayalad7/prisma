@@ -93,12 +93,15 @@ Devuelve las impresoras **activas** que el cliente puede usar, con su estado.
 
 ```json
 [
-  {"alias": "caja",   "nombre": "Caja principal", "ancho_mm": 80, "estado": "en_linea"},
-  {"alias": "cocina", "nombre": "Cocina",         "ancho_mm": 58, "estado": "fuera_de_linea"}
+  {"alias": "caja",   "nombre": "Caja principal", "ancho_mm": 80, "estado": "en_linea",       "virtual": false},
+  {"alias": "cocina", "nombre": "Cocina",         "ancho_mm": 58, "estado": "fuera_de_linea", "virtual": false},
+  {"alias": "prueba", "nombre": "Para probar",    "ancho_mm": 80, "estado": "en_linea",       "virtual": true}
 ]
 ```
 
 `estado` es `en_linea`, `fuera_de_linea`, `ocupada` o `desconocido` (todavía sin probar). El puente prueba cada impresora cada 30 s, salvo mientras imprime. Nunca se exponen IPs, puertos ni nombres del sistema: solo el alias.
+
+`virtual` (desde 0.2.0) indica una **impresora virtual**: vive dentro del puente, recibe exactamente los mismos bytes que una física y el ticket se ve en el panel en lugar de salir en papel. Sirve para probar una aplicación sin impresora. Se usa igual que cualquier otra; si el dueño la configura para simular fallas, responde con los mismos códigos que una física (por ejemplo `IMPRESORA_INALCANZABLE`).
 
 ## `POST /v1/imprimir`
 
