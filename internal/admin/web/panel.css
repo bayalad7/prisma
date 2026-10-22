@@ -163,8 +163,15 @@ code, .mono { font-family: var(--letra-mono); font-size: .9em; }
   min-width: 0; padding-block: 28px 64px;
   padding-left: max(28px, env(safe-area-inset-left, 0px)); padding-right: max(28px, env(safe-area-inset-right, 0px));
 }
-/* El foco llega a main al navegar (para lectores de pantalla); no es un control, no lleva contorno. */
-.contenido:focus { outline: none; }
+/* Al navegar, el foco llega al título de la pantalla (o a main) para los lectores de pantalla; no son
+   controles, así que no llevan contorno. */
+.contenido:focus, h1[tabindex="-1"]:focus { outline: none; }
+/* Los atajos de teclado no aplican en pantallas táctiles. */
+@media (pointer: coarse) { .atajos-boton { display: none; } }
+kbd {
+  display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px solid var(--borde-control); border-bottom-width: 2px;
+  border-radius: 4px; background: var(--superficie-2); font: .82rem/1.4 var(--letra-mono); text-align: center;
+}
 /* minmax(0, 1fr): el contenido ancho (tablas, textos sin espacios) no puede ensanchar la página. */
 .vista { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--e-5); max-width: 1080px; }
 .encabezado { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: var(--e-3); }
@@ -209,7 +216,7 @@ code, .mono { font-family: var(--letra-mono); font-size: .9em; }
 /* --- 4. Componentes -------------------------------------------------------------------------- */
 .tarjeta {
   background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio);
-  padding: 18px; display: grid; gap: 14px; min-width: 0;
+  padding: 18px; display: grid; gap: 14px; min-width: 0; align-content: start;
 }
 .tarjeta-cabeza { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
 .tarjeta-titulo { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }

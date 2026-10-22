@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -157,9 +158,13 @@ var paginasDesarrollo = map[string]struct{ archivo, tipo string }{
 	"estilos.js": {"estilos.js", "text/javascript; charset=utf-8"},
 }
 
+// vistasPanel son las rutas de las pantallas del panel: todas sirven index.html y panel.js dibuja
+// la pantalla según la ruta (deben coincidir con SECCIONES de panel.js).
+var vistasPanel = []string{"impresoras", "solicitudes", "trabajos", "aplicaciones", "imagenes", "ajustes", "ayuda"}
+
 func servirEstatico(w http.ResponseWriter, r *http.Request, estaticos fs.FS, desarrollo bool) {
 	nombre := strings.TrimPrefix(r.URL.Path, "/admin/")
-	if nombre == "" {
+	if nombre == "" || slices.Contains(vistasPanel, nombre) {
 		nombre = "index.html"
 	}
 	tipo, ok := tiposEstaticos[nombre]

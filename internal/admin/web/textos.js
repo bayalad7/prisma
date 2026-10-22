@@ -51,6 +51,28 @@ window.PRISMA_TEXTOS = {
     },
   },
 
+  // Estructura del panel: navegación, atajos y pie (Fase 3, entrega 1).
+  nav: {
+    grupos: { operacion: 'Operación', integracion: 'Integración', sistema: 'Sistema' },
+    secciones: {
+      inicio: 'Inicio', impresoras: 'Impresoras', solicitudes: 'Solicitudes', trabajos: 'Trabajos',
+      aplicaciones: 'Aplicaciones', imagenes: 'Imágenes', ajustes: 'Ajustes', ayuda: 'Ayuda',
+    },
+    pendientes: (n) => (n === 1 ? '1 solicitud pendiente' : `${n} solicitudes pendientes`),
+    tituloPagina: (seccion, puente) => `${seccion} · ${puente}`,
+    version: (v) => `Versión ${v}`,
+    cerrarSesion: 'Cerrar sesión',
+    cargando: 'Cargando…',
+    atajos: {
+      titulo: 'Atajos de teclado',
+      ayuda: 'Pulsa g y luego la letra de la sección. Funcionan cuando no estás escribiendo en un campo.',
+      mostrar: 'Mostrar esta ayuda',
+      boton: 'Atajos de teclado (?)',
+      activar: 'Usar atajos de teclado',
+      activarAyuda: 'Desactívalos si tu lector de pantalla o tu forma de escribir los activa sin querer.',
+    },
+  },
+
   // Impresora virtual (Fase 6.1). El rediseño de la Fase 3 reutiliza estos textos.
   virtual: {
     tipo: 'Virtual (para probar sin impresora)',

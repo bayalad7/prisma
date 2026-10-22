@@ -81,7 +81,7 @@
       if (cuerpo instanceof FormData) op.body = cuerpo;
       else if (cuerpo !== undefined) { op.headers['Content-Type'] = 'application/json'; op.body = JSON.stringify(cuerpo); }
       let r;
-      try { r = await fetch('api' + ruta, op); } catch {
+      try { r = await fetch('/admin/api' + ruta, op); } catch {
         throw new ErrorApi({ mensaje: 'No hay conexión con el puente.', sugerencia: 'Revisa que PRISMA siga en marcha.' });
       }
       const tipo = r.headers.get('Content-Type') || '';
@@ -96,18 +96,31 @@
     post: (ruta, cuerpo) => api.pedir('POST', ruta, cuerpo === undefined ? {} : cuerpo),
     put: (ruta, cuerpo) => api.pedir('PUT', ruta, cuerpo),
     borrar: (ruta) => api.pedir('DELETE', ruta),
-    url: (ruta) => (window.PRISMA_DEMO && window.PRISMA_DEMO.url) ? window.PRISMA_DEMO.url(ruta) : 'api' + ruta,
+    url: (ruta) => (window.PRISMA_DEMO && window.PRISMA_DEMO.url) ? window.PRISMA_DEMO.url(ruta) : '/admin/api' + ruta,
   };
   const enc = encodeURIComponent;
 
   // ---------------------------------------------------------------------------------------------
   // Estado, acceso y enrutado
   // ---------------------------------------------------------------------------------------------
-  const estado = { sesion: null, pendientes: 0, nombrePuente: 'PRISMA', direccion: '' };
+  const estado = { sesion: null, pendientes: 0, nombrePuente: 'PRISMA', direccion: '', version: '' };
+  const TN = window.PRISMA_TEXTOS.nav;
+  // Secciones del panel: cada una tiene su ruta bajo /admin/ (el puente sirve el panel en todas), su
+  // grupo en la navegación y la tecla de su atajo (g y la letra).
   const SECCIONES = [
-    ['inicio', 'Inicio'], ['impresoras', 'Impresoras'], ['clientes', 'Aplicaciones'], ['solicitudes', 'Solicitudes'],
-    ['trabajos', 'Trabajos'], ['recursos', 'Imágenes'], ['ajustes', 'Ajustes'], ['ayuda', 'Ayuda'],
+    { id: 'inicio', ruta: '', icono: 'inicio', grupo: 'operacion', tecla: 'i' },
+    { id: 'impresoras', ruta: 'impresoras', icono: 'impresora', grupo: 'operacion', tecla: 'p' },
+    { id: 'solicitudes', ruta: 'solicitudes', icono: 'solicitud', grupo: 'operacion', tecla: 's' },
+    { id: 'trabajos', ruta: 'trabajos', icono: 'trabajos', grupo: 'operacion', tecla: 't' },
+    { id: 'aplicaciones', ruta: 'aplicaciones', icono: 'aplicacion', grupo: 'integracion', tecla: 'a' },
+    { id: 'imagenes', ruta: 'imagenes', icono: 'imagen', grupo: 'integracion', tecla: 'm' },
+    { id: 'ajustes', ruta: 'ajustes', icono: 'ajustes', grupo: 'sistema', tecla: 'j' },
+    { id: 'ayuda', ruta: 'ayuda', icono: 'ayuda', grupo: 'sistema', tecla: 'y' },
   ];
+  // En 0.1.0 las secciones eran #clientes, #recursos, #impresoras…: esos enlaces siguen funcionando.
+  const HASH_VIEJOS = { clientes: 'aplicaciones', recursos: 'imagenes' };
+  const rutaDe = (id) => `/admin/${SECCIONES.find((s) => s.id === id).ruta}`;
+  const seccionDe = (ruta) => SECCIONES.find((s) => s.ruta === ruta.replace(/^\/admin\/?/, '').replace(/\/$/, ''))?.id;
 
   async function arrancar() {
     try {
@@ -210,52 +223,50 @@
     });
   }
 
-  let barra, principal;
+  let app;
   function mostrarApp() {
-    const nav = h('nav', { class: 'nav', 'aria-label': 'Secciones' });
-    const menu = h('button', { class: 'boton chico menu-boton', type: 'button', 'aria-expanded': 'false', onclick: () => {
-      const abierta = barra.classList.toggle('abierta');
-      menu.setAttribute('aria-expanded', String(abierta));
-    } }, 'Menú');
-    barra = h('header', { class: 'barra' },
-      h('a', { class: 'marca', href: '#inicio' }, logo(30), h('span', { class: 'marca-texto' },
+    const viejo = location.hash.slice(1);
+    if (viejo && (HASH_VIEJOS[viejo] || SECCIONES.some((x) => x.id === viejo))) history.replaceState(null, '', rutaDe(HASH_VIEJOS[viejo] || viejo));
+    const grupos = Object.entries(TN.grupos).map(([g, titulo]) => ({
+      titulo,
+      secciones: SECCIONES.filter((x) => x.grupo === g).map((x) => ({ id: x.id, texto: TN.secciones[x.id], icono: x.icono, href: rutaDe(x.id) })),
+    }));
+    const salir = UI.boton({ texto: TN.cerrarSesion, icono: 'salir', chico: true });
+    salir.addEventListener('click', async () => {
+      try { await api.post('/salir'); } catch { /* la sesión ya no existe */ }
+      estado.sesion = null; arrancar();
+    });
+    app = UI.marco({
+      marca: h('a', { class: 'marca', href: rutaDe('inicio') }, logo(30), h('span', { class: 'marca-texto' },
         h('span', { class: 'marca-nombre' }, 'PRISMA'), h('span', { class: 'marca-puente', id: 'nombre-puente' }, estado.nombrePuente))),
-      menu, nav,
-      h('div', { class: 'barra-pie' }, h('span', { id: 'version' }),
-        h('button', { class: 'boton chico', type: 'button', onclick: async () => {
-          try { await api.post('/salir'); } catch { /* la sesión ya no existe */ }
-          estado.sesion = null; arrancar();
-        } }, 'Cerrar sesión')));
-    principal = h('main', { class: 'contenido', id: 'principal', tabindex: '-1' });
-    vaciar(raiz, h('div', { class: 'app' }, barra, principal));
-    pintarNav();
-    window.onhashchange = navegar;
+      grupos, actual: seccionActual(), inferior: ['inicio', 'impresoras', 'solicitudes', 'trabajos', 'ayuda'],
+      pie: [UI.selectorTema(), h('span', { id: 'version' }, estado.version && TN.version(estado.version)), botonAtajos(), salir],
+    });
+    vaciar(raiz, app);
+    refrescarPendientes();
     navegar();
   }
-  function pintarNav() {
-    const actual = seccionActual();
-    vaciar(barra.querySelector('.nav'), SECCIONES.map(([id, nombre]) =>
-      h('a', { href: `#${id}`, 'aria-current': id === actual ? 'page' : false },
-        h('span', {}, nombre), id === 'solicitudes' && estado.pendientes > 0 && h('span', { class: 'contador', 'aria-label': `${estado.pendientes} pendientes` }, estado.pendientes))));
-  }
-  function seccionActual() {
-    const id = location.hash.slice(1);
-    return SECCIONES.some(([s]) => s === id) ? id : 'inicio';
+  function seccionActual() { return seccionDe(location.pathname) || 'inicio'; }
+  function ir(id) {
+    if (location.pathname !== rutaDe(id)) history.pushState(null, '', rutaDe(id));
+    navegar();
   }
   async function navegar() {
-    barra.classList.remove('abierta');
-    pintarNav();
     const id = seccionActual();
-    const vista = h('div', { class: 'vista' }, cintaDemo(), h('p', { class: 'tenue', id: 'cargando' }, 'Cargando…'));
-    vaciar(principal, vista);
+    app.marcar(id);
+    document.title = TN.tituloPagina(TN.secciones[id], estado.nombrePuente);
+    const vista = h('div', { class: 'vista' }, cintaDemo(), UI.esqueleto({ lineas: 4 }));
+    vaciar(app.principal, vista);
     try {
       await VISTAS[id](vista);
-      vista.querySelector('#cargando')?.remove();
+      vista.querySelector('.esqueleto')?.remove();
     } catch (e) {
       if (e.estado === 401) return;
       vaciar(vista, cintaDemo(), h('div', { class: 'nota error' }, e.message, ' ', e.sugerencia || ''));
     }
-    principal.focus({ preventScroll: true });
+    // El foco va al título de la pantalla: el lector de pantalla anuncia dónde se está.
+    const titulo = vista.querySelector('h1');
+    if (titulo) { titulo.tabIndex = -1; titulo.focus({ preventScroll: true }); } else app.principal.focus({ preventScroll: true });
     window.scrollTo(0, 0);
   }
   function encabezado(titulo, subtitulo, ...acciones) {
@@ -263,9 +274,67 @@
       acciones.length > 0 && h('div', { class: 'acciones' }, acciones));
   }
   function recargar() { navegar(); }
+  function actualizarContador() {
+    if (app) app.contador('solicitudes', estado.pendientes, TN.pendientes(estado.pendientes));
+  }
+  // Pide el resumen al entrar y al volver a la pestaña (no cada tanto: eso mantendría viva la sesión
+  // y anularía el cierre por inactividad).
   async function refrescarPendientes() {
-    try { estado.pendientes = (await api.get('/resumen')).solicitudes_pendientes; } catch { /* sin cambios */ }
-    pintarNav();
+    try {
+      const r = await api.get('/resumen');
+      estado.pendientes = r.solicitudes_pendientes;
+      estado.nombrePuente = r.puente.nombre;
+      estado.version = r.puente.version;
+      const nombre = document.getElementById('nombre-puente');
+      if (nombre) nombre.textContent = r.puente.nombre;
+      const version = document.getElementById('version');
+      if (version) version.textContent = TN.version(r.puente.version);
+    } catch { /* sin cambios */ }
+    actualizarContador();
+  }
+  const enElPanel = () => app && app.isConnected;
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && enElPanel()) refrescarPendientes(); });
+  window.addEventListener('popstate', () => { if (enElPanel()) navegar(); });
+  // Los enlaces internos cambian de pantalla sin recargar la página.
+  document.addEventListener('click', (ev) => {
+    const a = ev.target.closest('a[href^="/admin/"]');
+    if (!a || !enElPanel() || ev.defaultPrevented || ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+    if (a.target || a.hasAttribute('download')) return;
+    const id = seccionDe(new URL(a.href).pathname);
+    if (!id) return;
+    ev.preventDefault();
+    ir(id);
+  });
+
+  // Atajos: g y la letra de la sección; ? muestra la ayuda. Se pueden desactivar (WCAG 2.1.4).
+  const CLAVE_ATAJOS = 'prisma.atajos';
+  const atajosActivos = () => { try { return localStorage.getItem(CLAVE_ATAJOS) !== 'no'; } catch { return true; } };
+  let pulsoG = 0;
+  document.addEventListener('keydown', (ev) => {
+    if (!enElPanel() || !atajosActivos() || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+    if (ev.target.closest('input, textarea, select, [contenteditable]') || document.querySelector('dialog[open]')) return;
+    if (ev.key === '?') { ev.preventDefault(); mostrarAtajos(); return; }
+    if (ev.key === 'g') { pulsoG = Date.now(); return; }
+    if (Date.now() - pulsoG < 1500) {
+      pulsoG = 0;
+      const destino = SECCIONES.find((x) => x.tecla === ev.key.toLowerCase());
+      if (destino) { ev.preventDefault(); ir(destino.id); }
+    }
+  });
+  function mostrarAtajos() {
+    const activar = UI.interruptor({ id: 'atajos-activos', texto: TN.atajos.activar, ayuda: TN.atajos.activarAyuda, marcado: atajosActivos() });
+    activar.input.addEventListener('change', () => {
+      try { localStorage.setItem(CLAVE_ATAJOS, activar.input.checked ? 'si' : 'no'); } catch { /* solo en esta página */ }
+    });
+    dialogo({ titulo: TN.atajos.titulo, cuerpo: h('div', { class: 'pila-amplia' }, h('p', { class: 'tenue pequeno' }, TN.atajos.ayuda),
+      h('dl', { class: 'datos' }, SECCIONES.map((x) => [h('dt', {}, h('kbd', {}, 'g'), ' ', h('kbd', {}, x.tecla)), h('dd', {}, TN.secciones[x.id])]),
+        h('dt', {}, h('kbd', {}, '?')), h('dd', {}, TN.atajos.mostrar)),
+      activar) });
+  }
+  function botonAtajos() {
+    const b = UI.boton({ texto: TN.atajos.boton, variante: 'texto', chico: true, class: 'boton texto chico atajos-boton' });
+    b.addEventListener('click', mostrarAtajos);
+    return b;
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -274,11 +343,8 @@
   async function vistaInicio(vista) {
     const r = await api.get('/resumen');
     estado.pendientes = r.solicitudes_pendientes;
-    estado.nombrePuente = r.puente.nombre;
     estado.direccion = r.puente.direccion;
-    document.getElementById('nombre-puente').textContent = r.puente.nombre;
-    document.getElementById('version').textContent = `Versión ${r.puente.version}`;
-    pintarNav();
+    actualizarContador();
 
     const enLinea = r.impresoras.filter((i) => i.estado === 'en_linea').length;
     agregar(vista,
@@ -286,7 +352,7 @@
       r.solicitudes_pendientes > 0 && h('div', { class: 'aviso-caja', role: 'status' },
         h('div', {}, h('strong', {}, r.solicitudes_pendientes === 1 ? '1 sitio web quiere imprimir' : `${r.solicitudes_pendientes} sitios web quieren imprimir`),
           h('div', { class: 'pequeno' }, 'Intentaron imprimir desde un origen que no está aprobado. No imprimen hasta que los apruebes.')),
-        h('a', { class: 'boton primario', href: '#solicitudes' }, 'Revisar solicitudes')),
+        h('a', { class: 'boton primario', href: rutaDe('solicitudes') }, 'Revisar solicitudes')),
       r.certificado && h('div', { class: 'aviso-caja', role: 'alert' },
         h('div', {},
           h('strong', {}, r.certificado.estado === 'vencido'
@@ -295,7 +361,7 @@
           h('div', { class: 'pequeno' }, r.certificado.autofirmado
             ? 'Regenéralo en Ajustes → HTTPS y vuelve a instalarlo en cada equipo que imprime.'
             : 'Renueva los archivos del certificado configurados en config.toml; el puente los toma sin reiniciar.')),
-        h('a', { class: 'boton primario', href: '#ajustes' }, 'Ir a Ajustes')),
+        h('a', { class: 'boton primario', href: rutaDe('ajustes') }, 'Ir a Ajustes')),
       r.actualizacion && h('div', { class: 'aviso-caja', role: 'status' },
         h('div', {}, h('strong', {}, `Hay una versión nueva de PRISMA: ${r.actualizacion.version}`),
           h('div', { class: 'pequeno' }, `Tienes la ${r.puente.version}. En el equipo del puente, como administrador, ejecuta «prisma actualizar», o descarga el instalador de la página de la versión.`)),
@@ -311,7 +377,7 @@
           h('div', { class: 'tarjeta-cabeza' }, h('h2', { id: 't-imp' }, 'Impresoras'),
             h('span', { class: 'tenue pequeno numeros' }, `${enLinea} de ${r.impresoras.length} en línea`)),
           r.impresoras.length === 0
-            ? h('div', { class: 'pila' }, h('p', { class: 'tenue' }, TV.inicioVacio, ' ', h('a', { href: '#impresoras' }, TV.inicioAgregar), ' ', TV.inicioVirtual, '.'),
+            ? h('div', { class: 'pila' }, h('p', { class: 'tenue' }, TV.inicioVacio, ' ', h('a', { href: rutaDe('impresoras') }, TV.inicioAgregar), ' ', TV.inicioVirtual, '.'),
               h('div', {}, botonCrearVirtual()))
             : h('div', { class: 'pila' }, r.impresoras.map((i) => h('div', { class: 'fila-entre' },
               h('span', { class: 'fila' }, h('span', {}, h('span', { class: 'mono' }, i.alias), ' ', h('span', { class: 'tenue pequeno' }, i.nombre)), insigniaVirtual(i)),
@@ -320,7 +386,7 @@
           h('div', { class: 'cifras' },
             h('div', {}, h('div', { class: 'cifra' }, fmtNum.format(r.trabajos_hoy.completados)), h('div', { class: 'tenue pequeno' }, 'tickets impresos')),
             h('div', {}, h('div', { class: 'cifra' }, fmtNum.format(r.trabajos_hoy.fallidos)), h('div', { class: 'tenue pequeno' }, 'con error'))),
-          h('a', { href: '#trabajos', class: 'pequeno' }, 'Ver todos los trabajos'))),
+          h('a', { href: rutaDe('trabajos'), class: 'pequeno' }, 'Ver todos los trabajos'))),
       h('section', { class: 'pila', 'aria-labelledby': 't-ultimos' }, h('h2', { id: 't-ultimos' }, 'Últimos trabajos'), tablaTrabajos(r.ultimos_trabajos)));
   }
 
@@ -419,7 +485,7 @@
             soporta_codigo_barras_nativo: true, soporta_imagen: true, activa: true });
           aviso(TV.creada(alias), 'ok');
         });
-        if (location.hash === '#impresoras') recargar(); else location.hash = '#impresoras';
+        ir('impresoras');
       } catch (e) { avisoError(e); }
     });
     return b;
@@ -629,7 +695,7 @@
       try {
         await conEspera(bGuardar, () => existente ? api.put(`/impresoras/${enc(existente.alias)}`, d) : api.post('/impresoras', d));
         aviso(existente ? 'Cambios guardados.' : `Impresora «${d.alias}» agregada. Imprime el ticket de diagnóstico para comprobarla.`, 'ok');
-        location.hash = '#impresoras'; recargar();
+        ir('impresoras');
       } catch (e) { avisoError(e); }
     } },
     h('section', { class: 'tarjeta' }, h('h2', {}, 'Identificación'),
@@ -787,7 +853,7 @@
         const r = await conEspera(bGuardar, () => existente ? api.put(`/clientes/${enc(existente.id)}`, datos) : api.post('/clientes', datos));
         if (r.llave) await mostrarLlave(r.cliente, r.llave, impresoras);
         else aviso(existente ? 'Cambios guardados.' : 'Aplicación creada.', 'ok');
-        location.hash = '#clientes'; recargar();
+        ir('aplicaciones');
       } catch (e) { avisoError(e); }
     } },
     h('section', { class: 'tarjeta' }, h('h2', {}, 'Aplicación'),
@@ -897,7 +963,7 @@
     const [solicitudes, clientes, impresoras] = await Promise.all([api.get('/solicitudes'), api.get('/clientes'), api.get('/impresoras')]);
     const pendientes = solicitudes.filter((s) => s.estado === 'pendiente');
     const rechazadas = solicitudes.filter((s) => s.estado === 'rechazada');
-    estado.pendientes = pendientes.length; pintarNav();
+    estado.pendientes = pendientes.length; actualizarContador();
     const tabla = (lista, rechazada) => lista.length === 0
       ? h('div', { class: 'tabla-caja' }, h('p', { class: 'vacio' }, rechazada ? 'No hay orígenes rechazados.' : 'No hay solicitudes pendientes.'))
       : h('div', { class: 'tabla-caja', tabindex: '0', role: 'region', 'aria-label': 'Tabla (se puede desplazar)' }, h('table', {},
@@ -1103,7 +1169,7 @@
           if (!(await confirmar('¿Regenerar el certificado?', 'Se crea uno nuevo con el nombre y las IPs actuales de este equipo. Cada dispositivo que confiaba en el anterior tendrá que confiar en el nuevo.', { boton: 'Regenerar', peligro: true }))) return;
           try { await api.post('/tls/regenerar'); aviso('Certificado regenerado. El puente ya lo usa.', 'ok'); recargar(); } catch (e) { avisoError(e); }
         } }, 'Regenerar certificado')),
-      h('p', { class: 'tenue pequeno' }, 'Cómo instalarlo en cada dispositivo: ', h('a', { href: '#ayuda' }, 'Ayuda'), '.'));
+      h('p', { class: 'tenue pequeno' }, 'Cómo instalarlo en cada dispositivo: ', h('a', { href: rutaDe('ayuda') }, 'Ayuda'), '.'));
 
     const actual = h('input', { type: 'password', id: 'aj-actual', autocomplete: 'current-password' });
     const nueva = h('input', { type: 'password', id: 'aj-nueva', autocomplete: 'new-password' });
@@ -1192,7 +1258,7 @@
         pestanas, pasos),
       h('section', { class: 'tarjeta' }, h('h2', {}, 'Integrar una aplicación'),
         h('ol', { class: 'pila' },
-          h('li', {}, 'Agrega la aplicación en ', h('a', { href: '#clientes' }, 'Aplicaciones'), ' y elige su nivel de seguridad.'),
+          h('li', {}, 'Agrega la aplicación en ', h('a', { href: rutaDe('aplicaciones') }, 'Aplicaciones'), ' y elige su nivel de seguridad.'),
           h('li', {}, 'Copia su código de integración: incluye la dirección del puente y, si corresponde, su llave.'),
           h('li', {}, 'Arma los tickets como documentos JSON con las operaciones del contrato (texto, filas, QR, imágenes, corte…).')),
         h('ul', { class: 'pila' },
@@ -1207,8 +1273,8 @@
   }
 
   const VISTAS = {
-    inicio: vistaInicio, impresoras: vistaImpresoras, clientes: vistaClientes, solicitudes: vistaSolicitudes,
-    trabajos: vistaTrabajos, recursos: vistaRecursos, ajustes: vistaAjustes, ayuda: vistaAyuda,
+    inicio: vistaInicio, impresoras: vistaImpresoras, aplicaciones: vistaClientes, solicitudes: vistaSolicitudes,
+    trabajos: vistaTrabajos, imagenes: vistaRecursos, ajustes: vistaAjustes, ayuda: vistaAyuda,
   };
 
   arrancar();

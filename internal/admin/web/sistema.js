@@ -414,9 +414,9 @@
     const idNav = nuevoId('nav');
     const nav = h('nav', { class: 'nav', id: idNav, 'aria-label': T.navegacion });
     const todas = grupos.flatMap((g) => g.secciones);
-    const enlace = (s, corto) => h('a', { href: s.href || `#${s.id}`, 'aria-current': s.id === actual ? 'page' : false },
+    const enlace = (s, corto) => h('a', { href: s.href || `#${s.id}`, 'data-seccion': s.id, 'aria-current': s.id === actual ? 'page' : false },
       icono(s.icono), h('span', { class: 'nav-texto' }, corto && s.textoCorto ? s.textoCorto : s.texto),
-      s.contador > 0 && h('span', { class: 'contador', 'aria-label': s.etiquetaContador || String(s.contador) }, String(s.contador)));
+      h('span', { class: 'contador', hidden: !(s.contador > 0), 'aria-label': s.etiquetaContador || String(s.contador || 0) }, String(s.contador || 0)));
     agregar(nav, grupos.map((g) => h('div', { class: 'nav-grupo' }, g.titulo && h('p', { class: 'nav-titulo', 'aria-hidden': 'true' }, g.titulo),
       h('ul', { 'aria-label': g.titulo }, g.secciones.map((s) => h('li', {}, enlace(s)))))));
     const menu = boton({ texto: T.menu, icono: 'menu', chico: true, class: 'boton chico menu-boton', 'aria-expanded': 'false', 'aria-controls': idNav });
@@ -435,7 +435,13 @@
     el.principal = principal;
     el.marcar = (id) => {
       for (const a of el.querySelectorAll('.nav a, .nav-inferior a')) {
-        if (a.getAttribute('href') === `#${id}`) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+        if (a.dataset.seccion === id) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+      }
+    };
+    // Cambia el contador de una sección (0 lo oculta); etiqueta es su texto para lectores de pantalla.
+    el.contador = (id, n, etiqueta) => {
+      for (const c of el.querySelectorAll(`[data-seccion="${id}"] .contador`)) {
+        c.textContent = String(n); c.hidden = !(n > 0); c.setAttribute('aria-label', etiqueta || String(n));
       }
     };
     return el;

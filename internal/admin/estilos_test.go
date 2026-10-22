@@ -199,3 +199,32 @@ func TestSpriteDeIconos(t *testing.T) {
 		}
 	}
 }
+
+// TestRutasDeLasPantallas: cada pantalla del panel tiene su ruta (sirve index.html), las demás
+// responden 404 y la lista del servidor coincide con las secciones de panel.js.
+func TestRutasDeLasPantallas(t *testing.T) {
+	b := nuevoBanco(t)
+	n := b.nuevoNavegador("127.0.0.1")
+	indice := n.exigir("GET", "/admin/", nil, 200).Body.String()
+	for _, v := range vistasPanel {
+		r := n.exigir("GET", "/admin/"+v, nil, 200)
+		if r.Body.String() != indice || r.Header().Get("Content-Security-Policy") != cspPanel {
+			t.Errorf("/admin/%s debe servir el panel con su CSP", v)
+		}
+	}
+	for _, ruta := range []string{"/admin/no-existe", "/admin/impresoras/caja", "/admin/clientes", "/admin/index.htm"} {
+		n.exigir("GET", ruta, nil, 404)
+	}
+
+	fuente, err := fs.ReadFile(archivosWeb, "web/panel.js")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var rutas []string
+	for _, m := range regexp.MustCompile(`ruta: '([a-z]+)'`).FindAllStringSubmatch(string(fuente), -1) {
+		rutas = append(rutas, m[1])
+	}
+	if fmt.Sprint(rutas) != fmt.Sprint(vistasPanel) {
+		t.Errorf("las rutas de panel.js %v no coinciden con vistasPanel %v", rutas, vistasPanel)
+	}
+}
