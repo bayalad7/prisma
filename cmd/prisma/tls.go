@@ -66,7 +66,7 @@ func nuevoComandoTLS(op *opciones) *cobra.Command {
 				if err := mostrarCertificado(w, ruta); err != nil {
 					return err
 				}
-				fmt.Fprintln(w, "\nPara que los navegadores confíen en él, sigue docs/tls.md.")
+				fmt.Fprintln(w, "\nPara que los navegadores confíen en él, sigue docs/instalacion/https-y-certificados.md.")
 				return nil
 			},
 		},
