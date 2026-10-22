@@ -123,8 +123,8 @@ prisma impresoras agregar --alias caja --tipo red --destino 192.168.1.50 --cajon
 | Opción | Por defecto | Descripción |
 |---|---|---|
 | `--alias` | **obligatorio** | Nombre con el que las aplicaciones eligen la impresora: `^[a-z0-9][a-z0-9_-]{0,31}$`. |
-| `--tipo` | **obligatorio** | `red`, `usb`, `bluetooth` o `archivo`. |
-| `--destino` | **obligatorio** | `IP[:puerto]` (9100 por defecto) · nombre en Windows · `/dev/usb/lpN` o cola de CUPS · `COMn`, `/dev/rfcommN` o `/dev/cu.*` · carpeta. |
+| `--tipo` | **obligatorio** | `red`, `usb`, `bluetooth`, `archivo` o `virtual`. |
+| `--destino` | **obligatorio** (salvo `virtual`) | `IP[:puerto]` (9100 por defecto) · nombre en Windows · `/dev/usb/lpN` o cola de CUPS · `COMn`, `/dev/rfcommN` o `/dev/cu.*` · carpeta. La impresora virtual no tiene destino. |
 | `--nombre` | el alias | Nombre descriptivo. |
 | `--ancho` | `80` | Ancho del papel en mm: `58` u `80`. Fija las columnas y los puntos por defecto. |
 | `--columnas` | 48 (80 mm) / 32 (58 mm) | Caracteres por línea con la fuente A. |
