@@ -40,7 +40,7 @@ Están agrupadas en *Operación*, *Integración* y *Sistema*, y cada una tiene s
 | **[Solicitudes](aplicaciones-y-solicitudes.md#solicitudes-de-origen)** | Orígenes desconocidos que intentaron imprimir. Se aprueban (con una aplicación nueva o existente), se rechazan o se olvidan. |
 | **Trabajos** | Historial con filtros (todos, fallidos, con aviso, en cola; y por aplicación, impresora y fechas). Al tocar un trabajo se ve **qué pasó, por qué suele pasar y qué hacer**, con *Probar la impresora* ahí mismo; los avisos (un acento que no existe, sin cuchilla…) también se explican, y el de una impresora virtual muestra su ticket. Las pruebas del panel aparecen como «Panel (prueba)». Nunca muestra el contenido de los tickets: el puente no lo guarda. |
 | **Imágenes** | PNG guardados en el puente para usarlos con `"recurso"` en la operación `imagen`. Muestra cómo quedarán en 1 bit antes de guardarlos. |
-| **[Ajustes](ajustes.md)** | Nombre del puente, límites de peticiones, retención del historial, acceso solo desde la red local, certificado HTTPS, contraseña, respaldo y restauración. |
+| **[Ajustes](ajustes.md)** | En cuatro pestañas: General (nombre, límite de tickets, historial, versiones nuevas), Seguridad y acceso (contraseña, acceso solo desde la red del negocio), HTTPS (certificado) y Respaldo (descargar y restaurar). |
 | **Ayuda** | Cómo confiar en el certificado en cada sistema y enlaces a esta documentación. |
 
 Si algo no funciona, ver [problemas-comunes.md](problemas-comunes.md).
@@ -48,7 +48,7 @@ Si algo no funciona, ver [problemas-comunes.md](problemas-comunes.md).
 ## Seguridad del panel
 
 - **Contraseña:** guardada con argon2id. Tras 5 intentos fallidos desde una misma IP, esa IP queda bloqueada 5 minutos.
-- **Sesión:** cookie `HttpOnly`, `Secure` (con HTTPS) y `SameSite=Strict`, limitada a `/admin`. Termina tras 30 minutos sin actividad, a las 12 horas, al reiniciar el puente o al cambiar la contraseña.
+- **Sesión:** cookie `HttpOnly`, `Secure` (con HTTPS) y `SameSite=Strict`, limitada a `/admin`. Termina tras 30 minutos sin actividad, a las 12 horas, al reiniciar el puente o al cambiar la contraseña. Dos minutos antes del cierre por inactividad, el panel avisa con una cuenta regresiva; solo *Seguir conectado* (que pulsa la persona) renueva la sesión: el panel nunca la mantiene viva por su cuenta.
 - **CSRF:** cada cambio lleva un token de la sesión en `X-CSRF-Token` y debe venir del mismo origen que el panel.
 - **Contenido:** HTML, CSS y JavaScript van dentro del binario, sin CDNs ni recursos externos, con una política CSP que solo permite archivos del propio puente.
 - **Bitácora:** registra las acciones (impresora agregada, aplicación creada, origen aprobado…), nunca contraseñas, llaves, códigos ni el contenido de los tickets.

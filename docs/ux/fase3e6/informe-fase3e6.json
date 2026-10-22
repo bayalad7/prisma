@@ -1,0 +1,35 @@
+{
+  "axe": {
+    "general-escritorio": [],
+    "seguridad-escritorio": [],
+    "https-escritorio": [],
+    "respaldo-escritorio": [],
+    "https-celular": [],
+    "aviso-sesion-escritorio": []
+  },
+  "desborde": {
+    "general-escritorio": 0,
+    "seguridad-escritorio": 0,
+    "https-escritorio": 0,
+    "respaldo-escritorio": 0,
+    "https-celular": 0,
+    "aviso-sesion-escritorio": 0
+  },
+  "consola": [
+    "escritorio: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "comprobaciones": [
+    "ok    nombre vacío: error junto al campo ",
+    "ok    límite negativo: error junto al campo ",
+    "ok    la pestaña queda en la dirección https://127.0.0.1:18443/admin/ajustes?pestana=seguridad",
+    "ok    contraseña actual equivocada: error junto al campo ",
+    "ok    quitar «solo la red del negocio» pide confirmación ",
+    "ok    cancelar deja el interruptor como estaba ",
+    "ok    regenerar dice qué pasará en cada equipo ",
+    "ok    restaurar sin archivo ni confirmación: errores junto a los campos ",
+    "ok    ?pestana=https abre esa pestaña ",
+    "ok    avisa 2 minutos antes de cerrar la sesión ",
+    "ok    «Seguir conectado» cierra el aviso ",
+    "ok    sin actividad, la sesión se cierra y pide entrar "
+  ]
+}

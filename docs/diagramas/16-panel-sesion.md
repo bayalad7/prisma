@@ -39,12 +39,14 @@ sequenceDiagram
 - El token de sesión son 32 bytes aleatorios; el puente guarda su SHA-256, en memoria.
 - Tras `prisma admin restablecer-contrasena`, toda acción responde `CAMBIO_DE_CONTRASENA_REQUERIDO` hasta que se cambie.
 - Por defecto el panel solo responde a IPs privadas y al propio equipo (`ACCESO_SOLO_RED_LOCAL`).
+- Cualquier petición con sesión renueva la actividad. El panel avisa 2 minutos antes del cierre por inactividad y solo «Seguir conectado» la renueva; no consulta al puente por su cuenta, para no anular el cierre.
 
 **Fuentes en el código:**
 
 - internal/admin/sesiones.go (`inactividadMaxima`, `duracionMaxima`, `fallosPermitidos`, `bloqueo`, `vigenciaCodigo`, `fallosCodigo`)
 - internal/admin/admin.go (`Handler`, `redPermitida`)
+- internal/admin/web/panel.js (`INACTIVIDAD`, `mostrarAvisoSesion`)
 - internal/seguridad/contrasena.go
 - cmd/prisma/admin.go
 
-**Última verificación:** PRISMA 0.1.0 (rama `develop`, commit `5f67e19`), 22 de octubre de 2026.
+**Última verificación:** PRISMA 0.2.0 en desarrollo (rama `develop`), 22 de octubre de 2026.
