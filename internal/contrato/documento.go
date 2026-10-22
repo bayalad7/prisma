@@ -1,4 +1,4 @@
-// Package contrato define los tipos del documento v1 (docs/contrato-documento-v1.md) y su validación:
+// Package contrato define los tipos del documento v1 (docs/referencia/contrato-documento-v1.md) y su validación:
 // JSON Schema embebido más las reglas de negocio que no dependen de la impresora.
 package contrato
 
