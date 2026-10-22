@@ -25,6 +25,7 @@ type Trabajo struct {
 	DocumentoID    string
 	ClienteID      string
 	ImpresoraAlias string
+	Virtual        bool // la impresora era virtual (el ticket no salió en papel)
 	Referencia     string
 	Estado         string
 	CodigoError    string
@@ -36,7 +37,7 @@ type Trabajo struct {
 
 type RepoTrabajos struct{ a *Almacen }
 
-const columnasTrabajo = `id, documento_id, cliente_id, impresora_alias, referencia, estado, codigo_error,
+const columnasTrabajo = `id, documento_id, cliente_id, impresora_alias, virtual, referencia, estado, codigo_error,
 	advertencias, duracion_ms, creado, finalizado`
 
 // Crear registra un trabajo nuevo en estado encolado.
@@ -47,9 +48,9 @@ func (r *RepoTrabajos) Crear(ctx context.Context, t *Trabajo) error {
 	}
 	ahora := r.a.ahora()
 	t.Estado = TrabajoEncolado
-	_, err = r.a.bd().ExecContext(ctx, `INSERT INTO trabajos (id, documento_id, cliente_id, impresora_alias, referencia,
-		estado, advertencias, creado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-		t.ID, t.DocumentoID, t.ClienteID, t.ImpresoraAlias, textoNulo(t.Referencia), t.Estado, adv, ms(ahora))
+	_, err = r.a.bd().ExecContext(ctx, `INSERT INTO trabajos (id, documento_id, cliente_id, impresora_alias, virtual,
+		referencia, estado, advertencias, creado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		t.ID, t.DocumentoID, t.ClienteID, t.ImpresoraAlias, bit(t.Virtual), textoNulo(t.Referencia), t.Estado, adv, ms(ahora))
 	if err != nil {
 		return traducirError(err, "trabajo "+t.ID)
 	}
@@ -175,7 +176,8 @@ func escanearTrabajo(f filaEscaneable) (*Trabajo, error) {
 	var adv string
 	var duracion, finalizado sql.NullInt64
 	var creado int64
-	err := f.Scan(&t.ID, &t.DocumentoID, &t.ClienteID, &t.ImpresoraAlias, &referencia, &t.Estado, &codigo, &adv,
+	var virtual int
+	err := f.Scan(&t.ID, &t.DocumentoID, &t.ClienteID, &t.ImpresoraAlias, &virtual, &referencia, &t.Estado, &codigo, &adv,
 		&duracion, &creado, &finalizado)
 	if err != nil {
 		return nil, err
@@ -183,7 +185,7 @@ func escanearTrabajo(f filaEscaneable) (*Trabajo, error) {
 	if err := json.Unmarshal([]byte(adv), &t.Advertencias); err != nil {
 		return nil, fmt.Errorf("advertencias del trabajo %s: %w", t.ID, err)
 	}
-	t.Referencia, t.CodigoError = referencia.String, codigo.String
+	t.Virtual, t.Referencia, t.CodigoError = virtual == 1, referencia.String, codigo.String
 	t.Duracion = time.Duration(duracion.Int64) * time.Millisecond
 	t.Creado, t.Finalizado = desdeMs(creado), desdeMsNulo(finalizado)
 	return &t, nil
