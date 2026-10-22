@@ -69,7 +69,7 @@
       if (cuerpo instanceof FormData) op.body = cuerpo;
       else if (cuerpo !== undefined) { op.headers['Content-Type'] = 'application/json'; op.body = JSON.stringify(cuerpo); }
       let r;
-      try { r = await fetch('/admin/api' + ruta, op); if (!sondeo) api.ultimaActividad = Date.now(); } catch {
+      try { r = await fetch(ruta.startsWith('/admin/') ? ruta : '/admin/api' + ruta, op); if (!sondeo) api.ultimaActividad = Date.now(); } catch {
         throw new ErrorApi({ mensaje: 'No hay conexión con el puente.', sugerencia: 'Revisa que PRISMA siga en marcha.' });
       }
       const tipo = r.headers.get('Content-Type') || '';
@@ -112,6 +112,7 @@
   const seccionDe = (ruta) => {
     const r = ruta.replace(/^\/admin\/?/, '').replace(/\/$/, '');
     if (/^pruebas\/(permisos|rollo\/[^/]+)$/.test(r)) return 'pruebas';
+    if (/^ayuda\/[a-z]+\/[A-Za-z0-9-]+\.md$/.test(r)) return 'ayuda';
     return SECCIONES.find((s) => s.ruta === r)?.id;
   };
 
@@ -231,7 +232,7 @@
   let app;
   function mostrarApp() {
     const viejo = location.hash.slice(1);
-    if (viejo && (HASH_VIEJOS[viejo] || SECCIONES.some((x) => x.id === viejo))) history.replaceState(null, '', rutaDe(HASH_VIEJOS[viejo] || viejo));
+    if (viejo && location.pathname === '/admin/' && (HASH_VIEJOS[viejo] || SECCIONES.some((x) => x.id === viejo))) history.replaceState(null, '', rutaDe(HASH_VIEJOS[viejo] || viejo));
     const grupos = Object.entries(TN.grupos).map(([g, titulo]) => ({
       titulo,
       secciones: SECCIONES.filter((x) => x.grupo === g).map((x) => ({ id: x.id, texto: TN.secciones[x.id], icono: x.icono, href: rutaDe(x.id) })),
@@ -254,7 +255,7 @@
   function seccionActual() { return seccionDe(location.pathname) || 'inicio'; }
   function ir(id, consulta = '') { irRuta(rutaDe(id) + consulta); }
   function irRuta(destino) {
-    if (location.pathname + location.search !== destino) history.pushState(null, '', destino);
+    if (location.pathname + location.search + location.hash !== destino) history.pushState(null, '', destino);
     navegar();
   }
   async function navegar() {
@@ -270,6 +271,9 @@
       if (e.estado === 401) return;
       vaciar(vista, cintaDemo(), h('div', { class: 'nota error' }, e.message, ' ', e.sugerencia || ''));
     }
+    // Con un ancla (una sección del manual), la vista va a ese título.
+    const ancla = location.hash.length > 1 && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+    if (ancla && vista.contains(ancla)) { enfocarAncla(ancla); return; }
     // El foco va al título de la pantalla: el lector de pantalla anuncia dónde se está.
     const titulo = vista.querySelector('h1');
     if (titulo) { titulo.tabIndex = -1; titulo.focus({ preventScroll: true }); } else app.principal.focus({ preventScroll: true });
@@ -309,7 +313,7 @@
     const destino = new URL(a.href);
     if (!seccionDe(destino.pathname)) return;
     ev.preventDefault();
-    irRuta(destino.pathname + destino.search);
+    irRuta(destino.pathname + destino.search + destino.hash);
   });
 
   // Atajos: g y la letra de la sección; ? muestra la ayuda. Se pueden desactivar (WCAG 2.1.4).
@@ -2478,49 +2482,108 @@
   // La documentación de la versión instalada: la etiqueta v<versión> si es una versión publicada, o
   // main en una compilación de desarrollo (0.0.0-dev) o intermedia (git describe con -N-gabc).
   const docsDe = (version) => `https://github.com/bayalad7/prisma/blob/${/^\d+\.\d+\.\d+(-rc\.\d+)?$/.test(version || '') ? `v${version}` : 'main'}/docs/`;
-  const GUIAS_CERT = {
-    Windows: ['Descarga el certificado (Ajustes → HTTPS) y ábrelo con doble clic.', 'Instalar certificado → Equipo local.', 'Colocar todos los certificados en el siguiente almacén → «Entidades de certificación raíz de confianza».', 'Reinicia el navegador. Chrome y Edge usan el almacén de Windows.'],
-    macOS: ['Descarga el certificado y ábrelo: se agrega al llavero.', 'En Acceso a Llaveros, ábrelo y en «Confiar» elige «Confiar siempre».', 'O en Terminal: sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain certificado.pem'],
-    Linux: ['sudo cp certificado.pem /usr/local/share/ca-certificates/prisma.crt', 'sudo update-ca-certificates', 'Chrome/Chromium: certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n PRISMA -i certificado.pem'],
-    Android: ['Copia el certificado al teléfono.', 'Ajustes → Seguridad → Cifrado y credenciales → Instalar un certificado → Certificado de CA.', 'Chrome para Android confía en los certificados de CA instalados así.'],
-    'iPhone / iPad': ['Abre el certificado en Safari: se descarga como perfil.', 'Ajustes → General → VPN y gestión de dispositivos → instala el perfil.', 'Ajustes → General → Información → Ajustes de confianza de certificados → activa PRISMA.'],
-    Firefox: ['Ajustes → Privacidad y seguridad → Certificados → Ver certificados → Autoridades → Importar.', 'Marca «Confiar en esta CA para identificar sitios web».'],
-  };
+
+  // ---------------------------------------------------------------------------------------------
+  // 9. Ayuda: el manual de docs/ (docs.Manual), dibujado por manual.js sin innerHTML.
+  // ---------------------------------------------------------------------------------------------
+  const TAy = window.PRISMA_TEXTOS.ayuda;
+  let manual = null; // { grupos, documentos: Map(ruta → { titulo, grupo }), orden: [ruta] }
+  async function cargarManual() {
+    if (manual) return manual;
+    const { grupos } = await api.get('/manual');
+    const documentos = new Map();
+    const orden = [];
+    for (const g of grupos) for (const d of g.documentos) { documentos.set(d.ruta, { ...d, grupo: g }); orden.push(d.ruta); }
+    manual = { grupos, documentos, orden };
+    return manual;
+  }
+  const rutaAyuda = (ruta, ancla = '') => `/admin/ayuda/${ruta}${ancla}`;
+  // Resuelve un destino relativo al documento actual: «../referencia/cli.md#x» desde
+  // «administracion/README.md» es «referencia/cli.md» con el ancla «#x». Fuera de docs/ empieza con «../».
+  function resolverRuta(destino, desde) {
+    const u = new URL(destino, `https://x/docs/${desde}`);
+    const ruta = u.pathname.startsWith('/docs/') ? u.pathname.slice(6) : `../${u.pathname.slice(1)}`;
+    return { ruta: decodeURIComponent(ruta), ancla: u.hash };
+  }
+
   async function vistaAyuda(vista) {
-    let huella = '';
-    let docs = docsDe('');
-    try { huella = (await api.get('/ajustes')).tls.certificado?.huella || ''; } catch { /* la ayuda funciona sin huella */ }
-    try { docs = docsDe((await api.get('/resumen')).puente.version); } catch { /* sin versión, enlaza main */ }
-    const pasos = h('ol', { class: 'pila' });
-    const pestanas = h('div', { class: 'pestanas', role: 'tablist' });
-    const elegir = (so) => {
-      vaciar(pasos, GUIAS_CERT[so].map((p) => h('li', {}, /^(sudo|certutil|O en Terminal)/.test(p) ? h('code', {}, p) : p)));
-      for (const b of pestanas.children) b.setAttribute('aria-selected', String(b.textContent === so));
+    const { grupos, documentos, orden } = await cargarManual();
+    const ruta = decodeURIComponent(location.pathname.replace(/^\/admin\/ayuda\/?/, ''));
+    if (!ruta) {
+      agregar(vista, encabezado(TAy.titulo, TAy.subtitulo),
+        h('div', { class: 'grupos-manual' }, grupos.map((g) => UI.tarjeta({ titulo: g.titulo, icono: 'libro', nivel: 2 },
+          h('ul', { class: 'lista-manual' }, g.documentos.map((d) => h('li', {}, h('a', { href: rutaAyuda(d.ruta) }, d.titulo))))))));
+      return;
+    }
+    const doc = documentos.get(ruta);
+    const indice = h('nav', { class: 'indice-manual', 'aria-label': TAy.indice },
+      h('details', { class: 'avanzado', open: matchMedia('(min-width: 1024px)').matches },
+        h('summary', {}, TAy.indice),
+        grupos.map((g) => h('div', { class: 'pila' }, h('p', { class: 'grupo-manual' }, g.titulo),
+          h('ul', { class: 'lista-manual' }, g.documentos.map((d) => h('li', {},
+            h('a', { href: rutaAyuda(d.ruta), 'aria-current': d.ruta === ruta ? 'page' : undefined }, d.titulo))))))));
+    const volver = h('a', { href: rutaDe('ayuda'), class: 'volver' }, UI.icono('flecha-izq'), TAy.volver);
+    if (!doc) {
+      agregar(vista, h('div', { class: 'manual' }, indice, h('article', { class: 'documento-manual' }, volver,
+        UI.vacio({ icono: 'libro', titulo: TAy.noExiste, texto: TAy.noExisteTexto }))));
+      return;
+    }
+    const texto = await (await api.pedir('GET', '/admin/manual/' + ruta.split('/').map(enc).join('/'))).text();
+    const ref = `https://github.com/bayalad7/prisma/blob/${/^\d+\.\d+\.\d+(-rc\.\d+)?$/.test(estado.version || '') ? `v${estado.version}` : 'main'}/`;
+    const externo = (href, hijos, nota = TAy.externo) => h('a', { href, target: '_blank', rel: 'noopener noreferrer', class: 'enlace-externo' },
+      hijos, UI.icono('externo'), h('span', { class: 'solo-lector' }, ` ${nota}`));
+    const contexto = {
+      textos: TAy,
+      enlace(destino, hijos) {
+        if (/^(https?:|mailto:)/.test(destino)) return externo(destino, hijos);
+        if (destino.startsWith('#')) return h('a', { href: destino, 'data-ancla': '1' }, hijos);
+        let { ruta: r, ancla } = resolverRuta(destino, ruta);
+        if (r.endsWith('/') || r === '') r += 'README.md';
+        if (documentos.has(r)) return h('a', { href: rutaAyuda(r, ancla) }, hijos);
+        // Fuera del manual (código, ADR, desarrollo): el repositorio en GitHub, con Internet.
+        const enRepo = r.startsWith('../') ? r.slice(3) : `docs/${r}`;
+        return externo(`${ref}${enRepo}${ancla}`, hijos, TAy.requiereInternet);
+      },
+      imagen(destino, alt) {
+        if (/^https?:/.test(destino)) return h('span', { class: 'tenue' }, TAy.imagenExterna(alt));
+        const { ruta: r } = resolverRuta(destino, ruta);
+        return h('img', { src: `/admin/manual/${r}`, alt, loading: 'lazy', class: 'imagen-manual' });
+      },
+      codigo(lenguaje, _texto, pre) {
+        if (lenguaje !== 'mermaid') return pre;
+        return h('details', { class: 'avanzado' }, h('summary', {}, TAy.verDiagrama), pre);
+      },
     };
-    agregar(pestanas, Object.keys(GUIAS_CERT).map((so) => h('button', { type: 'button', role: 'tab', onclick: () => elegir(so) }, so)));
-    elegir('Windows');
-    const enlace = (archivo, texto, detalle) => h('li', {}, h('a', { href: docs + archivo, target: '_blank', rel: 'noopener' }, texto), ' — ', h('span', { class: 'tenue' }, detalle));
-    agregar(vista,
-      encabezado('Ayuda', null),
-      h('section', { class: 'tarjeta' }, h('h2', {}, 'Confiar en el certificado del puente'),
-        h('p', {}, 'Los navegadores solo dejan imprimir a las páginas HTTPS si confían en el certificado del puente. Hazlo una vez en cada equipo o teléfono desde el que se imprima.'),
-        huella && h('p', { class: 'pequeno' }, 'Antes de instalarlo, comprueba que su huella sea: ', h('span', { class: 'mono' }, huella)),
-        h('div', {}, enlaceDescarga('/tls/certificado', 'Descargar certificado')),
-        pestanas, pasos),
-      h('section', { class: 'tarjeta' }, h('h2', {}, 'Integrar una aplicación'),
-        h('ol', { class: 'pila' },
-          h('li', {}, 'Agrega la aplicación en ', h('a', { href: rutaDe('aplicaciones') }, 'Aplicaciones'), ' y elige su nivel de seguridad.'),
-          h('li', {}, 'Copia su código de integración: incluye la dirección del puente y, si corresponde, su llave.'),
-          h('li', {}, 'Arma los tickets como documentos JSON con las operaciones del contrato (texto, filas, QR, imágenes, corte…).')),
-        h('ul', { class: 'pila' },
-          enlace('administracion/README.md', 'Manual del panel', 'impresoras, aplicaciones, solicitudes y ajustes'),
-          enlace('integradores/README.md', 'Guía para integradores', 'SDK, niveles de seguridad y firmas'),
-          enlace('referencia/api-v1.md', 'API v1', 'endpoints, autorización, CORS y errores'),
-          enlace('referencia/contrato-documento-v1.md', 'Contrato del documento', 'todas las operaciones con ejemplos'),
-          enlace('instalacion/https-y-certificados.md', 'HTTPS y certificados', 'modos y cómo confiar en cada sistema'),
-          enlace('instalacion/impresoras.md', 'Conectar impresoras', 'red, USB y Bluetooth en cada sistema'),
-          enlace('administracion/problemas-comunes.md', 'Solución de problemas', 'errores frecuentes, acentos y columnas'),
-          enlace('operacion/README.md', 'Operación', 'respaldo, actualización, bitácoras y recuperación'))));
+    const { nodos, titulos } = window.PrismaManual.renderizar(texto, contexto);
+    const secciones = titulos.filter((t) => t.nivel === 2);
+    const enEsta = secciones.length >= 3 && h('details', { class: 'avanzado en-esta-pagina' }, h('summary', {}, TAy.enEstaPagina),
+      h('ul', { class: 'lista-manual' }, secciones.map((t) => h('li', {}, h('a', { href: `#${t.id}`, 'data-ancla': '1' }, t.texto)))));
+    const k = orden.indexOf(ruta);
+    const vecino = (j, etiqueta, icono) => orden[j] && h('a', { href: rutaAyuda(orden[j]), class: `vecino-manual vecino-${icono}` },
+      h('span', { class: 'tenue pequeno' }, etiqueta), h('span', {}, documentos.get(orden[j]).titulo));
+    const articulo = h('article', { class: 'documento-manual' },
+      h('div', { class: 'fila-entre' }, volver, h('span', { class: 'tenue pequeno' }, doc.grupo.titulo)),
+      nodos.slice(0, 1), enEsta, nodos.slice(1),
+      h('nav', { class: 'vecinos-manual', 'aria-label': TAy.indice }, vecino(k - 1, TAy.anterior, 'izq'), vecino(k + 1, TAy.siguiente, 'der')),
+      h('p', { class: 'pequeno' }, externo(`${ref}docs/${ruta}`, TAy.enGithub, TAy.requiereInternet)));
+    // Anclas dentro de la página: desplazan sin volver a dibujar.
+    articulo.addEventListener('click', (ev) => {
+      const a = ev.target.closest('a[data-ancla]');
+      if (!a) return;
+      const destino = document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+      if (!destino) return;
+      ev.preventDefault();
+      history.replaceState(null, '', a.getAttribute('href'));
+      enfocarAncla(destino);
+    });
+    document.title = TN.tituloPagina(doc.titulo, estado.nombrePuente);
+    agregar(vista, h('div', { class: 'manual' }, indice, articulo));
+  }
+  // Lleva la vista a un título del manual y le da el foco (lo anuncia el lector de pantalla).
+  function enfocarAncla(el) {
+    el.tabIndex = -1;
+    el.focus({ preventScroll: true });
+    el.scrollIntoView({ block: 'start' });
   }
 
   const VISTAS = {

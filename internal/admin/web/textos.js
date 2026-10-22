@@ -604,6 +604,25 @@ window.PRISMA_TEXTOS = {
     sinConexionTexto: 'Revisa que PRISMA siga en marcha en el equipo del puente y que estés en la misma red.',
     reintentar: 'Volver a intentar',
   },
+  // Ayuda: el manual de docs/ dentro del panel (Fase 4).
+  ayuda: {
+    titulo: 'Ayuda',
+    subtitulo: 'El manual de PRISMA viene dentro del puente: funciona sin Internet y corresponde a esta versión.',
+    indice: 'Índice del manual',
+    volver: 'Ayuda',
+    enEstaPagina: 'En esta página',
+    anterior: 'Anterior', siguiente: 'Siguiente',
+    enGithub: 'Ver en GitHub',
+    externo: '(se abre en otra pestaña)',
+    requiereInternet: '(requiere Internet)',
+    tabla: 'Tabla (se desplaza a los lados)',
+    codigo: 'Bloque de código',
+    diagrama: 'Código del diagrama',
+    verDiagrama: 'Ver el código del diagrama (Mermaid)',
+    imagenExterna: (alt) => `Imagen en Internet: ${alt}`,
+    noExiste: 'Esa página del manual no existe',
+    noExisteTexto: 'Puede que el enlace sea de otra versión. Busca el tema en el índice.',
+  },
   // Probar impresión (Fase 6.2).
   pruebas: {
     titulo: 'Probar impresión',

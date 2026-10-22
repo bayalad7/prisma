@@ -25,7 +25,7 @@ import (
 	"github.com/bayalad7/prisma/internal/servidor"
 )
 
-//go:embed web/index.html web/panel.css web/panel.js web/textos.js web/sistema.js web/iconos.svg web/estilos.html web/estilos.js
+//go:embed web/index.html web/panel.css web/panel.js web/textos.js web/sistema.js web/manual.js web/iconos.svg web/estilos.html web/estilos.js
 var archivosWeb embed.FS
 
 // Opciones del panel.
@@ -117,6 +117,8 @@ func (a *Admin) Handler() http.Handler {
 	privada("POST /admin/api/pruebas/imprimir", a.imprimirDocumentoPrueba)
 	privada("POST /admin/api/pruebas/permisos", a.comprobarPermisos)
 
+	privada("GET /admin/api/manual", a.listarManual)
+
 	privada("GET /admin/api/ajustes", a.leerAjustes)
 	privada("PUT /admin/api/ajustes", a.guardarAjustes)
 	privada("POST /admin/api/tls/regenerar", a.regenerarTLS)
@@ -142,6 +144,8 @@ func (a *Admin) Handler() http.Handler {
 			http.Redirect(w, r, "/admin/", http.StatusMovedPermanently)
 		case strings.HasPrefix(r.URL.Path, "/admin/api/"):
 			api.ServeHTTP(w, r)
+		case strings.HasPrefix(r.URL.Path, "/admin/manual/"):
+			a.conSesion(a.servirManual, false)(w, r)
 		default:
 			servirEstatico(w, r, estaticos, a.op.Config.Dev.ModoDesarrollo)
 		}
@@ -154,6 +158,7 @@ var tiposEstaticos = map[string]string{
 	"panel.js":   "text/javascript; charset=utf-8",
 	"textos.js":  "text/javascript; charset=utf-8",
 	"sistema.js": "text/javascript; charset=utf-8",
+	"manual.js":  "text/javascript; charset=utf-8",
 	"iconos.svg": "image/svg+xml",
 }
 
@@ -168,9 +173,9 @@ var paginasDesarrollo = map[string]struct{ archivo, tipo string }{
 // la pantalla según la ruta (deben coincidir con SECCIONES de panel.js).
 var vistasPanel = []string{"impresoras", "solicitudes", "trabajos", "pruebas", "aplicaciones", "imagenes", "ajustes", "ayuda"}
 
-// subvistas son pantallas dentro de una sección: el comprobador de permisos y el rollo en vivo de
-// una impresora virtual (/admin/pruebas/rollo/{alias}).
-var subvistas = regexp.MustCompile(`^pruebas/(permisos|rollo/[a-z0-9][a-z0-9_-]{0,31})$`)
+// subvistas son pantallas dentro de una sección: el comprobador de permisos, el rollo en vivo de
+// una impresora virtual (/admin/pruebas/rollo/{alias}) y cada página del manual (/admin/ayuda/{ruta}).
+var subvistas = regexp.MustCompile(`^(pruebas/(permisos|rollo/[a-z0-9][a-z0-9_-]{0,31})|ayuda/[a-z]+/[A-Za-z0-9-]+\.md)$`)
 
 func servirEstatico(w http.ResponseWriter, r *http.Request, estaticos fs.FS, desarrollo bool) {
 	nombre := strings.TrimPrefix(r.URL.Path, "/admin/")
