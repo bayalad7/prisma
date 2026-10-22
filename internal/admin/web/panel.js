@@ -249,6 +249,7 @@
       pie: [UI.selectorTema(), h('span', { id: 'version' }, estado.version && TN.version(estado.version)), botonAtajos(), salir],
     });
     vaciar(raiz, app);
+    UI.configurarAyuda({ abrir: (destino) => abrirAyuda(destino).catch(() => {}), deError: (codigo) => TAy.errores[codigo] });
     refrescarPendientes();
     navegar();
   }
@@ -280,8 +281,11 @@
     window.scrollTo(0, 0);
   }
   function encabezado(titulo, subtitulo, ...acciones) {
+    const destino = ayudaDePantalla();
+    const bAyuda = destino && UI.boton({ texto: TAy.botonPantalla, icono: 'ayuda', variante: 'texto', 'aria-haspopup': 'dialog',
+      'aria-label': TAy.botonPantallaEtiqueta, class: 'boton texto boton-ayuda', onclick: () => abrirAyuda(destino).catch(avisoError) });
     return h('div', { class: 'encabezado' }, h('div', {}, h('h1', {}, titulo), subtitulo && h('p', { class: 'subtitulo' }, subtitulo)),
-      acciones.length > 0 && h('div', { class: 'acciones' }, acciones));
+      (acciones.length > 0 || bAyuda) && h('div', { class: 'acciones' }, acciones, bAyuda));
   }
   function recargar() { navegar(); }
   function actualizarContador() {
@@ -713,7 +717,7 @@
       const cNombre = UI.campo({ id: 'as-nombre', etiqueta: TA.conexion.nombre, control: nombre, ayuda: TA.conexion.nombreAyuda,
         validar: (v) => (v.trim() ? '' : TA.conexion.nombreFalta) });
       const cAlias = UI.campo({ id: 'as-alias', etiqueta: TA.conexion.alias, control: alias, ayuda: TA.conexion.aliasAyuda,
-        info: { texto: TA.conexion.aliasInfo },
+        info: { texto: TA.conexion.aliasInfo, enlace: { destino: TAy.campos.alias } },
         validar: (v) => (!v ? TA.conexion.aliasFalta : !PATRON_ALIAS.test(v) ? TA.conexion.aliasMal : usados.has(v) ? TA.conexion.aliasUsado : '') });
       const nombres = h('div', { class: 'campos' }, cNombre, cAlias);
       const resultado = h('div', { 'aria-live': 'polite' });
@@ -1080,7 +1084,8 @@
     const origenes = [...c.origenes];
     const chips = h('div', { class: 'fila' });
     const nuevoOrigen = UI.entrada({ tipo: 'url', mono: true, autocomplete: 'off', placeholder: 'https://pos.mitienda.mx' });
-    const cOrigen = UI.campo({ id: 'cli-origen', etiqueta: F.origen, control: nuevoOrigen });
+    const cOrigen = UI.campo({ id: 'cli-origen', etiqueta: F.origen, control: nuevoOrigen,
+      info: { texto: TAy.origenInfo, enlace: { destino: TAy.campos.origen } } });
     const pintarOrigenes = () => vaciar(chips, origenes.length
       ? origenes.map((o, k) => h('span', { class: 'chip' }, o, h('button', { type: 'button', 'aria-label': F.quitarOrigen(o), onclick: () => { origenes.splice(k, 1); pintarOrigenes(); } }, '×')))
       : h('span', { class: 'tenue pequeno' }, F.origenesVacio));
@@ -1492,7 +1497,7 @@
         h('div', { class: 'pila' }, h('h3', {}, D.que), h('p', {}, c.que)),
         lista(D.porque, c.porque, false),
         lista(D.hacer, c.hacer, true),
-        h('div', { class: 'acciones' }, imp && botonProbar(), irImpresoras()),
+        h('div', { class: 'acciones' }, imp && botonProbar(), irImpresoras(), enlaceManual(t.codigo_error)),
         resultado,
         t.codigo_error !== 'PUENTE_REINICIADO' && h('p', { class: 'tenue pequeno' }, D.reintento),
       ];
@@ -1992,7 +1997,7 @@
         agregar(resultado,
           UI.nota({ tipo: 'error', titulo: TPr.noImpreso(enviada.alias), texto: h('div', {}, h('p', {}, ex ? ex.que : e.message),
             Array.isArray(hacer) ? h('ol', { class: 'lista-avisos' }, hacer.map((x) => h('li', {}, x))) : hacer ? h('p', {}, hacer) : ''),
-          acciones: e.codigo === 'IMPRESORA_INALCANZABLE' || e.codigo === 'TIEMPO_AGOTADO' ? probar : null }),
+          acciones: [(e.codigo === 'IMPRESORA_INALCANZABLE' || e.codigo === 'TIEMPO_AGOTADO') && probar, enlaceManual(e.codigo)].filter(Boolean) }),
           bloqueRespuesta({ codigo: e.codigo, mensaje: e.message, sugerencia: e.sugerencia }));
       }
     });
@@ -2510,6 +2515,95 @@
     return { ruta: decodeURIComponent(ruta), ancla: u.hash };
   }
 
+  const textosManual = new Map();
+  async function leerDocumento(ruta) {
+    if (!textosManual.has(ruta)) textosManual.set(ruta, await (await api.pedir('GET', '/admin/manual/' + ruta.split('/').map(enc).join('/'))).text());
+    return textosManual.get(ruta);
+  }
+  // Adónde lleva cada enlace de un documento del manual (para manual.js).
+  function contextoManual(ruta, documentos) {
+    const ref = `https://github.com/bayalad7/prisma/blob/${/^\d+\.\d+\.\d+(-rc\.\d+)?$/.test(estado.version || '') ? `v${estado.version}` : 'main'}/`;
+    const externo = (href, hijos, nota = TAy.externo) => h('a', { href, target: '_blank', rel: 'noopener noreferrer', class: 'enlace-externo' },
+      hijos, UI.icono('externo'), h('span', { class: 'solo-lector' }, ` ${nota}`));
+    return {
+      textos: TAy,
+      enlace(destino, hijos) {
+        if (/^(https?:|mailto:)/.test(destino)) return externo(destino, hijos);
+        if (destino.startsWith('#')) return h('a', { href: destino, 'data-ancla': '1' }, hijos);
+        let { ruta: r, ancla } = resolverRuta(destino, ruta);
+        if (r.endsWith('/') || r === '') r += 'README.md';
+        if (documentos.has(r)) return h('a', { href: rutaAyuda(r, ancla) }, hijos);
+        // Fuera del manual (código, ADR, desarrollo): el repositorio en GitHub, con Internet.
+        const enRepo = r.startsWith('../') ? r.slice(3) : `docs/${r}`;
+        return externo(`${ref}${enRepo}${ancla}`, hijos, TAy.requiereInternet);
+      },
+      imagen(destino, alt) {
+        if (/^https?:/.test(destino)) return h('span', { class: 'tenue' }, TAy.imagenExterna(alt));
+        const { ruta: r } = resolverRuta(destino, ruta);
+        return h('img', { src: `/admin/manual/${r}`, alt, loading: 'lazy', class: 'imagen-manual' });
+      },
+      codigo(lenguaje, _texto, pre) {
+        if (lenguaje !== 'mermaid') return pre;
+        return h('details', { class: 'avanzado' }, h('summary', {}, TAy.verDiagrama), pre);
+      },
+    };
+  }
+
+  // Panel lateral de ayuda: una sección del manual («ruta#ancla») sin salir de la pantalla, así no se
+  // pierde lo que se estaba haciendo. Los enlaces al panel lo cierran y llevan a su pantalla.
+  async function abrirAyuda(destino) {
+    const [ruta, ancla = ''] = destino.split('#');
+    const { documentos } = await cargarManual();
+    const doc = documentos.get(ruta);
+    if (!doc) return;
+    const { nodos } = window.PrismaManual.renderizar(await leerDocumento(ruta), contextoManual(ruta, documentos));
+    let titulo = doc.titulo;
+    let cuerpo = nodos.slice(1);
+    const i = ancla ? nodos.findIndex((n) => n.id === ancla) : -1;
+    if (i >= 0) {
+      const nivel = Number(nodos[i].tagName[1]);
+      let j = i + 1;
+      while (j < nodos.length && !(/^H[1-6]$/.test(nodos[j].tagName) && Number(nodos[j].tagName[1]) <= nivel)) j++;
+      titulo = nodos[i].textContent;
+      cuerpo = nodos.slice(i + 1, j);
+    }
+    const idTitulo = UI.nuevoId('ayuda');
+    const d = h('dialog', { class: 'panel-ayuda', 'aria-labelledby': idTitulo });
+    d.addEventListener('close', () => d.remove());
+    d.addEventListener('click', (ev) => {
+      if (ev.target === d) { d.close(); return; } // clic fuera del panel
+      const a = ev.target.closest('a');
+      if (!a) return;
+      if (a.dataset.ancla) {
+        ev.preventDefault();
+        d.querySelector(`[id="${CSS.escape(decodeURIComponent(a.getAttribute('href').slice(1)))}"]`)?.scrollIntoView({ block: 'start' });
+      } else if (a.getAttribute('href').startsWith('/admin/')) d.close();
+    });
+    agregar(d,
+      h('div', { class: 'panel-ayuda-cabeza' },
+        h('div', {}, i >= 0 && h('p', { class: 'tenue pequeno' }, doc.titulo), h('h2', { id: idTitulo }, titulo)),
+        UI.boton({ icono: 'cerrar', variante: 'texto', etiqueta: TAy.panelCerrar, onclick: () => d.close() })),
+      h('div', { class: 'documento-manual' }, cuerpo),
+      h('p', { class: 'pequeno' }, h('a', { href: rutaAyuda(ruta, ancla ? `#${ancla}` : '') }, TAy.abrirEnAyuda, UI.icono('derecha'))));
+    document.body.append(d);
+    d.showModal();
+  }
+  // La ayuda de la pantalla actual (las subpantallas de Probar impresión tienen la suya).
+  function ayudaDePantalla() {
+    const r = location.pathname.replace(/^\/admin\/?/, '');
+    if (r.startsWith('pruebas/rollo/')) return TAy.pantallas.rollo;
+    if (r === 'pruebas/permisos') return TAy.pantallas.permisos;
+    return TAy.pantallas[seccionActual()];
+  }
+  // Un enlace «Leer en el manual» para un código de error o de aviso, si el manual lo explica.
+  function enlaceManual(codigo) {
+    const destino = TAy.errores[codigo];
+    if (!destino) return null;
+    const b = UI.boton({ texto: TAy.leerManual, chico: true, variante: 'texto', icono: 'libro' });
+    b.addEventListener('click', () => abrirAyuda(destino).catch(avisoError));
+    return b;
+  }
+
   async function vistaAyuda(vista) {
     const { grupos, documentos, orden } = await cargarManual();
     const ruta = decodeURIComponent(location.pathname.replace(/^\/admin\/ayuda\/?/, ''));
@@ -2533,32 +2627,8 @@
         UI.vacio({ icono: 'libro', titulo: TAy.noExiste, texto: TAy.noExisteTexto }))));
       return;
     }
-    const texto = await (await api.pedir('GET', '/admin/manual/' + ruta.split('/').map(enc).join('/'))).text();
-    const ref = `https://github.com/bayalad7/prisma/blob/${/^\d+\.\d+\.\d+(-rc\.\d+)?$/.test(estado.version || '') ? `v${estado.version}` : 'main'}/`;
-    const externo = (href, hijos, nota = TAy.externo) => h('a', { href, target: '_blank', rel: 'noopener noreferrer', class: 'enlace-externo' },
-      hijos, UI.icono('externo'), h('span', { class: 'solo-lector' }, ` ${nota}`));
-    const contexto = {
-      textos: TAy,
-      enlace(destino, hijos) {
-        if (/^(https?:|mailto:)/.test(destino)) return externo(destino, hijos);
-        if (destino.startsWith('#')) return h('a', { href: destino, 'data-ancla': '1' }, hijos);
-        let { ruta: r, ancla } = resolverRuta(destino, ruta);
-        if (r.endsWith('/') || r === '') r += 'README.md';
-        if (documentos.has(r)) return h('a', { href: rutaAyuda(r, ancla) }, hijos);
-        // Fuera del manual (código, ADR, desarrollo): el repositorio en GitHub, con Internet.
-        const enRepo = r.startsWith('../') ? r.slice(3) : `docs/${r}`;
-        return externo(`${ref}${enRepo}${ancla}`, hijos, TAy.requiereInternet);
-      },
-      imagen(destino, alt) {
-        if (/^https?:/.test(destino)) return h('span', { class: 'tenue' }, TAy.imagenExterna(alt));
-        const { ruta: r } = resolverRuta(destino, ruta);
-        return h('img', { src: `/admin/manual/${r}`, alt, loading: 'lazy', class: 'imagen-manual' });
-      },
-      codigo(lenguaje, _texto, pre) {
-        if (lenguaje !== 'mermaid') return pre;
-        return h('details', { class: 'avanzado' }, h('summary', {}, TAy.verDiagrama), pre);
-      },
-    };
+    const texto = await leerDocumento(ruta);
+    const contexto = contextoManual(ruta, documentos);
     const { nodos, titulos } = window.PrismaManual.renderizar(texto, contexto);
     const secciones = titulos.filter((t) => t.nivel === 2);
     const enEsta = secciones.length >= 3 && h('details', { class: 'avanzado en-esta-pagina' }, h('summary', {}, TAy.enEstaPagina),

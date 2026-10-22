@@ -2,10 +2,14 @@ package admin
 
 import (
 	"encoding/json"
+	"io/fs"
 	"net/url"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/bayalad7/prisma/docs"
 )
 
 func TestManualDelPanel(t *testing.T) {
@@ -100,4 +104,83 @@ func TestAnclasDeLaBusqueda(t *testing.T) {
 		}
 		vistas[clave] = true
 	}
+}
+
+// destinosDeTextos lee de textos.js un objeto { clave: 'ruta#ancla' } de la sección ayuda.
+func destinosDeTextos(t *testing.T, objeto string) map[string]string {
+	t.Helper()
+	fuente, err := fs.ReadFile(archivosWeb, "web/textos.js")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, resto, ok := strings.Cut(string(fuente), "\n    "+objeto+": {\n")
+	if !ok {
+		t.Fatalf("textos.js no tiene ayuda.%s", objeto)
+	}
+	bloque, _, _ := strings.Cut(resto, "\n    },")
+	destinos := map[string]string{}
+	for _, m := range regexp.MustCompile(`(?m)^\s+(\w+): '([^']+)',`).FindAllStringSubmatch(bloque, -1) {
+		destinos[m[1]] = m[2]
+	}
+	return destinos
+}
+
+// TestAyudaDeCadaPantalla: cada pantalla del panel tiene su sección del manual, cada código de
+// error y advertencia documentado tiene su enlace, y cada destino (documento y ancla) existe.
+func TestAyudaDeCadaPantalla(t *testing.T) {
+	grupos, err := indiceManual()
+	if err != nil {
+		t.Fatal(err)
+	}
+	anclas := map[string]bool{}
+	for _, g := range grupos {
+		for _, d := range g.Documentos {
+			anclas[d.Ruta] = true
+		}
+	}
+	secciones, err := indiceBusqueda()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range secciones {
+		if s.ancla != "" {
+			anclas[s.ruta+"#"+s.ancla] = true
+		}
+	}
+	revisar := func(que string, destinos map[string]string) {
+		for clave, destino := range destinos {
+			if !anclas[destino] {
+				t.Errorf("ayuda.%s.%s lleva a %q, que no está en el manual", que, clave, destino)
+			}
+		}
+	}
+
+	pantallas := destinosDeTextos(t, "pantallas")
+	revisar("pantallas", pantallas)
+	fuente, _ := fs.ReadFile(archivosWeb, "web/panel.js")
+	for _, m := range regexp.MustCompile(`\{ id: '([a-z]+)', ruta:`).FindAllStringSubmatch(string(fuente), -1) {
+		if m[1] != "ayuda" && pantallas[m[1]] == "" {
+			t.Errorf("la pantalla %q no tiene su sección en ayuda.pantallas", m[1])
+		}
+	}
+	for _, sub := range []string{"rollo", "permisos"} {
+		if pantallas[sub] == "" {
+			t.Errorf("la subpantalla %q no tiene su sección en ayuda.pantallas", sub)
+		}
+	}
+
+	errores := destinosDeTextos(t, "errores")
+	revisar("errores", errores)
+	codigos, _ := fs.ReadFile(docs.Manual, "referencia/codigos-de-error.md")
+	n := 0
+	for _, m := range regexp.MustCompile("(?m)^\\| `([A-Z_]+)`").FindAllStringSubmatch(string(codigos), -1) {
+		n++
+		if errores[m[1]] == "" {
+			t.Errorf("el código %s no tiene enlace al manual en ayuda.errores", m[1])
+		}
+	}
+	if n < 60 {
+		t.Fatalf("códigos leídos de codigos-de-error.md: %d", n)
+	}
+	revisar("campos", destinosDeTextos(t, "campos"))
 }

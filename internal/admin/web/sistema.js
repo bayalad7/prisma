@@ -135,11 +135,19 @@
     return h('select', resto, opciones.map(([v, t]) => h('option', { value: v, selected: String(v) === String(valor) }, t)));
   }
 
-  // Explicación corta junto a un campo técnico, con enlace opcional al manual.
+  // El panel registra cómo abrir el manual: { abrir(destino), deError(codigo) → destino }. Así los
+  // avisos de error y los «Saber más» abren la sección en un panel lateral, sin salir de la pantalla.
+  let ayuda = null;
+  function configurarAyuda(a) { ayuda = a; }
+
+  // Explicación corta junto a un campo técnico, con enlace opcional al manual: { destino } abre la
+  // sección del manual en el panel lateral; { href } es un enlace común.
   function botonInfo(tema, { texto, enlace }) {
     const id = nuevoId('info');
-    const panel = h('div', { class: 'info-panel', id, hidden: true }, h('p', {}, texto),
-      enlace && h('a', { href: enlace.href }, enlace.texto || T.saberMas, icono('derecha')));
+    const saberMas = enlace && (enlace.destino && ayuda
+      ? h('button', { type: 'button', class: 'enlace', onclick: () => ayuda.abrir(enlace.destino) }, enlace.texto || T.saberMas, icono('derecha'))
+      : enlace.href && h('a', { href: enlace.href }, enlace.texto || T.saberMas, icono('derecha')));
+    const panel = h('div', { class: 'info-panel', id, hidden: true }, h('p', {}, texto), saberMas);
     const b = h('button', { type: 'button', class: 'info-boton', 'aria-expanded': 'false', 'aria-controls': id, 'aria-label': `${T.masInformacion} ${tema}` }, icono('info'));
     b.addEventListener('click', () => {
       const abierto = panel.hidden;
@@ -343,16 +351,21 @@
     return contAvisos;
   }
   // tipo: '' (información), ok, aviso o error. Los errores duran más; persistente no se cierra solo.
-  function aviso(texto, tipo = '', { persistente } = {}) {
+  // accion: { texto, alPulsar } agrega un botón (y el aviso no se va solo: hay algo que hacer).
+  function aviso(texto, tipo = '', { persistente, accion } = {}) {
+    const boton2 = accion && boton({ texto: accion.texto, variante: 'texto', chico: true, onclick: () => { t.remove(); accion.alPulsar(); } });
     const t = h('div', { class: `toast ${tipo}`, role: tipo === 'error' ? 'alert' : 'status' },
-      icono(ICONO_ESTADO[tipo] || 'info'), h('span', { class: 'toast-texto' }, texto),
+      icono(ICONO_ESTADO[tipo] || 'info'), h('span', { class: 'toast-texto' }, texto), boton2,
       boton({ icono: 'cerrar', variante: 'texto', chico: true, etiqueta: T.cerrarAviso, onclick: () => t.remove() }));
     contenedorAvisos().append(t);
-    if (!persistente) setTimeout(() => t.remove(), tipo === 'error' ? 9000 : 5000);
+    if (!persistente && !accion) setTimeout(() => t.remove(), tipo === 'error' ? 9000 : 5000);
     return t;
   }
+  // Un error con código conocido ofrece «Cómo resolverlo»: la sección del manual que lo explica.
   function avisoError(e) {
-    aviso(e.sugerencia ? `${e.message} ${e.sugerencia}` : e.message, 'error');
+    const destino = ayuda && e.codigo && ayuda.deError(e.codigo);
+    aviso(e.sugerencia ? `${e.message} ${e.sugerencia}` : e.message, 'error',
+      { accion: destino && { texto: T.comoResolverlo, alPulsar: () => ayuda.abrir(destino) } });
   }
 
   function dialogo({ titulo, cuerpo, acciones = [{ texto: T.cerrar, valor: null }], ancho }) {
@@ -524,7 +537,7 @@
     boton, conEspera, copiar, botonCopiar,
     entrada, selector, campo, interruptor, casilla, revisarCampos,
     tarjeta, insignia, nota, vacio, esqueleto, pasos, pestanas, codigo, tabla,
-    aviso, avisoError, dialogo, confirmar,
+    aviso, avisoError, dialogo, confirmar, configurarAyuda,
     selectorTema, marco, visorDiagrama, ticketPapel,
     leerTema, guardarTema,
   };
