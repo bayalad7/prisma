@@ -37,7 +37,7 @@ flowchart LR
 - Atajos: `g` y la letra de la sección (por ejemplo `g p`, Impresoras); `?` los muestra y permite desactivarlos.
 - *Acceso* es el primer acceso (con código desde otro equipo), el inicio de sesión y el cambio de contraseña obligatorio tras restablecerla ([16-panel-sesion.md](16-panel-sesion.md)).
 - Toda acción usa la API interna `/admin/api/…`, con sesión y CSRF; no es una API pública.
-- *Ayuda* muestra el manual de `docs/` embebido en el binario, sin Internet: cada página tiene su ruta y los enlaces entre páginas no recargan; lo que no está en el manual (código, ADR) enlaza a GitHub en la versión instalada ([ADR 0017](../adr/0017-manual-del-panel-con-renderizador-propio.md)).
+- *Ayuda* muestra el manual de `docs/` embebido en el binario, sin Internet, con búsqueda local: cada página tiene su ruta y los enlaces entre páginas no recargan; lo que no está en el manual (código, ADR) enlaza a GitHub en la versión instalada ([ADR 0017](../adr/0017-manual-del-panel-con-renderizador-propio.md)).
 - *Probar impresión* incluye el rollo en vivo de cada impresora virtual (`/admin/pruebas/rollo/{alias}`) y el comprobador de permisos (`/admin/pruebas/permisos`).
 
 **Fuentes en el código:**

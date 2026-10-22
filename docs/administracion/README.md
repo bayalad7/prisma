@@ -1,5 +1,7 @@
 # Panel de administración
 
+¿Primera vez? Empieza por [Primeros pasos](primeros-pasos.md). Las palabras del panel están en [Conceptos básicos](conceptos.md); lo de todos los días, en [Tareas frecuentes](tareas-frecuentes.md); y si algo falla, [Solución de problemas](solucion-de-problemas.md) o las [Preguntas frecuentes](preguntas-frecuentes.md).
+
 El panel es la página web donde el dueño del negocio configura PRISMA: impresoras, aplicaciones autorizadas, solicitudes de origen, historial de trabajos, imágenes y ajustes. Lo sirve el mismo programa `prisma` que imprime, en el mismo puerto que la API:
 
 ```
@@ -45,7 +47,7 @@ Están agrupadas en *Operación*, *Integración* y *Sistema*, y cada una tiene s
 | **[Probar sin impresora](probar-sin-impresora.md)** | Guía para dueños e integradores: la impresora virtual, *Probar impresión*, el rollo en vivo, la simulación de fallas y el comprobador de permisos. |
 | **Imágenes** | PNG guardados en el puente para usarlos con `"recurso"` en la operación `imagen`. Muestra cómo quedarán en 1 bit antes de guardarlos (en 58 u 80 mm) y explica junto al campo un nombre o un archivo que no sirven. |
 | **[Ajustes](ajustes.md)** | En cuatro pestañas: General (nombre, límite de tickets, historial, versiones nuevas), Seguridad y acceso (contraseña, acceso solo desde la red del negocio), HTTPS (certificado) y Respaldo (descargar y restaurar). |
-| **Ayuda** | Este manual, incluido en el puente: funciona sin Internet y corresponde a la versión instalada. Índice por grupos, una dirección por página (`/admin/ayuda/{ruta}`) y enlaces entre páginas sin recargar; lo que no está en el manual (código, decisiones) se abre en GitHub. Cómo confiar en el certificado: [instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md#confiar-en-el-certificado). |
+| **Ayuda** | Este manual, incluido en el puente: funciona sin Internet y corresponde a la versión instalada. Índice por grupos, **búsqueda** sin Internet (no distingue acentos; también busca en los diagramas), una dirección por página (`/admin/ayuda/{ruta}`) y enlaces entre páginas sin recargar; lo que no está en el manual (código, decisiones) se abre en GitHub. Cómo confiar en el certificado: [instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md#confiar-en-el-certificado). |
 
 Si algo no funciona, ver [problemas-comunes.md](problemas-comunes.md).
 

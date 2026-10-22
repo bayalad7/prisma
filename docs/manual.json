@@ -4,13 +4,17 @@
       "id": "empezar",
       "titulo": "Empezar",
       "documentos": [
-        "administracion/README.md"
+        "administracion/primeros-pasos.md",
+        "administracion/conceptos.md",
+        "administracion/README.md",
+        "administracion/preguntas-frecuentes.md"
       ]
     },
     {
       "id": "panel",
       "titulo": "Usar el panel",
       "documentos": [
+        "administracion/tareas-frecuentes.md",
         "administracion/impresoras.md",
         "administracion/aplicaciones-y-solicitudes.md",
         "administracion/probar-sin-impresora.md",
@@ -21,6 +25,7 @@
       "id": "problemas",
       "titulo": "Solución de problemas",
       "documentos": [
+        "administracion/solucion-de-problemas.md",
         "administracion/problemas-comunes.md",
         "instalacion/problemas-comunes.md",
         "integradores/problemas-comunes.md"
