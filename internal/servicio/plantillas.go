@@ -38,7 +38,7 @@ func Argumentos(rutaConfig string) []string {
 // dueño correcto aunque alguien los borre.
 var plantillaSystemd = template.Must(template.New("systemd").Funcs(template.FuncMap{"comando": comandoSystemd}).Parse(`[Unit]
 Description=` + NombreVisible + `
-Documentation=https://github.com/bayalad7/prisma/blob/main/docs/instalacion.md
+Documentation=https://github.com/bayalad7/prisma/blob/main/docs/instalacion/README.md
 After=network-online.target
 Wants=network-online.target
 StartLimitIntervalSec=300
