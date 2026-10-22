@@ -202,7 +202,10 @@ func (a *Admin) registrar(imp almacen.Impresora) {
 }
 
 func (a *Admin) impresora(w http.ResponseWriter, r *http.Request) (*almacen.Impresora, bool) {
-	alias := r.PathValue("alias")
+	return a.impresoraPorAlias(w, r, r.PathValue("alias"))
+}
+
+func (a *Admin) impresoraPorAlias(w http.ResponseWriter, r *http.Request, alias string) (*almacen.Impresora, bool) {
 	imp, err := a.op.Almacen.Impresoras.Obtener(r.Context(), alias)
 	if errors.Is(err, almacen.ErrNoEncontrado) {
 		err = &conector.Error{Codigo: conector.ErrImpresoraNoEncontrada, Mensaje: fmt.Sprintf("No existe la impresora «%s».", alias),
@@ -325,7 +328,11 @@ func (a *Admin) detectar(w http.ResponseWriter, r *http.Request) {
 
 // impresoraParaImprimir obtiene la impresora del camino y exige que esté activa.
 func (a *Admin) impresoraParaImprimir(w http.ResponseWriter, r *http.Request) (*almacen.Impresora, bool) {
-	imp, ok2 := a.impresora(w, r)
+	return a.impresoraActiva(w, r, r.PathValue("alias"))
+}
+
+func (a *Admin) impresoraActiva(w http.ResponseWriter, r *http.Request, alias string) (*almacen.Impresora, bool) {
+	imp, ok2 := a.impresoraPorAlias(w, r, alias)
 	if ok2 && !imp.Activa {
 		a.error(w, r, rechazo(http.StatusConflict, "IMPRESORA_INACTIVA", "La impresora está desactivada.", "Actívala para imprimir en ella."))
 		return nil, false
@@ -333,9 +340,10 @@ func (a *Admin) impresoraParaImprimir(w http.ResponseWriter, r *http.Request) (*
 	return imp, ok2
 }
 
-// imprimirPrueba encola bytes generados por el panel, guarda el trabajo y espera el resultado.
-// imprimirPrueba imprime un ticket de prueba del panel y responde; devuelve si se imprimió.
-func (a *Admin) imprimirPrueba(w http.ResponseWriter, r *http.Request, imp *almacen.Impresora, referencia string, datos []byte) bool {
+// imprimirPrueba encola bytes generados por el panel, guarda el trabajo, espera el resultado y
+// responde como /v1/imprimir (más la imagen del ticket); devuelve si se imprimió. advs son las
+// advertencias del render.
+func (a *Admin) imprimirPrueba(w http.ResponseWriter, r *http.Request, imp *almacen.Impresora, referencia string, datos []byte, advs []escpos.Advertencia) bool {
 	if err := a.op.Servidor.AsegurarRegistrada(*imp); err != nil {
 		a.error(w, r, err)
 		return false
@@ -344,6 +352,9 @@ func (a *Admin) imprimirPrueba(w http.ResponseWriter, r *http.Request, imp *alma
 	id := servidor.NuevoTrabajoID()
 	t := &almacen.Trabajo{ID: id, DocumentoID: id, ClienteID: ClientePanel, ImpresoraAlias: imp.Alias,
 		Virtual: imp.Tipo == almacen.ConexionVirtual, Referencia: referencia}
+	for _, adv := range advs {
+		t.Advertencias = append(t.Advertencias, adv.Codigo)
+	}
 	if err := a.op.Almacen.Trabajos.Crear(ctx, t); err != nil {
 		a.error(w, r, err)
 		return false
@@ -362,9 +373,13 @@ func (a *Admin) imprimirPrueba(w http.ResponseWriter, r *http.Request, imp *alma
 			codigo = "ERROR_INTERNO"
 		}
 	}
-	var advertencias []string
+	advertencias := t.Advertencias
 	if res.Aviso != nil {
-		advertencias = []string{res.Aviso.Codigo}
+		advertencias = append(advertencias, res.Aviso.Codigo)
+		advs = append(advs, escpos.Advertencia{Codigo: res.Aviso.Codigo, Mensaje: res.Aviso.Mensaje})
+	}
+	if advs == nil {
+		advs = []escpos.Advertencia{}
 	}
 	if err := a.op.Almacen.Trabajos.Finalizar(context.WithoutCancel(ctx), id, estado, codigo, advertencias, res.Duracion); err != nil {
 		a.op.Log.Error("no se pudo guardar el resultado del trabajo", "trabajo", id, "error", err.Error())
@@ -376,7 +391,8 @@ func (a *Admin) imprimirPrueba(w http.ResponseWriter, r *http.Request, imp *alma
 		return false
 	}
 	pagina := dev.Simular(datos, *imp)
-	resp := map[string]any{"ok": true, "trabajo_id": id, "vista": dev.VistaTexto(pagina, false),
+	resp := map[string]any{"ok": true, "trabajo_id": id, "impresora": imp.Alias, "duracion_ms": res.Duracion.Milliseconds(),
+		"advertencias": advs, "vista": dev.VistaTexto(pagina, false),
 		"imagen": "data:image/png;base64," + base64.StdEncoding.EncodeToString(dev.RasterPNG(pagina, imp.AnchoMM))}
 	if res.Aviso != nil {
 		resp["aviso"] = res.Aviso.Mensaje
@@ -396,7 +412,7 @@ func (a *Admin) diagnostico(w http.ResponseWriter, r *http.Request) {
 		a.error(w, r, err)
 		return
 	}
-	if a.imprimirPrueba(w, r, imp, "DIAGNOSTICO", datos) {
+	if a.imprimirPrueba(w, r, imp, "DIAGNOSTICO", datos, nil) {
 		a.marcarPaso(r, almacen.AjustePrimeraPrueba)
 	}
 }
@@ -466,7 +482,7 @@ func (a *Admin) paginasCodigos(w http.ResponseWriter, r *http.Request) {
 		a.error(w, r, err)
 		return
 	}
-	if a.imprimirPrueba(w, r, imp, "PAGINAS", datos) && imp.Tipo != almacen.ConexionVirtual {
+	if a.imprimirPrueba(w, r, imp, "PAGINAS", datos, nil) && imp.Tipo != almacen.ConexionVirtual {
 		a.marcarPaso(r, almacen.AjusteAcentosProbados)
 	}
 }

@@ -600,3 +600,11 @@ dialog::backdrop { background: var(--velo); }
 .paleta { display: grid; gap: var(--e-2); grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr)); }
 .color { display: grid; gap: 4px; font-size: var(--fs-xs); }
 .color-muestra { height: 44px; border-radius: var(--radio-chico); border: 1px solid var(--borde); }
+
+/* Probar impresión: documento a la izquierda y vista previa a la derecha (apiladas en celular) */
+.area-pruebas { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--e-4); align-items: start; }
+@media (min-width: 1024px) { .area-pruebas { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); } .tarjeta-previa { position: sticky; top: var(--e-4); } }
+.editor-json { min-height: 360px; white-space: pre; overflow-wrap: normal; overflow-x: auto; tab-size: 2; }
+.previa-prueba { display: grid; justify-items: center; min-width: 0; }
+.estado-valido { display: flex; gap: 6px; align-items: center; color: var(--ok); margin: 0; }
+.lista-avisos { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }

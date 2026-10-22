@@ -54,6 +54,7 @@
     constructor(d, estadoHttp) {
       super((d && d.mensaje) || 'No se pudo completar la operación.');
       this.codigo = d && d.codigo; this.sugerencia = d && d.sugerencia; this.estado = estadoHttp;
+      this.detalles = d && d.detalles;
     }
   }
   const api = {
@@ -97,6 +98,7 @@
     { id: 'impresoras', ruta: 'impresoras', icono: 'impresora', grupo: 'operacion', tecla: 'p' },
     { id: 'solicitudes', ruta: 'solicitudes', icono: 'solicitud', grupo: 'operacion', tecla: 's' },
     { id: 'trabajos', ruta: 'trabajos', icono: 'trabajos', grupo: 'operacion', tecla: 't' },
+    { id: 'pruebas', ruta: 'pruebas', icono: 'probar', grupo: 'integracion', tecla: 'r' },
     { id: 'aplicaciones', ruta: 'aplicaciones', icono: 'aplicacion', grupo: 'integracion', tecla: 'a' },
     { id: 'imagenes', ruta: 'imagenes', icono: 'imagen', grupo: 'integracion', tecla: 'm' },
     { id: 'ajustes', ruta: 'ajustes', icono: 'ajustes', grupo: 'sistema', tecla: 'j' },
@@ -1623,6 +1625,226 @@
   }
 
   // ---------------------------------------------------------------------------------------------
+  // Probar impresión: plantillas o JSON, vista previa con el raster de la impresora y envío.
+  // ---------------------------------------------------------------------------------------------
+  const TPr = window.PRISMA_TEXTOS.pruebas;
+  const nuevoUUID = () => {
+    if (crypto.randomUUID) return crypto.randomUUID();
+    const b = crypto.getRandomValues(new Uint8Array(16));
+    b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
+    const x = [...b].map((n) => n.toString(16).padStart(2, '0')).join('');
+    return `${x.slice(0, 8)}-${x.slice(8, 12)}-${x.slice(12, 16)}-${x.slice(16, 20)}-${x.slice(20)}`;
+  };
+  // "/operaciones/3/valor" → «Operación 4 (texto) · valor».
+  function rutaLegible(ruta, doc) {
+    const m = /^\/operaciones\/(\d+)(?:\/(.+))?$/.exec(ruta || '');
+    if (!m) return ruta ? ruta.slice(1).replace(/\//g, ' · ') : '';
+    const op = doc && Array.isArray(doc.operaciones) ? doc.operaciones[Number(m[1])] : null;
+    return TPr.ruta(Number(m[1]) + 1, op && op.tipo, m[2] && m[2].replace(/\//g, ' · '));
+  }
+  // Renglón y columna de un error de JSON.parse (Chromium y Firefox los dan distinto).
+  function errorSintaxis(texto, e) {
+    const lc = /line (\d+) column (\d+)/.exec(e.message);
+    const pos = /position (\d+)/.exec(e.message);
+    let linea, columna;
+    if (lc) [linea, columna] = [Number(lc[1]), Number(lc[2])];
+    else if (pos) {
+      const antes = texto.slice(0, Number(pos[1])).split('\n');
+      [linea, columna] = [antes.length, antes[antes.length - 1].length + 1];
+    }
+    const mensaje = e.message.replace(/^JSON\.parse: /, '').replace(/ in JSON at position.*$| at line \d+ column \d+.*$/, '');
+    return linea ? TPr.sintaxis(linea, columna, mensaje) : TPr.sintaxisSinLugar(mensaje);
+  }
+  const explicacion = (codigo) => TT.avisos[codigo] || TT.codigos[codigo] || null;
+  const bloqueRespuesta = (datos) => h('details', { class: 'avanzado' }, h('summary', {}, TPr.respuesta),
+    h('pre', { class: 'codigo', tabindex: '0', 'aria-label': TPr.respuesta }, h('code', {}, JSON.stringify(datos, null, 2))));
+
+  async function vistaPruebas(vista) {
+    const impresoras = (await api.get('/impresoras')).filter((i) => i.activa);
+    agregar(vista, encabezado(TPr.titulo, TPr.subtitulo));
+    if (impresoras.length === 0) {
+      const agregarImp = UI.boton({ texto: TP.agregar, variante: 'primario', icono: 'mas' });
+      agregarImp.addEventListener('click', () => ir('impresoras'));
+      agregar(vista, UI.vacio({ icono: 'impresora', titulo: TPr.sinImpresoras, texto: TPr.sinImpresorasTexto, accion: [agregarImp, botonCrearVirtual()] }));
+      return;
+    }
+    const consulta = new URLSearchParams(location.search);
+    const enLinea = (i) => i.estado === 'en_linea';
+    let imp = impresoras.find((i) => i.alias === consulta.get('impresora')) || impresoras.find((i) => i.virtual && enLinea(i))
+      || impresoras.find(enLinea) || impresoras.find((i) => i.virtual) || impresoras[0];
+    const plantillas = await api.get(`/pruebas/plantillas?impresora=${enc(imp.alias)}`);
+
+    // El texto del editor es la única fuente del documento: las plantillas lo escriben y el modo
+    // JSON lo edita, así cambiar de modo nunca lo pierde.
+    let texto = '';
+    let doc = null;
+    const conImpresora = (d) => ({ ...d, impresora: imp.alias });
+
+    const editor = h('textarea', { id: 'pr-json', class: 'editor-json', spellcheck: 'false', autocomplete: 'off', rows: '22',
+      'aria-describedby': 'pr-json-ayuda pr-estado' });
+    const estadoDoc = h('div', { id: 'pr-estado', 'aria-live': 'polite' });
+    const previa = h('div', { class: 'previa-prueba' }, UI.vacio({ icono: 'ticket', titulo: TPr.vistaPreviaVacia }));
+    const advertencias = h('div');
+    const resultado = h('div', { 'aria-live': 'polite', class: 'pila' });
+    const bEnviar = UI.boton({ texto: TPr.enviar(imp.alias), variante: 'primario', icono: 'ticket' });
+    const bCodigo = UI.boton({ texto: TPr.copiarCodigo, icono: 'codigo' });
+    const falta = h('div');
+    const habilitar = (si) => { bEnviar.disabled = !si; bCodigo.disabled = !si; };
+
+    const selImp = UI.selector({ opciones: impresoras.map((i) => [i.alias, i.virtual ? `${i.alias} (${TV.insignia})` : i.alias]), valor: imp.alias });
+    const cImp = UI.campo({ id: 'pr-impresora', etiqueta: TPr.impresora, control: selImp, ayuda: TPr.impresoraAyuda });
+    selImp.addEventListener('change', () => {
+      imp = impresoras.find((i) => i.alias === selImp.value);
+      bEnviar.lastChild.textContent = TPr.enviar(imp.alias);
+      vaciar(resultado);
+      if (doc) escribir(JSON.stringify(conImpresora(doc), null, 2));
+      else revisar();
+    });
+
+    let turno = 0;
+    let temporizador;
+    async function revisar() {
+      const mio = ++turno;
+      vaciar(advertencias);
+      if (!texto.trim()) { doc = null; vaciar(estadoDoc); editor.removeAttribute('aria-invalid'); habilitar(false); return; }
+      try {
+        doc = JSON.parse(texto);
+        if (!doc || typeof doc !== 'object' || Array.isArray(doc)) throw Object.assign(new Error(TPr.noObjeto), { propio: true });
+      } catch (e) {
+        doc = null;
+        editor.setAttribute('aria-invalid', 'true');
+        habilitar(false);
+        vaciar(estadoDoc, h('p', { class: 'campo-error' }, UI.icono('error'), h('span', {}, e.propio ? e.message : errorSintaxis(texto, e))));
+        return;
+      }
+      vaciar(estadoDoc, h('p', { class: 'tenue pequeno' }, TPr.revisando));
+      try {
+        const r = await api.post('/pruebas/vista-previa', { ...doc, id: doc.id || nuevoUUID() });
+        if (mio !== turno) return;
+        editor.removeAttribute('aria-invalid');
+        habilitar(true);
+        vaciar(estadoDoc, h('p', { class: 'estado-valido pequeno' }, UI.icono('ok'), h('span', {}, `${TPr.valido} ${TPr.bytes(r.bytes)}`)));
+        vaciar(previa, UI.ticketPapel({ imagen: r.imagen, anchoMm: imp.ancho_mm }));
+        if (r.advertencias.length) {
+          vaciar(advertencias, UI.nota({ tipo: 'aviso', titulo: TPr.advertencias, texto: h('ul', { class: 'lista-avisos' }, r.advertencias.map((a) => {
+            const ex = explicacion(a.codigo);
+            return h('li', {}, ex ? ex.que : a.mensaje, ex && ex.hacer ? ` ${[].concat(ex.hacer).join(' ')}` : '',
+              a.ruta ? h('span', { class: 'tenue' }, ` (${rutaLegible(a.ruta, doc)})`) : '');
+          })) }));
+        }
+      } catch (e) {
+        if (mio !== turno) return;
+        editor.setAttribute('aria-invalid', 'true');
+        habilitar(false);
+        const detalles = (e.detalles || []).map((d) => h('li', {}, d.ruta ? h('strong', {}, `${rutaLegible(d.ruta, doc)}: `) : '', d.mensaje));
+        vaciar(estadoDoc, UI.nota({ tipo: 'error', titulo: e.message, texto: h('div', {}, e.sugerencia ? h('p', {}, e.sugerencia) : '',
+          detalles.length ? h('ul', { class: 'lista-avisos' }, detalles) : '') }));
+        vaciar(previa, UI.vacio({ icono: 'ticket', titulo: TPr.vistaPreviaError }));
+      }
+    }
+    function escribir(nuevo) {
+      texto = nuevo;
+      editor.value = nuevo;
+      clearTimeout(temporizador);
+      revisar();
+    }
+
+    const listaPlantillas = h('div', { class: 'opciones', role: 'radiogroup', 'aria-label': TPr.modos.plantillas }, plantillas.map((p) => {
+      const [nombre, descripcion] = TPr.plantillas[p.id] || [p.id, ''];
+      const radio = h('input', { type: 'radio', name: 'pr-plantilla', value: p.id });
+      radio.addEventListener('change', () => {
+        const irImagenes = UI.boton({ texto: TPr.irImagenes, chico: true });
+        irImagenes.addEventListener('click', () => ir('imagenes'));
+        vaciar(falta, p.faltan && p.faltan.length ? UI.nota({ tipo: 'aviso', texto: TPr.falta(p.faltan), acciones: irImagenes }) : '');
+        vaciar(resultado);
+        escribir(JSON.stringify(conImpresora(p.documento), null, 2));
+      });
+      return h('label', { class: 'opcion' }, radio, h('span', { class: 'titulo-opcion' }, nombre), h('span', { class: 'tenue' }, descripcion));
+    }));
+    editor.addEventListener('input', () => {
+      texto = editor.value;
+      for (const r of listaPlantillas.querySelectorAll('input')) r.checked = false;
+      vaciar(falta);
+      clearTimeout(temporizador);
+      temporizador = setTimeout(revisar, 400);
+    });
+
+    const modos = UI.pestanas([
+      { id: 'plantillas', titulo: TPr.modos.plantillas, contenido: () => h('div', { class: 'pila' }, listaPlantillas, falta) },
+      { id: 'json', titulo: TPr.modos.json, contenido: () => h('div', { class: 'campo' },
+        h('label', { for: 'pr-json' }, TPr.jsonEtiqueta), editor, h('span', { class: 'ayuda', id: 'pr-json-ayuda' }, TPr.jsonAyuda)) },
+    ], { etiqueta: TPr.modos.etiqueta, inicial: consulta.get('modo') === 'json' ? 1 : 0 });
+
+    bEnviar.addEventListener('click', async () => {
+      if (!doc) return;
+      vaciar(resultado);
+      const enviada = imp;
+      try {
+        const r = await conEspera(bEnviar, () => api.post('/pruebas/imprimir', { ...doc, id: nuevoUUID() }));
+        const { imagen, vista: _vista, aviso: _aviso, ...respuesta } = r;
+        const verTrabajos = UI.boton({ texto: TPr.verTrabajos, chico: true, variante: 'texto' });
+        verTrabajos.addEventListener('click', () => ir('trabajos'));
+        const verTicket = enviada.virtual && UI.boton({ texto: TPr.verTicket, chico: true, icono: 'ticket' });
+        if (verTicket) verTicket.addEventListener('click', () => dialogo({ titulo: TPr.verTicket, ancho: 520, cuerpo: UI.ticketPapel({ imagen, anchoMm: enviada.ancho_mm }) }));
+        agregar(resultado,
+          UI.nota({ tipo: r.advertencias.length ? 'aviso' : 'ok',
+            titulo: enviada.virtual ? TPr.impresoVirtual(enviada.alias) : TPr.impreso(enviada.alias, r.duracion_ms),
+            texto: r.advertencias.length ? h('ul', { class: 'lista-avisos' }, r.advertencias.map((a) => h('li', {}, (explicacion(a.codigo) || { que: a.mensaje }).que))) : null,
+            acciones: [verTicket, verTrabajos].filter(Boolean) }),
+          bloqueRespuesta(respuesta));
+      } catch (e) {
+        const ex = explicacion(e.codigo);
+        const hacer = (ex && ex.hacer) || e.sugerencia;
+        // Los pasos de «qué hacer» citan «Probar la impresora»: el botón está aquí mismo.
+        const probar = UI.boton({ texto: TP.acciones.probar, chico: true, icono: 'red' });
+        probar.addEventListener('click', async () => {
+          try { await conEspera(probar, () => api.post(`/impresoras/${enc(enviada.alias)}/probar`)); aviso(TP.respondio, 'ok'); } catch (e2) { avisoError(e2); }
+        });
+        agregar(resultado,
+          UI.nota({ tipo: 'error', titulo: TPr.noImpreso(enviada.alias), texto: h('div', {}, h('p', {}, ex ? ex.que : e.message),
+            Array.isArray(hacer) ? h('ol', { class: 'lista-avisos' }, hacer.map((x) => h('li', {}, x))) : hacer ? h('p', {}, hacer) : ''),
+          acciones: e.codigo === 'IMPRESORA_INALCANZABLE' || e.codigo === 'TIEMPO_AGOTADO' ? probar : null }),
+          bloqueRespuesta({ codigo: e.codigo, mensaje: e.message, sugerencia: e.sugerencia }));
+      }
+    });
+
+    bCodigo.addEventListener('click', () => {
+      if (!doc) return;
+      const url = estado.direccion || location.origin;
+      const { version: _version, id: _id, impresora, operaciones = [], ...opciones } = doc;
+      const ops = operaciones.map((o) => `  ${JSON.stringify(o)},`).join('\n');
+      const opc = Object.keys(opciones).length ? `, ${JSON.stringify(opciones).replace(/"(\w+)":/g, '$1: ')}` : '';
+      const variantes = {
+        [TPr.codigoPestanas.sdk]: [
+          `const prisma = new Prisma({ url: "${url}", llave: "pk_..." });`,
+          `const resultado = await prisma.imprimir("${impresora}", [`, ops, `]${opc});`,
+        ].join('\n'),
+        [TPr.codigoPestanas.curl]: [
+          `curl --cacert prisma.crt ${url}/v1/imprimir \\`,
+          '  -H "Content-Type: application/json" \\',
+          '  -H "Authorization: Bearer pk_..." \\',
+          "  --data-binary @- <<'FIN'",
+          JSON.stringify({ ...doc, id: nuevoUUID() }, null, 2),
+          'FIN',
+        ].join('\n'),
+      };
+      dialogo({ titulo: TPr.codigoTitulo, ancho: 760, cuerpo: h('div', { class: 'pila' }, h('p', { class: 'tenue pequeno' }, TPr.codigoTexto), UI.codigo(variantes)) });
+    });
+    habilitar(false);
+
+    agregar(vista, h('div', { class: 'area-pruebas' },
+      UI.tarjeta({ titulo: TPr.documento, icono: 'codigo' }, cImp, modos),
+      UI.tarjeta({ titulo: TPr.vistaPrevia, icono: 'ticket', clase: 'tarjeta-previa' }, estadoDoc, previa, advertencias,
+        h('div', { class: 'acciones' }, bEnviar, bCodigo), resultado)));
+
+    // Con una virtual se empieza por una venta; con una física, por su diagnóstico.
+    const inicial = plantillas.find((p) => p.id === (imp.virtual ? 'venta-simple' : 'diagnostico')) || plantillas[0];
+    const radio = listaPlantillas.querySelector(`input[value="${inicial.id}"]`);
+    radio.checked = true;
+    radio.dispatchEvent(new Event('change'));
+  }
+
+  // ---------------------------------------------------------------------------------------------
   // 7. Ajustes: cuatro pestañas (General, Seguridad y acceso, HTTPS, Respaldo); la pestaña va en
   // la dirección (?pestana=https) para enlazarla desde otras pantallas.
   // ---------------------------------------------------------------------------------------------
@@ -1881,7 +2103,7 @@
 
   const VISTAS = {
     inicio: vistaInicio, impresoras: vistaImpresoras, aplicaciones: vistaClientes, solicitudes: vistaSolicitudes,
-    trabajos: vistaTrabajos, imagenes: vistaRecursos, ajustes: vistaAjustes, ayuda: vistaAyuda,
+    trabajos: vistaTrabajos, pruebas: vistaPruebas, imagenes: vistaRecursos, ajustes: vistaAjustes, ayuda: vistaAyuda,
   };
 
   arrancar();

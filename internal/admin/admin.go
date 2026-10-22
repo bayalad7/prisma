@@ -111,6 +111,10 @@ func (a *Admin) Handler() http.Handler {
 	privada("GET /admin/api/recursos/{nombre}/imagen", a.imagenRecurso)
 	privada("DELETE /admin/api/recursos/{nombre}", a.eliminarRecurso)
 
+	privada("GET /admin/api/pruebas/plantillas", a.plantillas)
+	privada("POST /admin/api/pruebas/vista-previa", a.vistaPreviaPrueba)
+	privada("POST /admin/api/pruebas/imprimir", a.imprimirDocumentoPrueba)
+
 	privada("GET /admin/api/ajustes", a.leerAjustes)
 	privada("PUT /admin/api/ajustes", a.guardarAjustes)
 	privada("POST /admin/api/tls/regenerar", a.regenerarTLS)
@@ -160,7 +164,7 @@ var paginasDesarrollo = map[string]struct{ archivo, tipo string }{
 
 // vistasPanel son las rutas de las pantallas del panel: todas sirven index.html y panel.js dibuja
 // la pantalla según la ruta (deben coincidir con SECCIONES de panel.js).
-var vistasPanel = []string{"impresoras", "solicitudes", "trabajos", "aplicaciones", "imagenes", "ajustes", "ayuda"}
+var vistasPanel = []string{"impresoras", "solicitudes", "trabajos", "pruebas", "aplicaciones", "imagenes", "ajustes", "ayuda"}
 
 func servirEstatico(w http.ResponseWriter, r *http.Request, estaticos fs.FS, desarrollo bool) {
 	nombre := strings.TrimPrefix(r.URL.Path, "/admin/")
