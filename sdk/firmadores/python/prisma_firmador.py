@@ -4,7 +4,7 @@
     firmado = firmar(documento, "cli_…", open("privada.pem", "rb").read())
 
 Firma con Ed25519 la forma canónica JCS (RFC 8785) del documento sin «firma», como verifica el
-puente (docs/contrato-documento-v1.md §7). Única dependencia: pip install cryptography.
+puente (docs/referencia/contrato-documento-v1.md §7). Única dependencia: pip install cryptography.
 """
 
 from __future__ import annotations
