@@ -15,9 +15,13 @@
       "titulo": "Usar el panel",
       "documentos": [
         "administracion/tareas-frecuentes.md",
+        "administracion/inicio.md",
         "administracion/impresoras.md",
         "administracion/aplicaciones-y-solicitudes.md",
+        "administracion/trabajos.md",
+        "administracion/probar-impresion.md",
         "administracion/probar-sin-impresora.md",
+        "administracion/imagenes.md",
         "administracion/ajustes.md"
       ]
     },

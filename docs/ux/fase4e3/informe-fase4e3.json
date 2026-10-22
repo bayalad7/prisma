@@ -1,0 +1,25 @@
+{
+  "axe": {
+    "panel-escritorio": [],
+    "panel-celular": [],
+    "impresoras-celular": []
+  },
+  "desborde": {
+    "panel-escritorio": 0,
+    "panel-celular": 0,
+    "impresoras-celular": 0
+  },
+  "consola": [],
+  "comprobaciones": [
+    "ok    las 10 pantallas abren su sección del manual 10",
+    "ok    la Ayuda no tiene botón de ayuda ",
+    "ok    cerrar la ayuda conserva lo escrito y devuelve el foco ",
+    "ok    «Abrir en la Ayuda» cierra el panel y abre la página ",
+    "ok    un trabajo fallido enlaza la sección que lo resuelve «La impresora no imprime»",
+    "ok    un error con código ofrece «Cómo resolverlo» ",
+    "ok    ese aviso no se va solo (tiene una acción) ",
+    "ok    «Cómo resolverlo» abre «La impresora no imprime» ",
+    "ok    «Saber más» abre el manual sobre el formulario Origen no autorizado",
+    "ok    el formulario conserva lo escrito "
+  ]
+}

@@ -37,6 +37,7 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 
 ### Cambiado
 
+- **Ayuda en cada pantalla:** el botón *Ayuda* abre su sección del manual en un panel lateral, sin salir de la pantalla ni perder lo escrito. Los avisos de error ofrecen *Cómo resolverlo*, el detalle de un trabajo fallido y *Probar impresión* enlazan la sección que lo resuelve, y los campos técnicos tienen *Saber más*. Una prueba exige ayuda para cada pantalla y cada código de error. Guías nuevas de Inicio, Trabajos, Probar impresión e Imágenes.
 - Manual para el dueño: **Primeros pasos** (de recién instalado al primer ticket y la primera aplicación, con capturas generadas por un script), **Conceptos básicos**, **Tareas frecuentes**, **Solución de problemas** (cada síntoma lleva a su solución) y **Preguntas frecuentes**. La Ayuda busca en todo el manual sin Internet, sin distinguir acentos, y resalta las palabras en cada resultado.
 - En el asistente de impresoras, responder «Sí, se leen bien» a los acentos completa ese paso de *Primeros pasos* (antes lo pedía otra vez).
 - La *Ayuda* del panel muestra el manual de `docs/` dentro del puente, sin Internet y de la versión instalada: índice por grupos, una dirección por página y enlaces entre páginas sin recargar. Lo dibuja un renderizador propio que no usa `innerHTML` (ADR 0017); una prueba falla si un documento usa Markdown que no admite.
