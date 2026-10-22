@@ -352,11 +352,25 @@ func TestConfirmarConImpresoraVirtual(t *testing.T) {
 		t.Fatal(err)
 	}
 	ctx, cancelar := context.WithCancel(context.Background())
-	defer cancelar()
-	go v.Servir(ctx, ln)
+	terminado := make(chan error, 1)
+	go func() { terminado <- v.Servir(ctx, ln) }()
 	r := NuevoRed(ln.Addr().String())
 	r.Confirmar, r.TiempoConfirmacion = true, 2*time.Second
-	if err := r.Enviar(context.Background(), []byte("\x1b@Hola\n")); err != nil {
+	err = r.Enviar(context.Background(), []byte("\x1b@Hola\n"))
+	// La impresora guarda el trabajo después de confirmar: hay que esperarla antes de que se
+	// borre su carpeta temporal.
+	limite := time.Now().Add(5 * time.Second)
+	for err == nil && v.Recibidos() < 1 && time.Now().Before(limite) {
+		time.Sleep(10 * time.Millisecond)
+	}
+	cancelar()
+	if e := <-terminado; e != nil {
+		t.Fatal(e)
+	}
+	if err != nil {
 		t.Fatalf("la impresora virtual debe confirmar: %v", err)
+	}
+	if v.Recibidos() != 1 {
+		t.Fatalf("la impresora virtual no guardó el trabajo: %d", v.Recibidos())
 	}
 }
