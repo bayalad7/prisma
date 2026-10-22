@@ -23,7 +23,7 @@ import (
 	"github.com/bayalad7/prisma/internal/servidor"
 )
 
-//go:embed web/index.html web/panel.css web/panel.js
+//go:embed web/index.html web/panel.css web/panel.js web/textos.js web/sistema.js web/iconos.svg web/estilos.html web/estilos.js
 var archivosWeb embed.FS
 
 // Opciones del panel.
@@ -131,7 +131,7 @@ func (a *Admin) Handler() http.Handler {
 		case strings.HasPrefix(r.URL.Path, "/admin/api/"):
 			api.ServeHTTP(w, r)
 		default:
-			servirEstatico(w, r, estaticos)
+			servirEstatico(w, r, estaticos, a.op.Config.Dev.ModoDesarrollo)
 		}
 	})
 }
@@ -140,14 +140,27 @@ var tiposEstaticos = map[string]string{
 	"index.html": "text/html; charset=utf-8",
 	"panel.css":  "text/css; charset=utf-8",
 	"panel.js":   "text/javascript; charset=utf-8",
+	"textos.js":  "text/javascript; charset=utf-8",
+	"sistema.js": "text/javascript; charset=utf-8",
+	"iconos.svg": "image/svg+xml",
 }
 
-func servirEstatico(w http.ResponseWriter, r *http.Request, estaticos fs.FS) {
+// paginasDesarrollo: la galería del sistema de diseño (/admin/estilos) solo existe con
+// modo_desarrollo; en producción responde 404.
+var paginasDesarrollo = map[string]struct{ archivo, tipo string }{
+	"estilos":    {"estilos.html", "text/html; charset=utf-8"},
+	"estilos.js": {"estilos.js", "text/javascript; charset=utf-8"},
+}
+
+func servirEstatico(w http.ResponseWriter, r *http.Request, estaticos fs.FS, desarrollo bool) {
 	nombre := strings.TrimPrefix(r.URL.Path, "/admin/")
 	if nombre == "" {
 		nombre = "index.html"
 	}
 	tipo, ok := tiposEstaticos[nombre]
+	if p, existe := paginasDesarrollo[nombre]; existe && desarrollo {
+		nombre, tipo, ok = p.archivo, p.tipo, true
+	}
 	if !ok || (r.Method != http.MethodGet && r.Method != http.MethodHead) {
 		http.NotFound(w, r)
 		return

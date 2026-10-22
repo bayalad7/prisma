@@ -15,10 +15,18 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 - 27 diagramas Mermaid numerados en `docs/diagramas/`, cada uno con las fuentes en el código en que se basa, y `scripts/validar-diagramas.sh` (y `.ps1`), que los compila con mermaid-cli. El CI falla si alguno no compila.
 - Pruebas que mantienen la documentación fiel al código (`go test ./docs`): rutas de la API, códigos de error y enlaces.
 - `CONTRIBUTING.md` y `SECURITY.md`.
+- Sistema de diseño del panel: tokens de color con contraste AA verificado por pruebas, tema oscuro con selector manual, componentes accesibles (`sistema.js`), textos en un solo archivo (`textos.js`) y un sprite de iconos propios. Con `modo_desarrollo`, `/admin/estilos` muestra la galería de componentes y los prototipos de las pantallas.
+- Análisis de experiencia del panel en `docs/ux/` (hallazgos, flujos, accesibilidad e inventario de diagramas).
 
 ### Cambiado
 
 - La *Ayuda* del panel enlaza la documentación de la versión instalada, no la de la rama `develop`.
+
+### Corregido
+
+- En celular, Trabajos, Ayuda y el asistente de impresoras ya no se salen de la pantalla a lo ancho.
+- El foco del teclado se ve en las tarjetas de opción (nivel de seguridad, página de códigos) y los bloques de código desplazables reciben el foco.
+- Los bordes de los campos de formulario tienen contraste suficiente (3:1).
 - Los mensajes que citan la documentación usan las rutas nuevas. Las rutas viejas siguen existiendo como páginas que redirigen.
 
 ## [0.1.0] — 2026-10-22

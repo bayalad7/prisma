@@ -5,51 +5,8 @@
 (() => {
   const raiz = document.getElementById('raiz');
 
-  // ---------------------------------------------------------------------------------------------
-  // Utilidades de DOM
-  // ---------------------------------------------------------------------------------------------
-  function h(etiqueta, props, ...hijos) {
-    const el = document.createElement(etiqueta);
-    for (const [k, v] of Object.entries(props || {})) {
-      if (v === undefined || v === null || v === false) continue;
-      if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2), v);
-      else if (k === 'class') el.className = v;
-      else if (k === 'value') el.value = v;
-      else if (k === 'checked') el.checked = !!v;
-      else if (v === true) el.setAttribute(k, '');
-      else el.setAttribute(k, v);
-    }
-    agregar(el, hijos);
-    return el;
-  }
-  function agregar(el, ...hijos) {
-    for (const hijo of hijos.flat(Infinity)) {
-      if (hijo === null || hijo === undefined || hijo === false) continue;
-      el.append(hijo instanceof Node ? hijo : String(hijo));
-    }
-    return el;
-  }
-  function vaciar(el, ...hijos) { el.replaceChildren(); return agregar(el, hijos); }
-
-  const NS = 'http://www.w3.org/2000/svg';
-  function logo(tam = 28) {
-    // Un prisma que separa la luz en tres franjas: el documento entra y sale en tres conexiones.
-    const s = document.createElementNS(NS, 'svg');
-    s.setAttribute('viewBox', '0 0 32 32'); s.setAttribute('width', tam); s.setAttribute('height', tam);
-    s.setAttribute('aria-hidden', 'true');
-    const p = (d, color, ancho) => {
-      const e = document.createElementNS(NS, 'path');
-      e.setAttribute('d', d); e.setAttribute('fill', 'none'); e.setAttribute('stroke', color);
-      e.setAttribute('stroke-width', ancho); e.setAttribute('stroke-linejoin', 'round'); e.setAttribute('stroke-linecap', 'round');
-      s.append(e);
-    };
-    p('M3 13 L12 15', 'currentColor', 2);
-    p('M12 5 L21 25 L3 25 Z', 'var(--acento)', 2.2);
-    p('M16 15 L29 10', 'var(--acento)', 2);
-    p('M16.8 16.8 L29 16.8', 'var(--ok)', 2);
-    p('M17.6 18.6 L29 23.6', 'var(--aviso)', 2);
-    return s;
-  }
+  // Utilidades de DOM y componentes del sistema de diseño (sistema.js).
+  const { h, agregar, vaciar, logo, aviso, avisoError, dialogo, confirmar, copiar, botonCopiar, conEspera } = window.PrismaUI;
 
   // ---------------------------------------------------------------------------------------------
   // Formatos
@@ -139,66 +96,6 @@
     url: (ruta) => (window.PRISMA_DEMO && window.PRISMA_DEMO.url) ? window.PRISMA_DEMO.url(ruta) : 'api' + ruta,
   };
   const enc = encodeURIComponent;
-
-  // ---------------------------------------------------------------------------------------------
-  // Avisos, diálogos y copiar
-  // ---------------------------------------------------------------------------------------------
-  const contAvisos = h('div', { class: 'avisos', 'aria-live': 'polite' });
-  document.body.append(contAvisos);
-  function aviso(texto, tipo = '') {
-    const t = h('div', { class: `toast ${tipo}`, role: tipo === 'error' ? 'alert' : 'status' }, texto);
-    contAvisos.append(t);
-    setTimeout(() => t.remove(), tipo === 'error' ? 7000 : 4000);
-  }
-  function avisoError(e) {
-    aviso(e.sugerencia ? `${e.message} ${e.sugerencia}` : e.message, 'error');
-  }
-
-  function dialogo({ titulo, cuerpo, acciones = [{ texto: 'Cerrar', valor: null }], ancho }) {
-    return new Promise((resolver) => {
-      const d = h('dialog', { 'aria-labelledby': 'dialogo-titulo' });
-      if (ancho) d.style.width = `min(${ancho}px, calc(100vw - 32px))`;
-      const cerrar = (valor) => { d.close(); d.remove(); resolver(valor); };
-      const pie = h('div', { class: 'dialogo-pie' }, acciones.map((a) =>
-        h('button', { class: `boton ${a.clase || ''}`, type: 'button', onclick: async (ev) => {
-          if (a.antes) {
-            const b = ev.currentTarget;
-            b.disabled = true;
-            try { if ((await a.antes()) === false) { b.disabled = false; return; } } catch (e) { avisoError(e); b.disabled = false; return; }
-          }
-          cerrar(a.valor);
-        } }, a.texto)));
-      d.append(h('div', { class: 'dialogo' }, h('h2', { id: 'dialogo-titulo' }, titulo), cuerpo, pie));
-      d.addEventListener('cancel', (ev) => { ev.preventDefault(); cerrar(null); });
-      document.body.append(d);
-      d.showModal();
-    });
-  }
-  function confirmar(titulo, texto, { boton = 'Confirmar', peligro = false } = {}) {
-    return dialogo({
-      titulo, cuerpo: h('p', {}, texto),
-      acciones: [{ texto: 'Cancelar', valor: false }, { texto: boton, valor: true, clase: peligro ? 'peligro lleno' : 'primario' }],
-    });
-  }
-  async function copiar(texto, boton) {
-    try {
-      await navigator.clipboard.writeText(texto);
-      if (boton) { const t = boton.textContent; boton.textContent = 'Copiado'; setTimeout(() => { boton.textContent = t; }, 1600); }
-    } catch {
-      aviso('No se pudo copiar automáticamente: selecciona el texto y cópialo a mano.');
-    }
-  }
-  function botonCopiar(texto, etiqueta = 'Copiar') {
-    const b = h('button', { class: 'boton chico', type: 'button', onclick: () => copiar(texto, b) }, etiqueta);
-    return b;
-  }
-  // Ejecuta una acción mostrando un indicador en el botón mientras dura.
-  async function conEspera(boton, accion) {
-    const contenido = [...boton.childNodes];
-    boton.disabled = true;
-    vaciar(boton, h('span', { class: 'girando', 'aria-hidden': 'true' }), contenido.map((n) => n.cloneNode(true)));
-    try { return await accion(); } finally { boton.disabled = false; vaciar(boton, contenido); }
-  }
 
   // ---------------------------------------------------------------------------------------------
   // Estado, acceso y enrutado
@@ -469,7 +366,7 @@
         else mostrar(`Ticket de diagnóstico enviado (trabajo ${r.trabajo_id}).`, 'ok');
         dialogo({ titulo: 'Ticket de diagnóstico', ancho: 460, cuerpo: h('div', { class: 'pila' },
           h('p', { class: 'tenue pequeno' }, 'Así se ve el ticket que se acaba de imprimir. Compara la regla de columnas y los acentos con el papel.'),
-          h('pre', { class: 'papel' }, r.vista)) });
+          h('pre', { class: 'papel', tabindex: '0', 'aria-label': 'Vista del ticket' }, r.vista)) });
       } catch (e) { mostrar(`${e.codigo ? e.codigo + ': ' : ''}${e.message} ${e.sugerencia || ''}`, 'error'); }
     } }, 'Ticket de diagnóstico');
     const bPaginas = h('button', { class: 'boton chico', type: 'button', onclick: () => probarPaginas(imp, bPaginas, vista) }, 'Probar páginas de códigos');
@@ -508,7 +405,7 @@
       titulo: 'Elige la página de códigos', ancho: 620,
       cuerpo: h('div', { class: 'pila' },
         h('p', {}, 'Se imprimió la misma línea con cuatro páginas de códigos. Busca en el papel la que muestra bien todos los caracteres y elígela.'),
-        h('pre', { class: 'papel' }, r.vista), opciones),
+        h('pre', { class: 'papel', tabindex: '0', 'aria-label': 'Vista del ticket' }, r.vista), opciones),
       acciones: [{ texto: 'Cancelar', valor: null }, { texto: 'Usar la elegida', clase: 'primario', valor: 'elegir' }],
     });
     if (elegida !== 'elegir') return;
@@ -892,7 +789,7 @@
         `  --data-binary @documento.json`,
       ],
     };
-    const pre = h('pre', { class: 'codigo' });
+    const pre = h('pre', { class: 'codigo', tabindex: '0', 'aria-label': 'Código de integración' });
     const bCopiar = h('button', { class: 'boton chico', type: 'button', onclick: () => copiar(pre.textContent, bCopiar) }, 'Copiar código');
     const pestanas = h('div', { class: 'pestanas', role: 'tablist' });
     const elegir = (nombre) => {

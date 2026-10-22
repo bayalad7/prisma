@@ -18,6 +18,7 @@ Cada archivo registra una decisión que ya está tomada en el código: el contex
 | 0012 | [Actualizaciones firmadas con una llave Ed25519 del proyecto](0012-actualizaciones-firmadas.md) | 2026-10-20 |
 | 0013 | [Panel sin frameworks ni CDN, con sesiones en memoria](0013-panel-sin-frameworks.md) | 2026-10-19 |
 | 0014 | [CI y publicación con el último parche de Go 1.26](0014-go-ultimo-parche-en-ci.md) | 2026-10-22 |
+| 0015 | [Sistema de diseño propio para el panel](0015-sistema-de-diseno-del-panel.md) | 2026-10-22 |
 
 ## Cómo agregar una decisión
 

@@ -61,6 +61,20 @@ $env:GOOS="darwin"; go vet ./...              # PowerShell (luego: Remove-Item E
 
 La previsualización no es una maqueta aparte: ejecuta los mismos bytes que recibiría la impresora en una impresora virtual (`internal/dev/simulador.go`). Si la previsualización se ve bien, los bytes son correctos.
 
+### Sistema de diseño del panel
+
+Con `modo_desarrollo = true`, `https://localhost:8443/admin/estilos` muestra cada componente del panel en sus estados (claro y oscuro) y los prototipos de las pantallas. En producción esa ruta responde 404.
+
+| Archivo (`internal/admin/web/`) | Qué contiene |
+|---|---|
+| `panel.css` | Tokens (colores, tipografía, espaciado, radios, sombras; claro, oscuro automático y oscuro elegido a mano) y estilos de los componentes. |
+| `sistema.js` | Componentes accesibles sin dependencias (`window.PrismaUI`): botones, campos con error en línea, interruptores, tarjetas, tablas que se vuelven tarjetas en celular, insignias de estado, avisos, diálogos de confirmación, estados vacíos y de carga, pasos de asistente, pestañas, bloque de código, navegación, visor de diagramas y ticket en papel térmico. |
+| `textos.js` | Los textos para la persona, en un solo archivo (preparado para traducir). |
+| `iconos.svg` | Un solo sprite de iconos propios (`icono('nombre')`). |
+| `estilos.html`, `estilos.js` | La galería y los prototipos (solo en modo desarrollo). |
+
+Reglas: el texto se inserta como texto (nunca `innerHTML`), los estilos dinámicos usan CSSOM (`el.style`) para cumplir la CSP, y cada estado lleva color, icono y texto. `go test ./internal/admin` verifica el contraste AA de los tokens en los dos temas, que los dos bloques del tema oscuro sean iguales y que el sprite solo tenga formas básicas y todos los iconos que usa el panel. La decisión está en [ADR 0015](../adr/0015-sistema-de-diseno-del-panel.md).
+
 ## Pruebas
 
 Cómo correrlas, qué cubren y cómo regenerar los archivos generados: [pruebas.md](pruebas.md).
