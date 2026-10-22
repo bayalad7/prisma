@@ -260,5 +260,37 @@
     return { nodos, titulos: contexto.titulos, metadatos };
   }
 
-  window.PrismaManual = { renderizar, anclaDe };
+  // flujo(texto) lee un diagrama de decisión (docs/diagramas/23-…): el bloque mermaid flowchart y la
+  // lista «- `id`: [texto](destino)» que enlaza nodos con el manual. Devuelve los nodos
+  // ({ texto, pregunta }), las respuestas de cada uno ([{ texto, a }]), el inicio y los enlaces.
+  // TestArbolDeDiagnostico (docs) comprueba en Go que el árbol esté completo.
+  function flujo(texto) {
+    const bloque = (/```mermaid\n([\s\S]*?)\n```/.exec(texto) || [])[1] || '';
+    const nodos = {};
+    const respuestas = {};
+    const limpiar = (t) => t.replace(/<br\s*\/?>/g, ' ').replace(/\s+/g, ' ').trim();
+    const nodo = (id, forma, etiqueta) => {
+      if (etiqueta !== undefined) nodos[id] = { texto: limpiar(etiqueta), pregunta: forma === '{' };
+      return id;
+    };
+    // id["texto"] o id{"texto"}, con :::clase opcional.
+    const reNodo = /(\w+)(?:([[{])"([^"]*)"[\]}])?(?::::\w+)?/;
+    let inicio = null;
+    for (const linea of bloque.split('\n')) {
+      const m = /^\s*(.+?)\s*(?:--\s*"?([^">]*?)"?\s*)?-->\s*(.+?)\s*$/.exec(linea);
+      if (!m) continue;
+      const a = reNodo.exec(m[1]);
+      const b = reNodo.exec(m[3]);
+      if (!a || !b) continue;
+      const de = nodo(a[1], a[2], a[3]);
+      const hasta = nodo(b[1], b[2], b[3]);
+      if (inicio === null) inicio = de;
+      (respuestas[de] = respuestas[de] || []).push({ texto: limpiar(m[2] || ''), a: hasta });
+    }
+    const enlaces = {};
+    for (const m of texto.matchAll(/^- `(\w+)`: \[([^\]]+)\]\(([^)]+)\)/gm)) enlaces[m[1]] = { texto: m[2], destino: m[3] };
+    return { nodos, respuestas, inicio, enlaces };
+  }
+
+  window.PrismaManual = { renderizar, anclaDe, flujo };
 })();

@@ -40,7 +40,7 @@ func TestManualDelPanel(t *testing.T) {
 	}
 	// Cada página del manual tiene su dirección en el panel.
 	indice := s.exigir("GET", "/admin/", nil, 200).Body.String()
-	for _, ruta := range []string{"administracion/impresoras.md", "administracion/README.md"} {
+	for _, ruta := range []string{"administracion/impresoras.md", "administracion/README.md", "no-imprime"} {
 		if r := s.exigir("GET", "/admin/ayuda/"+ruta, nil, 200); r.Body.String() != indice {
 			t.Fatalf("/admin/ayuda/%s debe servir el panel", ruta)
 		}

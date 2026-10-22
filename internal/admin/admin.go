@@ -177,7 +177,7 @@ var vistasPanel = []string{"impresoras", "solicitudes", "trabajos", "pruebas", "
 
 // subvistas son pantallas dentro de una sección: el comprobador de permisos, el rollo en vivo de
 // una impresora virtual (/admin/pruebas/rollo/{alias}) y cada página del manual (/admin/ayuda/{ruta}).
-var subvistas = regexp.MustCompile(`^(pruebas/(permisos|rollo/[a-z0-9][a-z0-9_-]{0,31})|ayuda/[a-z]+/[A-Za-z0-9-]+\.md)$`)
+var subvistas = regexp.MustCompile(`^(pruebas/(permisos|rollo/[a-z0-9][a-z0-9_-]{0,31})|ayuda/([a-z]+/[A-Za-z0-9-]+\.md|no-imprime))$`)
 
 func servirEstatico(w http.ResponseWriter, r *http.Request, estaticos fs.FS, desarrollo bool) {
 	nombre := strings.TrimPrefix(r.URL.Path, "/admin/")

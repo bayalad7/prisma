@@ -630,6 +630,22 @@ window.PRISMA_TEXTOS = {
     sinResultados: (q) => `No hay resultados para «${q}». Prueba con otras palabras o revisa el índice.`,
     // Ayuda de cada pantalla (Fase 4, entrega 3): el botón «Ayuda» abre esta sección del manual en un
     // panel lateral. TestAyudaDeCadaPantalla exige una por sección y que el documento y el ancla existan.
+    // «Mi impresora no imprime»: el árbol del diagrama 23 (Fase 4, entrega 4).
+    noImprime: {
+      titulo: 'Mi impresora no imprime',
+      subtitulo: 'Contesta unas preguntas y te decimos qué revisar.',
+      tarjeta: '¿Tu impresora no imprime?',
+      tarjetaTexto: 'Te guiamos con unas preguntas hasta la solución.',
+      empezar: 'Empezar',
+      cambiar: 'Cambiar',
+      cambiarEtiqueta: (p) => `Cambiar la respuesta a «${p}»`,
+      comoSaber: '¿Cómo saberlo?',
+      probable: 'Lo más probable',
+      leerSolucion: (t) => `Cómo resolverlo: ${t}`,
+      reiniciar: 'Empezar de nuevo',
+      fuente: 'Estas preguntas salen del diagrama de diagnóstico del manual.',
+      verDiagrama: 'Ver el diagrama completo',
+    },
     botonPantalla: 'Ayuda', botonPantallaEtiqueta: 'Ayuda de esta pantalla',
     abrirEnAyuda: 'Abrir en la Ayuda', panelCerrar: 'Cerrar la ayuda', leerManual: 'Leer en el manual',
     pantallas: {

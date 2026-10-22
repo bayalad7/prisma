@@ -112,7 +112,7 @@
   const seccionDe = (ruta) => {
     const r = ruta.replace(/^\/admin\/?/, '').replace(/\/$/, '');
     if (/^pruebas\/(permisos|rollo\/[^/]+)$/.test(r)) return 'pruebas';
-    if (/^ayuda\/[a-z]+\/[A-Za-z0-9-]+\.md$/.test(r)) return 'ayuda';
+    if (/^ayuda\/([a-z]+\/[A-Za-z0-9-]+\.md|no-imprime)$/.test(r)) return 'ayuda';
     return SECCIONES.find((s) => s.ruta === r)?.id;
   };
 
@@ -2604,11 +2604,75 @@
     return b;
   }
 
+  // «Mi impresora no imprime»: preguntas paso a paso armadas desde el diagrama 23 (la única fuente),
+  // hasta la solución del manual. manual.js (flujo) lee el diagrama; TestArbolDeDiagnostico exige que
+  // el árbol esté completo.
+  const DIAGRAMA_NO_IMPRIME = 'diagramas/23-diagnostico-problemas.md';
+  // Primera letra en mayúscula, también después de «¿» (los diagramas van en minúsculas).
+  const mayuscula = (t) => t.replace(/^([¿¡]?)(\p{L})/u, (_, signo, letra) => signo + letra.toUpperCase());
+  async function vistaNoImprime(vista) {
+    const T = TAy.noImprime;
+    const f = window.PrismaManual.flujo(await leerDocumento(DIAGRAMA_NO_IMPRIME));
+    const destino = (id) => {
+      const e = f.enlaces[id];
+      if (!e) return null;
+      const { ruta, ancla } = resolverRuta(e.destino, DIAGRAMA_NO_IMPRIME);
+      return { texto: e.texto, destino: `${ruta}${decodeURIComponent(ancla)}` };
+    };
+    const botonManual = (enlace, texto) => {
+      const b = UI.boton({ texto, icono: 'libro', chico: true });
+      b.addEventListener('click', () => abrirAyuda(enlace.destino).catch(avisoError));
+      return b;
+    };
+    const recorrido = []; // [{ pregunta, respuesta }] ya contestadas
+    let actual = f.respuestas[f.inicio][0].a;
+    const zona = h('div', { class: 'pila-amplia' });
+    function pintar(enfocar) {
+      const historial = recorrido.length > 0 && h('ol', { class: 'recorrido-arbol' }, recorrido.map((paso, k) => {
+        const cambiar = UI.boton({ texto: T.cambiar, variante: 'texto', chico: true, 'aria-label': T.cambiarEtiqueta(f.nodos[paso.pregunta].texto) });
+        cambiar.addEventListener('click', () => { actual = paso.pregunta; recorrido.splice(k); pintar(true); });
+        return h('li', {}, h('span', {}, mayuscula(f.nodos[paso.pregunta].texto)), h('strong', {}, ` ${mayuscula(paso.respuesta.texto)}`), cambiar);
+      }));
+      const nodo = f.nodos[actual];
+      const idTitulo = UI.nuevoId('arbol');
+      let paso;
+      if (nodo.pregunta) {
+        const ayuda = destino(actual);
+        paso = h('section', { class: 'tarjeta pregunta-arbol', 'aria-labelledby': idTitulo },
+          h('h2', { id: idTitulo, tabindex: '-1' }, mayuscula(nodo.texto)),
+          h('div', { class: 'acciones' }, f.respuestas[actual].map((r) => {
+            const b = UI.boton({ texto: mayuscula(r.texto), variante: 'secundario' });
+            b.addEventListener('click', () => { recorrido.push({ pregunta: actual, respuesta: r }); actual = r.a; pintar(true); });
+            return b;
+          })),
+          ayuda && h('p', { class: 'pequeno' }, T.comoSaber, ' ', botonManual(ayuda, ayuda.texto)));
+      } else {
+        const solucion = destino(actual);
+        const reiniciar = UI.boton({ texto: T.reiniciar, variante: 'texto', icono: 'recargar' });
+        reiniciar.addEventListener('click', () => { recorrido.length = 0; actual = f.respuestas[f.inicio][0].a; pintar(true); });
+        paso = h('section', { class: 'tarjeta', 'aria-labelledby': idTitulo },
+          h('h2', { id: idTitulo, tabindex: '-1' }, T.probable),
+          UI.nota({ tipo: 'info', titulo: mayuscula(nodo.texto) }),
+          h('div', { class: 'acciones' }, solucion && botonManual(solucion, T.leerSolucion(solucion.texto)), reiniciar));
+      }
+      vaciar(zona, historial, paso);
+      if (enfocar) zona.querySelector('h2').focus();
+    }
+    agregar(vista, h('a', { href: rutaDe('ayuda'), class: 'volver' }, UI.icono('flecha-izq'), TAy.volver),
+      encabezado(T.titulo, T.subtitulo), zona,
+      h('p', { class: 'pequeno tenue' }, T.fuente, ' ', h('a', { href: rutaAyuda(DIAGRAMA_NO_IMPRIME) }, T.verDiagrama)));
+    pintar(false);
+  }
+
   async function vistaAyuda(vista) {
     const { grupos, documentos, orden } = await cargarManual();
     const ruta = decodeURIComponent(location.pathname.replace(/^\/admin\/ayuda\/?/, ''));
+    if (ruta === 'no-imprime') return vistaNoImprime(vista);
     if (!ruta) {
-      agregar(vista, encabezado(TAy.titulo, TAy.subtitulo), buscadorManual(),
+      const guiar = h('a', { class: 'boton primario', href: rutaAyuda('no-imprime') }, UI.icono('impresora'), TAy.noImprime.empezar);
+      agregar(vista, encabezado(TAy.titulo, TAy.subtitulo),
+        UI.nota({ tipo: 'info', titulo: TAy.noImprime.tarjeta, texto: TAy.noImprime.tarjetaTexto, acciones: guiar }),
+        buscadorManual(),
         h('div', { class: 'grupos-manual' }, grupos.map((g) => UI.tarjeta({ titulo: g.titulo, icono: 'libro', nivel: 2 },
           h('ul', { class: 'lista-manual' }, g.documentos.map((d) => h('li', {}, h('a', { href: rutaAyuda(d.ruta) }, d.titulo))))))));
       return;
