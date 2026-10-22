@@ -65,7 +65,8 @@ según el perfil de la impresora y lo imprime por USB, red (TCP 9100) o Bluetoot
 - Los instaladores nunca activan `modo_desarrollo` (TestConfiguracionDeLosInstaladores).
 - Ninguna goroutine de la cola sobrevive a Quitar/Cerrar (TestSinFugasDeGoroutines).
 - Los tickets de las impresoras virtuales viven solo en memoria (conector.RollosVirtuales): nunca en la
-  base, la bitácora ni los respaldos (TestImpresoraVirtualDePrincipioAFin).
+  base, la bitácora ni los respaldos, tampoco desde «Probar impresión» (TestImpresoraVirtualDePrincipioAFin,
+  TestProbarImpresionNoGuardaElContenido).
 - Permisos: base y llave del certificado 0600; datos solo para el usuario del servicio
   (en Windows, SYSTEM y Administradores).
 
