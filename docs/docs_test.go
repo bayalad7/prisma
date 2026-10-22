@@ -114,6 +114,65 @@ func TestCodigosDeErrorDocumentados(t *testing.T) {
 	}
 }
 
+// clasesDiagramas son los colores comunes de docs/diagramas: externo, prisma, datos y seguridad.
+var clasesDiagramas = []string{
+	"classDef externo fill:#e8f0fe,stroke:#3b6db3,color:#102a43",
+	"classDef prisma fill:#e6f4ea,stroke:#2f7d32,color:#0b2e13",
+	"classDef datos fill:#fff4e0,stroke:#b26a00,color:#3d2400",
+	"classDef seguridad fill:#fde8e8,stroke:#c62828,color:#4a0d0d",
+}
+
+// TestFormatoDeLosDiagramas exige que cada docs/diagramas/NN-nombre.md tenga su diagrama, sus
+// fuentes en el código (que deben existir), su fecha de verificación, los colores comunes y una
+// fila en el índice.
+func TestFormatoDeLosDiagramas(t *testing.T) {
+	archivos, err := filepath.Glob(filepath.Join(raiz, "docs", "diagramas", "[0-9][0-9]-*.md"))
+	if err != nil || len(archivos) < 20 {
+		t.Fatalf("diagramas encontrados: %d (%v)", len(archivos), err)
+	}
+	indice := leer(t, "docs/diagramas/README.md")
+	reFuente := regexp.MustCompile("(?m)^- `?([A-Za-z0-9_./-]+)")
+	for _, ruta := range archivos {
+		nombre := filepath.Base(ruta)
+		texto := leer(t, filepath.ToSlash(filepath.Join("docs", "diagramas", nombre)))
+		for _, seccion := range []string{"\n```mermaid\n", "**Fuentes en el código:**", "**Última verificación:**"} {
+			if !strings.Contains(texto, seccion) {
+				t.Errorf("%s: falta %q", nombre, strings.TrimSpace(seccion))
+			}
+		}
+		if !strings.HasPrefix(texto, "# ") {
+			t.Errorf("%s: debe empezar con el título", nombre)
+		}
+		if !strings.Contains(indice, "]("+nombre+")") {
+			t.Errorf("%s no está en el índice docs/diagramas/README.md", nombre)
+		}
+		_, bloque, _ := strings.Cut(texto, "```mermaid\n")
+		bloque, _, _ = strings.Cut(bloque, "\n```")
+		if strings.Contains(bloque, "classDef") {
+			for _, c := range clasesDiagramas {
+				if !strings.Contains(bloque, c) {
+					t.Errorf("%s: los colores deben ser los comunes; falta %q", nombre, c)
+				}
+			}
+		}
+		_, fuentes, _ := strings.Cut(texto, "**Fuentes en el código:**")
+		fuentes, _, _ = strings.Cut(fuentes, "**Última verificación:**")
+		citadas := 0
+		for _, m := range reFuente.FindAllStringSubmatch(fuentes, -1) {
+			if m[1] == "go" { // `go list …`
+				continue
+			}
+			citadas++
+			if _, err := os.Stat(filepath.Join(raiz, filepath.FromSlash(m[1]))); err != nil {
+				t.Errorf("%s cita %s, que no existe", nombre, m[1])
+			}
+		}
+		if citadas == 0 {
+			t.Errorf("%s no cita ningún archivo del código", nombre)
+		}
+	}
+}
+
 var (
 	reCodigoBloque = regexp.MustCompile("(?s)```.*?```")
 	reCodigoLinea  = regexp.MustCompile("`[^`\n]*`")
