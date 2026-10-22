@@ -48,11 +48,6 @@
     const [clase, texto] = mapa[clave] || ['', clave];
     return h('span', { class: `pastilla ${clase}` }, texto);
   }
-  const NIVELES = {
-    1: { nombre: 'Origen', texto: 'Se identifica por la página web (encabezado Origin). Para páginas sin backend en una red de confianza.' },
-    2: { nombre: 'Llave', texto: 'Origen aprobado más una llave pk_ en cada petición. Recomendado para la mayoría.' },
-    3: { nombre: 'Firma', texto: 'El backend firma cada documento con Ed25519. Para aplicaciones que no deben poder ser suplantadas.' },
-  };
   const PAGINAS = [
     { pagina: 'CP437', comando: 0, etiqueta: 'PC437 (EE. UU.)' },
     { pagina: 'CP850', comando: 2, etiqueta: 'PC850 (Multilingüe)' },
@@ -581,7 +576,12 @@
         imp.virtual && h('button', { class: 'boton chico', type: 'button', onclick: () => verRollo(imp).catch(avisoError) }, TV.verTickets(imp.tickets_recibidos)),
         h('button', { class: 'boton chico', type: 'button', onclick: () => formularioImpresora(vista, imp) }, 'Editar'),
         h('button', { class: 'boton chico peligro', type: 'button', onclick: async () => {
-          if (!(await confirmar(`¿Eliminar «${imp.alias}»?`, 'Las aplicaciones que imprimen en esta impresora empezarán a recibir IMPRESORA_NO_ENCONTRADA. El historial de trabajos se conserva.', { boton: 'Eliminar', peligro: true }))) return;
+          // Dice qué aplicaciones se quedan sin esta impresora.
+          let usan = [];
+          try { usan = (await api.get('/clientes')).filter((c) => c.todas_las_impresoras || c.impresoras.includes(imp.alias)).map((c) => c.nombre); } catch { /* se confirma sin la lista */ }
+          const E = window.PRISMA_TEXTOS.eliminarImpresora;
+          if (!(await confirmar(E.titulo(imp.alias), E.texto, { boton: E.boton, peligro: true,
+            consecuencias: [usan.length ? E.usan(usan) : E.ninguna, E.historial] }))) return;
           try { await api.borrar(ruta); aviso(`Impresora «${imp.alias}» eliminada.`, 'ok'); recargar(); } catch (e) { avisoError(e); }
         } }, 'Eliminar')),
       resultado);
@@ -1004,301 +1004,389 @@
   }
 
   // ---------------------------------------------------------------------------------------------
-  // 3. Aplicaciones (clientes)
+  // 3. Aplicaciones (en la API y la CLI se llaman «clientes»)
   // ---------------------------------------------------------------------------------------------
+  const TAp = window.PRISMA_TEXTOS.aplicaciones;
+  const TS = window.PRISMA_TEXTOS.solicitudes;
+  const CDN_SDK = 'https://cdn.jsdelivr.net/gh/bayalad7/prisma@v0.1.0/sdk/js/dist/prisma.umd.js';
+  const ICONO_NIVEL = { 1: 'aplicacion', 2: 'llave', 3: 'escudo' };
+  const insigniaNivel = (n) => UI.insignia('acento', `${TAp.nivel(n)} · ${TAp.niveles[n].corto}`, { icono: ICONO_NIVEL[n] });
+  // Tarjetas de opción para elegir el nivel; el recomendado (2) va primero.
+  const opcionesNivel = (nombre, actual, niveles = [2, 3, 1]) => h('div', { class: 'opciones' }, niveles.map((n) => h('label', { class: 'opcion' },
+    h('input', { type: 'radio', name: nombre, value: n, checked: actual === n }), UI.icono(ICONO_NIVEL[n]),
+    h('span', { class: 'titulo-opcion' }, TAp.niveles[n].titulo, n === 2 && h('span', { class: 'tenue' }, ` (${TAp.recomendado})`)),
+    h('span', { class: 'tenue' }, TAp.niveles[n].texto))));
+
   async function vistaClientes(vista) {
     const [clientes, impresoras] = await Promise.all([api.get('/clientes'), api.get('/impresoras')]);
-    agregar(vista,
-      encabezado('Aplicaciones', 'Sitios web y sistemas autorizados a imprimir, con su nivel de seguridad y permisos.',
-        h('button', { class: 'boton primario', type: 'button', onclick: () => formularioCliente(vista, null, impresoras) }, 'Agregar aplicación')),
+    const botonAgregar = () => {
+      const b = UI.boton({ texto: TAp.agregar, variante: 'primario', icono: 'mas' });
+      b.addEventListener('click', () => formularioCliente(vista, null, impresoras));
+      return b;
+    };
+    agregar(vista, encabezado(TAp.titulo, TAp.subtitulo, botonAgregar()),
       clientes.length === 0
-        ? h('div', { class: 'tarjeta vacio' }, h('p', {}, 'Todavía no hay aplicaciones autorizadas.'))
+        ? UI.vacio({ icono: 'aplicacion', titulo: TAp.vacio, texto: TAp.vacioTexto, accion: botonAgregar() })
         : h('div', { class: 'lista' }, clientes.map((c) => tarjetaCliente(c, vista, impresoras))));
   }
 
   function tarjetaCliente(c, vista, impresoras) {
     const ruta = `/clientes/${enc(c.id)}`;
-    const llave = c.llave_prefijo ? `${c.llave_prefijo}_…` : null;
-    return h('article', { class: 'tarjeta' },
-      h('div', { class: 'tarjeta-cabeza' },
-        h('div', { class: 'cliente-cabeza' }, h('h2', {}, c.nombre), h('span', { class: 'mono tenue pequeno' }, c.id)),
-        h('div', { class: 'fila' }, h('span', { class: 'pastilla sin-punto acento' }, `Nivel ${c.nivel} · ${NIVELES[c.nivel].nombre}`),
-          h('span', { class: `pastilla ${c.activo ? 'ok' : ''}` }, c.activo ? 'Activa' : 'Desactivada'))),
-      h('dl', { class: 'datos' },
-        h('dt', {}, 'Orígenes'), h('dd', { class: 'fila' }, c.origenes.length ? c.origenes.map((o) => h('span', { class: 'chip' }, o)) : h('span', { class: 'tenue' }, 'Ninguno (solo desde servidores)')),
-        h('dt', {}, 'Impresoras'), h('dd', {}, c.todas_las_impresoras ? 'Todas' : (c.impresoras.length ? c.impresoras.map((a) => h('span', { class: 'chip' }, a)) : h('span', { class: 'tenue' }, 'Ninguna'))),
-        h('dt', {}, 'Llave'), h('dd', {}, llave ? h('span', { class: 'mono' }, llave) : h('span', { class: 'tenue' }, c.nivel === 2 ? 'Revocada' : 'Sin llave'), c.exigir_llave && ' (obligatoria con la firma)'),
-        c.nivel === 3 && [h('dt', {}, 'Llave pública'), h('dd', { class: 'mono pequeno' }, c.huella_publica || 'Registrada')],
-        h('dt', {}, 'Sensibles'), h('dd', {}, c.operaciones_sensibles.length ? c.operaciones_sensibles.map((o) => h('span', { class: 'chip aviso' }, o)) : h('span', { class: 'tenue' }, 'Ninguna'))),
-      h('div', { class: 'acciones' },
-        h('button', { class: 'boton chico', type: 'button', onclick: () => codigoIntegracion(c, impresoras) }, 'Código de integración'),
-        h('button', { class: 'boton chico', type: 'button', onclick: () => formularioCliente(vista, c, impresoras) }, 'Editar'),
-        (c.nivel === 2 || c.llave_prefijo) && h('button', { class: 'boton chico', type: 'button', onclick: async () => {
-          if (!(await confirmar('¿Generar una llave nueva?', `La llave actual de «${c.nombre}» deja de funcionar en cuanto confirmes. Tendrás que poner la nueva en la aplicación.`, { boton: 'Generar llave nueva' }))) return;
-          try { const r = await api.post(`${ruta}/llave`); await mostrarLlave(c, r.llave, impresoras); recargar(); } catch (e) { avisoError(e); }
-        } }, c.llave_prefijo ? 'Rotar llave' : 'Generar llave'),
-        c.llave_prefijo && h('button', { class: 'boton chico peligro', type: 'button', onclick: async () => {
-          if (!(await confirmar('¿Revocar la llave?', c.nivel === 2 ? `«${c.nombre}» dejará de poder imprimir hasta que generes una llave nueva.` : `«${c.nombre}» seguirá imprimiendo con documentos firmados, sin llave.`, { boton: 'Revocar', peligro: true }))) return;
-          try { await api.borrar(`${ruta}/llave`); aviso('Llave revocada.', 'ok'); recargar(); } catch (e) { avisoError(e); }
-        } }, 'Revocar llave'),
-        h('button', { class: 'boton chico', type: 'button', onclick: async () => {
-          try { await api.put(ruta, { ...c, activo: !c.activo }); aviso(c.activo ? 'Aplicación desactivada.' : 'Aplicación activada.', 'ok'); recargar(); } catch (e) { avisoError(e); }
-        } }, c.activo ? 'Desactivar' : 'Activar'),
-        h('button', { class: 'boton chico peligro', type: 'button', onclick: async () => {
-          if (!(await confirmar(`¿Eliminar «${c.nombre}»?`, 'Se borran sus orígenes, su llave y sus permisos. Su historial de trabajos se conserva.', { boton: 'Eliminar', peligro: true }))) return;
-          try { await api.borrar(ruta); aviso('Aplicación eliminada.', 'ok'); recargar(); } catch (e) { avisoError(e); }
-        } }, 'Eliminar')));
+    const D = TAp.datos, A = TAp.acciones, K = TAp.confirmar;
+    const chips = (lista, f = (x) => x, clase = 'chip') => h('span', { class: 'fila' }, lista.map((x) => h('span', { class: clase }, f(x))));
+    const accion = (texto, variante, alPulsar, icono) => {
+      const b = UI.boton({ texto, variante, chico: true, icono });
+      b.addEventListener('click', () => alPulsar(b));
+      return b;
+    };
+    const hacer = async (b, f, mensaje) => {
+      try { await conEspera(b, f); aviso(mensaje, 'ok'); recargar(); } catch (e) { avisoError(e); }
+    };
+    return UI.tarjeta({ titulo: c.nombre, icono: 'aplicacion',
+      acciones: h('span', { class: 'fila' }, insigniaNivel(c.nivel), c.activo ? UI.insignia('ok', TAp.activa) : UI.insignia('desconocido', TAp.desactivada)) },
+    h('dl', { class: 'datos' },
+      h('dt', {}, D.origenes), h('dd', {}, c.origenes.length ? chips(c.origenes) : h('span', { class: 'tenue' }, D.origenesNinguna)),
+      h('dt', {}, D.impresoras), h('dd', {}, c.todas_las_impresoras ? D.todas : (c.impresoras.length ? chips(c.impresoras) : h('span', { class: 'tenue' }, D.ninguna))),
+      h('dt', {}, D.llave), h('dd', {}, c.llave_prefijo ? h('span', { class: 'mono' }, `${c.llave_prefijo}_…`)
+        : h('span', { class: 'tenue' }, c.nivel === 2 ? D.llaveQuitada : D.sinLlave)),
+      c.nivel === 3 && [h('dt', {}, D.llavePublica), h('dd', { class: 'mono pequeno' }, c.huella_publica || D.registrada)],
+      h('dt', {}, D.especiales), h('dd', {}, c.operaciones_sensibles.length
+        ? chips(c.operaciones_sensibles, (o) => TAp.especiales[o] || o, 'chip aviso') : h('span', { class: 'tenue' }, D.ningunPermiso))),
+    h('div', { class: 'acciones' },
+      accion(A.codigo, 'primario', () => codigoIntegracion(c, impresoras), 'codigo'),
+      accion(A.editar, '', () => formularioCliente(vista, c, impresoras), 'lapiz'),
+      (c.nivel === 2 || c.llave_prefijo) && accion(c.llave_prefijo ? A.cambiarLlave : A.darLlave, '', async (b) => {
+        if (c.llave_prefijo && !(await confirmar(K.cambiarTitulo(c.nombre), K.cambiarTexto, { boton: K.cambiarBoton, consecuencias: K.cambiarConsecuencias }))) return;
+        try {
+          const r = await conEspera(b, () => api.post(`${ruta}/llave`));
+          await mostrarLlave(c, r.llave, impresoras);
+          recargar();
+        } catch (e) { avisoError(e); }
+      }, 'llave'),
+      c.llave_prefijo && accion(A.quitarLlave, 'peligro', async (b) => {
+        if (!(await confirmar(K.quitarTitulo(c.nombre), c.nivel === 2 ? K.quitarTexto2 : K.quitarTexto3, { boton: K.quitarBoton, peligro: true }))) return;
+        hacer(b, () => api.borrar(`${ruta}/llave`), TAp.hecho.llaveQuitada);
+      }),
+      accion(c.activo ? A.desactivar : A.activar, '', async (b) => {
+        if (c.activo && !(await confirmar(K.desactivarTitulo(c.nombre), K.desactivarTexto,
+          { boton: K.desactivarBoton, peligro: true, consecuencias: K.desactivarConsecuencias }))) return;
+        hacer(b, () => api.put(ruta, { ...c, activo: !c.activo }), c.activo ? TAp.hecho.desactivada : TAp.hecho.activada);
+      }),
+      accion(A.eliminar, 'peligro', async (b) => {
+        if (!(await confirmar(K.eliminarTitulo(c.nombre), K.eliminarTexto, { boton: K.eliminarBoton, peligro: true, consecuencias: K.eliminarConsecuencias }))) return;
+        hacer(b, () => api.borrar(ruta), TAp.hecho.eliminada);
+      }, 'papelera')));
   }
 
-  function formularioCliente(vista, existente, impresoras, prellenado = {}) {
-    const c = existente ? { ...existente } : {
-      nombre: '', nivel: 2, origenes: [], todas_las_impresoras: true, impresoras: [], operaciones_sensibles: [], exigir_llave: false, activo: true, ...prellenado,
-    };
-    const nombre = h('input', { type: 'text', id: 'cli-nombre', value: c.nombre, required: true, placeholder: 'Tienda en línea' });
-    const niveles = h('div', { class: 'opciones', role: 'radiogroup', 'aria-label': 'Nivel de seguridad' }, [1, 2, 3].map((n) =>
-      h('label', { class: 'opcion' }, h('input', { type: 'radio', name: 'nivel', value: n, checked: c.nivel === n }),
-        h('span', { class: 'titulo-opcion' }, `Nivel ${n} · ${NIVELES[n].nombre}`, n === 2 ? ' (recomendado)' : ''), h('span', { class: 'tenue' }, NIVELES[n].texto))));
+  function formularioCliente(vista, existente, impresoras) {
+    const F = TAp.form;
+    const c = existente ? { ...existente }
+      : { nombre: '', nivel: 2, origenes: [], todas_las_impresoras: true, impresoras: [], operaciones_sensibles: [], exigir_llave: false, activo: true };
+    const nombre = UI.entrada({ value: c.nombre, autocomplete: 'off' });
+    const cNombre = UI.campo({ id: 'cli-nombre', etiqueta: F.nombre, control: nombre, ayuda: F.nombreAyuda, validar: (v) => (v.trim() ? '' : F.nombreFalta) });
+    const niveles = opcionesNivel('nivel', c.nivel);
+    const nivelElegido = () => Number(niveles.querySelector('input:checked').value);
+    const cualElijo = h('details', { class: 'avanzado' }, h('summary', {}, TAp.cualElijo), h('div', {}, h('ul', {}, TAp.cualElijoTexto.map((t) => h('li', {}, t)))));
 
+    // Páginas web (orígenes): solo esquema, nombre y puerto.
     const origenes = [...c.origenes];
     const chips = h('div', { class: 'fila' });
-    const nuevoOrigen = h('input', { type: 'url', id: 'cli-origen', class: 'mono', placeholder: 'https://tienda.example', autocomplete: 'off' });
-    const pintarOrigenes = () => vaciar(chips, origenes.length ? origenes.map((o, k) => h('span', { class: 'chip' }, o,
-      h('button', { type: 'button', 'aria-label': `Quitar ${o}`, onclick: () => { origenes.splice(k, 1); pintarOrigenes(); } }, '×'))) : h('span', { class: 'tenue pequeno' }, 'Sin orígenes.'));
+    const nuevoOrigen = UI.entrada({ tipo: 'url', mono: true, autocomplete: 'off', placeholder: 'https://pos.mitienda.mx' });
+    const cOrigen = UI.campo({ id: 'cli-origen', etiqueta: F.origen, control: nuevoOrigen });
+    const pintarOrigenes = () => vaciar(chips, origenes.length
+      ? origenes.map((o, k) => h('span', { class: 'chip' }, o, h('button', { type: 'button', 'aria-label': F.quitarOrigen(o), onclick: () => { origenes.splice(k, 1); pintarOrigenes(); } }, '×')))
+      : h('span', { class: 'tenue pequeno' }, F.origenesVacio));
+    const normalizar = (v) => {
+      let u;
+      try { u = new URL(v); } catch { return null; }
+      if (!/^https?:$/.test(u.protocol) || (u.pathname !== '/' && u.pathname !== '') || u.search || u.hash || v.includes('*')) return null;
+      return u.origin;
+    };
+    // Agrega lo escrito; devuelve false si no es un origen válido.
     const agregarOrigen = () => {
       const v = nuevoOrigen.value.trim();
-      let u;
-      try { u = new URL(v); } catch { aviso('Escribe un origen completo, por ejemplo https://tienda.example', 'error'); return; }
-      if (!/^https?:$/.test(u.protocol) || (u.pathname !== '/' && u.pathname !== '') || u.search || u.hash || v.includes('*')) {
-        aviso('Un origen es solo esquema, nombre y puerto: https://tienda.example o http://localhost:5173 (sin rutas ni comodines).', 'error'); return;
-      }
-      if (!origenes.includes(u.origin)) origenes.push(u.origin);
-      nuevoOrigen.value = ''; pintarOrigenes();
+      if (!v) return true;
+      const o = normalizar(v);
+      if (!o) { cOrigen.ponerError(F.origenMal); nuevoOrigen.focus(); return false; }
+      cOrigen.quitarError();
+      if (!origenes.includes(o)) origenes.push(o);
+      nuevoOrigen.value = '';
+      pintarOrigenes();
+      return true;
     };
     nuevoOrigen.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); agregarOrigen(); } });
     pintarOrigenes();
+    const bAgregarOrigen = UI.boton({ texto: F.agregarOrigen, icono: 'mas' });
+    bAgregarOrigen.addEventListener('click', agregarOrigen);
 
-    const todas = h('input', { type: 'checkbox', id: 'cli-todas', checked: c.todas_las_impresoras });
-    const listaImpresoras = h('div', { class: 'pila' }, impresoras.map((i) => h('label', { class: 'casilla' },
-      h('input', { type: 'checkbox', value: i.alias, checked: c.impresoras.includes(i.alias) }), h('span', {}, h('span', { class: 'mono' }, i.alias), ' ', h('span', { class: 'tenue' }, i.nombre)))));
-    const actualizarTodas = () => { listaImpresoras.hidden = todas.checked; };
-    todas.addEventListener('change', actualizarTodas); actualizarTodas();
+    // Permisos
+    const todas = UI.interruptor({ id: 'cli-todas', texto: F.impresorasTodas, marcado: c.todas_las_impresoras });
+    const listaImpresoras = h('div', { class: 'pila' }, impresoras.map((i) => UI.casilla({ id: `cli-imp-${i.alias}`, value: i.alias,
+      marcado: c.impresoras.includes(i.alias),
+      texto: h('span', { class: 'fila' }, h('span', {}, h('span', { class: 'mono' }, i.alias), ' ', h('span', { class: 'tenue' }, i.nombre)), insigniaVirtual(i)) })));
+    const actualizarTodas = () => { listaImpresoras.hidden = todas.input.checked; };
+    todas.input.addEventListener('change', actualizarTodas);
+    actualizarTodas();
+    const especiales = Object.entries(TAp.especiales).map(([op, texto]) => UI.casilla({ id: `cli-op-${op}`, value: op, texto, marcado: c.operaciones_sensibles.includes(op) }));
 
-    const sensible = (op, texto) => h('label', { class: 'casilla' }, h('input', { type: 'checkbox', value: op, checked: c.operaciones_sensibles.includes(op) }),
-      h('span', {}, h('span', { class: 'mono' }, op), ' — ', texto));
-    const sensibles = h('fieldset', {}, h('legend', {}, 'Operaciones sensibles'),
-      h('p', { class: 'nota aviso' }, 'Habilítalas solo si la aplicación las necesita: abrir_cajon abre el cajón de dinero y raw envía comandos sin revisar a la impresora.'),
-      sensible('abrir_cajon', 'abrir el cajón de dinero'), sensible('raw', 'enviar bytes ESC/POS sin revisar'));
-
-    const llavePublica = h('textarea', { id: 'cli-publica', placeholder: '-----BEGIN PUBLIC KEY-----\n…\n-----END PUBLIC KEY-----\n\no los 32 bytes en base64' });
-    const estadoLlave = h('p', { class: 'pequeno', 'aria-live': 'polite' });
+    // Nivel 3: llave pública del servidor de la aplicación.
+    const llavePublica = h('textarea', { placeholder: '-----BEGIN PUBLIC KEY-----\n…\n-----END PUBLIC KEY-----' });
+    const cLlave = UI.campo({ id: 'cli-publica', etiqueta: existente && existente.nivel === 3 ? F.llavePublicaReemplazo : F.llavePublica,
+      control: llavePublica, ayuda: F.llavePublicaAyuda });
+    const estadoLlave = h('div', { 'aria-live': 'polite' });
     let temporizador;
     llavePublica.addEventListener('input', () => {
       clearTimeout(temporizador);
       temporizador = setTimeout(async () => {
         const v = llavePublica.value.trim();
-        if (!v) { estadoLlave.textContent = ''; return; }
+        vaciar(estadoLlave);
+        cLlave.quitarError();
+        if (!v) return;
         try {
           const r = await api.post('/validar-llave-publica', { llave: v });
-          estadoLlave.className = 'pequeno nota ok'; estadoLlave.textContent = `Llave Ed25519 válida (${r.formato}). Huella: ${r.huella}`;
-        } catch (e) { estadoLlave.className = 'pequeno nota error'; estadoLlave.textContent = e.message; }
+          vaciar(estadoLlave, UI.nota({ tipo: 'ok', texto: F.llaveValida(r.formato, r.huella) }));
+        } catch (e) { cLlave.ponerError(e.message); }
       }, 300);
     });
-    const exigir = h('input', { type: 'checkbox', id: 'cli-exigir', checked: c.exigir_llave });
-    const bloqueFirma = h('section', { class: 'tarjeta' }, h('h2', {}, 'Llave pública (nivel 3)'),
-      h('label', { class: 'campo', for: 'cli-publica' }, h('span', {}, existente ? 'Reemplazar la llave pública (opcional)' : 'Pega la llave pública Ed25519 del backend'), llavePublica,
-        h('span', { class: 'ayuda' }, 'Solo la llave pública: la privada nunca sale del servidor de la aplicación. Para pruebas: ', h('code', {}, 'prisma dev llaves'), '.')),
-      estadoLlave,
-      h('label', { class: 'casilla', for: 'cli-exigir' }, exigir, h('span', {}, 'Exigir también la llave pk_ en cada petición')));
-    const nivelElegido = () => +niveles.querySelector('input:checked').value;
+    const exigir = UI.casilla({ id: 'cli-exigir', texto: F.exigirLlave, marcado: c.exigir_llave });
+    const bloqueFirma = UI.tarjeta({ titulo: F.seccionFirma, icono: 'escudo' }, cLlave, estadoLlave, exigir);
     const actualizarNivel = () => { bloqueFirma.hidden = nivelElegido() !== 3; };
-    niveles.addEventListener('change', actualizarNivel); actualizarNivel();
+    niveles.addEventListener('change', actualizarNivel);
+    actualizarNivel();
 
-    const bGuardar = h('button', { class: 'boton primario', type: 'submit' }, existente ? 'Guardar cambios' : 'Crear aplicación');
-    const form = h('form', { class: 'pila', onsubmit: async (ev) => {
+    const resultado = h('div', { 'aria-live': 'polite' });
+    const bGuardar = UI.boton({ texto: existente ? F.guardar : F.crear, variante: 'primario', tipo: 'submit' });
+    const form = h('form', { class: 'pila-amplia', novalidate: true, onsubmit: async (ev) => {
       ev.preventDefault();
-      if (nuevoOrigen.value.trim()) agregarOrigen();
+      vaciar(resultado);
+      let valido = UI.revisarCampos([cNombre]);
+      if (!agregarOrigen()) valido = false;
+      const nivel = nivelElegido();
+      if (nivel === 1 && origenes.length === 0) { cOrigen.ponerError(F.origenFaltaNivel1); if (valido) nuevoOrigen.focus(); valido = false; }
+      if (nivel === 3 && !(existente && existente.nivel === 3) && !llavePublica.value.trim()) {
+        cLlave.ponerError(F.llavePublicaFalta); if (valido) llavePublica.focus(); valido = false;
+      }
+      if (!valido) return;
       const datos = {
-        nombre: nombre.value.trim(), nivel: nivelElegido(), origenes, todas_las_impresoras: todas.checked,
+        nombre: nombre.value.trim(), nivel, origenes, todas_las_impresoras: todas.input.checked,
         impresoras: [...listaImpresoras.querySelectorAll('input:checked')].map((x) => x.value),
-        operaciones_sensibles: [...sensibles.querySelectorAll('input:checked')].map((x) => x.value),
-        llave_publica: llavePublica.value.trim() || undefined, exigir_llave: exigir.checked, activo: c.activo,
+        operaciones_sensibles: especiales.filter((e) => e.input.checked).map((e) => e.input.value),
+        llave_publica: llavePublica.value.trim() || undefined, exigir_llave: exigir.input.checked, activo: c.activo,
       };
-      if (!datos.nombre) { aviso('Escribe el nombre de la aplicación.', 'error'); nombre.focus(); return; }
-      if (datos.nivel === 1 && datos.origenes.length === 0) { aviso('El nivel 1 se identifica solo por el origen: agrega al menos uno.', 'error'); nuevoOrigen.focus(); return; }
-      if (datos.nivel === 3 && !(existente && existente.nivel === 3) && !datos.llave_publica) { aviso('El nivel 3 necesita la llave pública.', 'error'); llavePublica.focus(); return; }
       try {
-        const r = await conEspera(bGuardar, () => existente ? api.put(`/clientes/${enc(existente.id)}`, datos) : api.post('/clientes', datos));
+        const r = await conEspera(bGuardar, () => (existente ? api.put(`/clientes/${enc(existente.id)}`, datos) : api.post('/clientes', datos)));
         if (r.llave) await mostrarLlave(r.cliente, r.llave, impresoras);
-        else aviso(existente ? 'Cambios guardados.' : 'Aplicación creada.', 'ok');
+        else aviso(existente ? TAp.hecho.guardada : TAp.hecho.creada, 'ok');
         ir('aplicaciones');
-      } catch (e) { avisoError(e); }
+      } catch (e) {
+        if (e.codigo === 'ORIGEN_DUPLICADO') { cOrigen.ponerError([e.message, e.sugerencia].filter(Boolean).join(' ')); nuevoOrigen.focus(); return; }
+        if (e.codigo === 'LLAVE_PUBLICA_INVALIDA') { cLlave.ponerError(e.message); llavePublica.focus(); return; }
+        vaciar(resultado, UI.nota({ tipo: 'error', titulo: e.message, texto: e.sugerencia }));
+      }
     } },
-    h('section', { class: 'tarjeta' }, h('h2', {}, 'Aplicación'),
-      h('label', { class: 'campo', for: 'cli-nombre' }, h('span', {}, 'Nombre'), nombre),
-      h('fieldset', {}, h('legend', {}, 'Nivel de seguridad'), niveles)),
+    UI.tarjeta({ titulo: F.seccionApp, icono: 'aplicacion' }, cNombre, h('fieldset', {}, h('legend', {}, F.nivel), niveles), cualElijo),
     bloqueFirma,
-    h('section', { class: 'tarjeta' }, h('h2', {}, 'Orígenes permitidos'),
-      h('p', { class: 'tenue pequeno' }, 'La dirección exacta de la página web que imprime: esquema, nombre y puerto. Sin comodines.'),
-      h('div', { class: 'fila' }, h('div', { class: 'campo', style: null }, nuevoOrigen), h('button', { class: 'boton', type: 'button', onclick: agregarOrigen }, 'Agregar')),
-      chips),
-    h('section', { class: 'tarjeta' }, h('h2', {}, 'Permisos'),
-      h('fieldset', {}, h('legend', {}, 'Impresoras'), h('label', { class: 'casilla', for: 'cli-todas' }, todas, h('span', {}, 'Todas las impresoras, también las que se agreguen después')), listaImpresoras),
-      h('hr', { class: 'separador' }), sensibles),
-    h('div', { class: 'acciones' }, h('button', { class: 'boton', type: 'button', onclick: recargar }, 'Cancelar'), bGuardar));
+    UI.tarjeta({ titulo: F.seccionOrigenes, icono: 'red' }, h('p', { class: 'tenue pequeno' }, F.origenesTexto),
+      h('div', { class: 'fila-campo' }, cOrigen, bAgregarOrigen), chips),
+    UI.tarjeta({ titulo: F.seccionPermisos, icono: 'candado' },
+      h('fieldset', {}, h('legend', {}, F.impresorasLeyenda), todas, listaImpresoras),
+      h('hr', { class: 'separador' }),
+      h('fieldset', {}, h('legend', {}, F.especialesLeyenda), h('p', { class: 'tenue pequeno' }, F.especialesAviso), especiales)),
+    resultado,
+    h('div', { class: 'acciones' }, h('a', { class: 'boton', href: rutaDe('aplicaciones') }, F.cancelar), bGuardar));
 
-    vaciar(vista, cintaDemo(), encabezado(existente ? `Editar «${c.nombre}»` : 'Agregar aplicación',
-      existente ? null : 'Registra un sitio web o sistema que imprimirá en este puente.'), form);
+    vaciar(vista, cintaDemo(), encabezado(existente ? F.tituloEditar(c.nombre) : F.tituloNueva, existente ? null : F.subtituloNueva), form);
     nombre.focus();
   }
 
+  // La llave se muestra una sola vez: con copiar, descargar como archivo y qué hacer con ella.
   async function mostrarLlave(cliente, llave, impresoras) {
-    const caja = h('div', { class: 'llave-caja' }, h('code', {}, llave), botonCopiar(llave));
+    const L = TAp.llave;
+    const url = estado.direccion || location.origin;
+    const href = URL.createObjectURL(new Blob([L.archivo(cliente.nombre, llave, url)], { type: 'text/plain;charset=utf-8' }));
     await dialogo({
-      titulo: 'Llave de la aplicación', ancho: 640,
-      cuerpo: h('div', { class: 'pila' },
-        h('p', {}, `Esta es la llave de «${cliente.nombre}». `, h('strong', {}, 'Cópiala ahora: no se volverá a mostrar.'), ' El puente solo guarda una huella de ella.'),
-        caja,
-        h('p', { class: 'tenue pequeno' }, 'La aplicación la envía en cada petición con el encabezado Authorization: Bearer <llave>.'),
+      titulo: L.titulo(cliente.nombre), ancho: 700,
+      cuerpo: h('div', { class: 'pila-amplia' },
+        UI.nota({ tipo: 'aviso', titulo: L.aviso, texto: L.avisoTexto }),
+        h('div', { class: 'llave-caja' }, h('code', {}, llave), botonCopiar(llave)),
+        h('div', {}, h('a', { class: 'boton chico', href, download: `llave-${aliasDe(cliente.nombre, new Set())}.txt` }, UI.icono('descargar'), L.descargar)),
+        h('div', { class: 'pila' }, h('h3', {}, L.queHago), h('p', { class: 'tenue pequeno' }, L.queHagoTexto)),
         bloqueCodigo(cliente, impresoras, llave)),
-      acciones: [{ texto: 'Ya la copié', clase: 'primario', valor: true }],
+      acciones: [{ texto: L.listo, clase: 'primario', valor: true }],
     });
+    URL.revokeObjectURL(href);
   }
 
+  // Código para integrar la aplicación, con la impresora elegida y la llave si el nivel la usa.
   function bloqueCodigo(cliente, impresoras, llave) {
+    const K = TAp.codigo;
     const url = estado.direccion || location.origin;
-    const permitidas = cliente.todas_las_impresoras ? impresoras.map((i) => i.alias) : cliente.impresoras;
-    const alias = permitidas[0] || 'caja';
-    const valorLlave = llave || (cliente.llave_prefijo ? `${cliente.llave_prefijo}_…` : '');
-    const conLlave = cliente.nivel === 2 || (cliente.nivel === 3 && cliente.exigir_llave) || (llave && cliente.nivel !== 1);
-    const variantes = {
-      SDK: [
-        `import { Prisma } from "./prisma.js";`,
-        ``,
-        `const prisma = new Prisma({`,
-        `  url: "${url}",`,
-        conLlave && `  llave: "${valorLlave}",`,
-        `});`,
-        ``,
-        `await prisma.imprimir({`,
-        `  impresora: "${alias}",`,
-        `  operaciones: [`,
-        `    { tipo: "texto", valor: "Hola desde ${cliente.nombre.replace(/"/g, '')}", alineacion: "centro" },`,
-        `    { tipo: "cortar" },`,
-        `  ],`,
-        `});`,
-      ],
-      fetch: [
-        `const respuesta = await fetch("${url}/v1/imprimir", {`,
-        `  method: "POST",`,
-        `  headers: {`,
-        `    "Content-Type": "application/json",`,
-        conLlave && `    "Authorization": "Bearer ${valorLlave}",`,
-        `  },`,
-        `  body: JSON.stringify({`,
-        `    version: "1",`,
-        `    id: crypto.randomUUID(),`,
-        `    impresora: "${alias}",`,
-        `    operaciones: [{ tipo: "texto", valor: "Hola" }, { tipo: "cortar" }],`,
-        `  }),`,
-        `});`,
-        `const resultado = await respuesta.json();`,
-      ],
-      curl: cliente.nivel === 3 && !conLlave ? [
-        `prisma dev firmar documento.json --llave privada.pem --cliente ${cliente.id} --nuevo-id -o firmado.json`,
-        `curl --cacert certificado.pem ${url}/v1/imprimir \\`,
-        `  -H "Content-Type: application/json" --data-binary @firmado.json`,
-      ] : [
-        `curl --cacert certificado.pem ${url}/v1/imprimir \\`,
-        conLlave && `  -H "Authorization: Bearer ${valorLlave}" \\`,
-        `  -H "Content-Type: application/json" \\`,
-        `  --data-binary @documento.json`,
-      ],
+    const permitidas = impresoras.filter((i) => cliente.todas_las_impresoras || cliente.impresoras.includes(i.alias));
+    const conLlave = cliente.nivel === 2 || (cliente.nivel === 3 && cliente.exigir_llave);
+    const valorLlave = llave || K.llaveAqui;
+    const preferida = permitidas.find((i) => i.estado === 'en_linea' && !i.virtual) || permitidas.find((i) => i.estado === 'en_linea') || permitidas[0];
+    const caja = h('div', {});
+    const pintar = (alias) => {
+      const saludo = K.saludo(cliente.nombre.replace(/["\\]/g, ''));
+      const variantes = {
+        [K.pestanas.web]: [
+          `<script src="${CDN_SDK}"></script>`,
+          '<script>',
+          '  const prisma = new Prisma({',
+          `    url: "${url}",`,
+          conLlave && `    llave: "${valorLlave}",`,
+          '  });',
+          `  prisma.imprimir("${alias}", (doc) => doc`,
+          `    .texto("${saludo}", { alineacion: "centro" })`,
+          '    .cortar());',
+          '</script>',
+        ],
+        [K.pestanas.fetch]: [
+          `const respuesta = await fetch("${url}/v1/imprimir", {`,
+          '  method: "POST",',
+          '  headers: {',
+          '    "Content-Type": "application/json",',
+          conLlave && `    "Authorization": "Bearer ${valorLlave}",`,
+          '  },',
+          '  body: JSON.stringify({',
+          '    version: "1",',
+          '    id: crypto.randomUUID(),',
+          `    impresora: "${alias}",`,
+          `    operaciones: [{ tipo: "texto", valor: "${saludo}" }, { tipo: "cortar" }],`,
+          '  }),',
+          '});',
+          'const resultado = await respuesta.json();',
+        ],
+        [K.pestanas.curl]: cliente.nivel === 3 && !conLlave ? [
+          `prisma dev firmar documento.json --llave privada.pem --cliente ${cliente.id} --nuevo-id -o firmado.json`,
+          `curl --cacert certificado.pem ${url}/v1/imprimir \\`,
+          '  -H "Content-Type: application/json" --data-binary @firmado.json',
+        ] : [
+          `curl --cacert certificado.pem ${url}/v1/imprimir \\`,
+          conLlave && `  -H "Authorization: Bearer ${valorLlave}" \\`,
+          '  -H "Content-Type: application/json" \\',
+          '  --data-binary @documento.json',
+        ],
+      };
+      const textos = Object.fromEntries(Object.entries(variantes).map(([k, ls]) => [k, ls.filter((l) => typeof l === 'string').join('\n')]));
+      vaciar(caja, UI.codigo(textos, { etiqueta: K.titulo }));
     };
-    const pre = h('pre', { class: 'codigo', tabindex: '0', 'aria-label': 'Código de integración' });
-    const bCopiar = h('button', { class: 'boton chico', type: 'button', onclick: () => copiar(pre.textContent, bCopiar) }, 'Copiar código');
-    const pestanas = h('div', { class: 'pestanas', role: 'tablist' });
-    const elegir = (nombre) => {
-      pre.textContent = variantes[nombre].filter((l) => l !== false && l !== null && l !== undefined).join('\n');
-      for (const b of pestanas.children) b.setAttribute('aria-selected', String(b.textContent === nombre));
-    };
-    agregar(pestanas, Object.keys(variantes).map((n) => h('button', { type: 'button', role: 'tab', onclick: () => elegir(n) }, n)));
-    elegir('SDK');
-    return h('div', { class: 'pila' }, h('div', { class: 'fila-entre' }, h('h3', {}, 'Código de integración'), bCopiar), pestanas, pre,
-      h('p', { class: 'tenue pequeno' }, 'El SDK (prisma.js) está en camino; mientras tanto puedes usar fetch. ',
-        cliente.nivel === 1 && 'En el nivel 1 la página debe servirse desde un origen aprobado. ',
-        cliente.nivel === 3 && 'En el nivel 3 el backend firma cada documento antes de enviarlo (ver docs/integradores/firmar-documentos.md).'));
+    const idSelector = `cod-imp-${cliente.id}`;
+    const selector = permitidas.length > 1 && UI.selector({ opciones: permitidas.map((i) => [i.alias, i.virtual ? `${i.alias} (${TV.insignia})` : i.alias]), valor: preferida.alias });
+    if (selector) selector.addEventListener('change', () => pintar(selector.value));
+    pintar(preferida ? preferida.alias : 'caja');
+    return h('div', { class: 'pila-amplia' }, h('h3', {}, K.titulo),
+      permitidas.length === 0 && UI.nota({ tipo: 'aviso', texto: K.sinImpresoras }),
+      selector && UI.campo({ id: idSelector, etiqueta: K.impresora, control: selector }),
+      caja,
+      h('p', { class: 'tenue pequeno' }, K.certificado, h('a', { href: rutaDe('ayuda'), target: '_blank', rel: 'noopener' }, K.certificadoEnlace), '.'),
+      cliente.nivel === 1 && h('p', { class: 'tenue pequeno' }, K.nivel1),
+      cliente.nivel === 3 && h('p', { class: 'tenue pequeno' }, K.nivel3));
   }
 
   function codigoIntegracion(c, impresoras) {
-    dialogo({ titulo: `Integrar «${c.nombre}»`, ancho: 680, cuerpo: bloqueCodigo(c, impresoras, null) });
+    dialogo({ titulo: TAp.codigo.dialogo(c.nombre), ancho: 720, cuerpo: bloqueCodigo(c, impresoras, null) });
   }
 
   // ---------------------------------------------------------------------------------------------
-  // 4. Solicitudes de origen
+  // 4. Solicitudes: páginas web desconocidas que intentaron imprimir.
   // ---------------------------------------------------------------------------------------------
+  const esEsteEquipo = (host) => host === 'localhost' || /^127\./.test(host) || host === '[::1]';
+  const esRedLocal = (host) => /^(10|192\.168|169\.254)\./.test(host) || /^172\.(1[6-9]|2\d|3[01])\./.test(host) || /\.(local|lan|home)$/.test(host);
+  // Dónde está la página y qué riesgos tiene aprobarla.
+  function contextoOrigen(origen) {
+    let u;
+    try { u = new URL(origen); } catch { return { insignias: [], riesgos: [], host: origen }; }
+    const host = u.hostname;
+    const local = esEsteEquipo(host);
+    const red = !local && esRedLocal(host);
+    const sinCifrar = u.protocol === 'http:' && !local;
+    return {
+      host,
+      insignias: [
+        local ? UI.insignia('info', TS.esteEquipo, { icono: 'inicio' }) : red ? UI.insignia('info', TS.red, { icono: 'red' }) : UI.insignia('aviso', TS.internet, { icono: 'externo' }),
+        sinCifrar && UI.insignia('aviso', TS.sinCifrar, { icono: 'candado' }),
+      ].filter(Boolean),
+      riesgos: [!local && !red && TS.dialogo.riesgoInternet, sinCifrar && TS.dialogo.riesgoHttp].filter(Boolean),
+    };
+  }
+
   async function vistaSolicitudes(vista) {
     const [solicitudes, clientes, impresoras] = await Promise.all([api.get('/solicitudes'), api.get('/clientes'), api.get('/impresoras')]);
     const pendientes = solicitudes.filter((s) => s.estado === 'pendiente');
     const rechazadas = solicitudes.filter((s) => s.estado === 'rechazada');
-    estado.pendientes = pendientes.length; actualizarContador();
-    const tabla = (lista, rechazada) => lista.length === 0
-      ? h('div', { class: 'tabla-caja' }, h('p', { class: 'vacio' }, rechazada ? 'No hay orígenes rechazados.' : 'No hay solicitudes pendientes.'))
-      : h('div', { class: 'tabla-caja', tabindex: '0', role: 'region', 'aria-label': 'Tabla (se puede desplazar)' }, h('table', {},
-        h('thead', {}, h('tr', {}, ['Origen', 'Intentos', 'Primera vez', 'Última vez', ''].map((t) => h('th', { scope: 'col' }, t)))),
-        h('tbody', {}, lista.map((s) => h('tr', {},
-          h('td', { class: 'mono' }, s.origen), h('td', { class: 'numeros' }, fmtNum.format(s.intentos)),
-          h('td', { class: 'numeros' }, fechaHora(s.primera_vez)), h('td', { class: 'numeros' }, hace(s.ultima_vez)),
-          h('td', {}, h('div', { class: 'acciones' },
-            h('button', { class: 'boton chico primario', type: 'button', onclick: () => aprobar(s, clientes, impresoras) }, 'Aprobar'),
-            !rechazada && h('button', { class: 'boton chico', type: 'button', onclick: async () => {
-              try { await api.post('/solicitudes/rechazar', { origen: s.origen }); aviso(`${s.origen} rechazado. Sus intentos se seguirán contando sin avisarte.`, 'ok'); recargar(); } catch (e) { avisoError(e); }
-            } }, 'Rechazar'),
-            rechazada && h('button', { class: 'boton chico', type: 'button', onclick: async () => {
-              try { await api.post('/solicitudes/olvidar', { origen: s.origen }); aviso('Solicitud eliminada.', 'ok'); recargar(); } catch (e) { avisoError(e); }
-            } }, 'Olvidar'))))))));
-    agregar(vista,
-      encabezado('Solicitudes de origen', 'Páginas web que intentaron imprimir sin estar aprobadas. No imprimen hasta que las apruebes.'),
+    estado.pendientes = pendientes.length;
+    actualizarContador();
+    const tarjeta = (s, rechazada) => {
+      const ctx = contextoOrigen(s.origen);
+      const accion = (texto, variante, f) => {
+        const b = UI.boton({ texto, variante, chico: true });
+        b.addEventListener('click', () => f(b));
+        return b;
+      };
+      const quitar = (b, ruta, mensaje) => async () => {
+        try { await conEspera(b, () => api.post(ruta, { origen: s.origen })); aviso(mensaje, 'ok'); refrescarPendientes(); recargar(); } catch (e) { avisoError(e); }
+      };
+      return h('article', { class: 'tarjeta' },
+        h('div', { class: 'fila-entre' }, h('span', { class: 'mono solicitud-origen' }, s.origen), h('span', { class: 'fila' }, ctx.insignias)),
+        h('p', { class: 'tenue pequeno numeros' }, TS.intentos(s.intentos, hace(s.ultima_vez))),
+        h('div', { class: 'acciones' },
+          accion(TS.aprobar, 'primario', () => aprobar(s, clientes, impresoras)),
+          !rechazada && accion(TS.rechazar, '', (b) => quitar(b, '/solicitudes/rechazar', TS.rechazada(s.origen))()),
+          rechazada && accion(TS.olvidar, 'texto', (b) => quitar(b, '/solicitudes/olvidar', TS.olvidada)())));
+    };
+    agregar(vista, encabezado(TS.titulo, TS.subtitulo),
       // El puente recuerda hasta 200; más de 150 suele indicar que alguien de la red registra orígenes inventados.
-      solicitudes.length >= 150 && h('p', { class: 'nota aviso' },
-        `Hay ${solicitudes.length} solicitudes guardadas (el máximo es 200). Muchas solicitudes de orígenes desconocidos pueden indicar que un equipo de la red intenta imprimir sin permiso. Al llegar al máximo, cada solicitud nueva reemplaza a la pendiente más antigua; las que no tienen actividad se olvidan solas a los 30 días.`),
-      h('section', { class: 'pila' }, h('h2', {}, `Pendientes (${pendientes.length})`), tabla(pendientes, false)),
-      h('section', { class: 'pila' }, h('h2', {}, `Rechazadas (${rechazadas.length})`), tabla(rechazadas, true)));
+      solicitudes.length >= 150 && UI.nota({ tipo: 'aviso', texto: TS.muchas(solicitudes.length) }),
+      pendientes.length === 0
+        ? UI.vacio({ icono: 'solicitud', titulo: TS.vacio, texto: TS.vacioTexto })
+        : h('section', { class: 'pila-amplia', 'aria-labelledby': 's-pendientes' },
+          h('h2', { id: 's-pendientes' }, TS.pendientes(pendientes.length)),
+          h('details', { class: 'avanzado' }, h('summary', {}, TS.queEs), h('div', {}, h('p', {}, TS.queEsTexto))),
+          h('div', { class: 'lista' }, pendientes.map((s) => tarjeta(s, false)))),
+      rechazadas.length > 0 && h('details', { class: 'avanzado' }, h('summary', {}, TS.rechazadas(rechazadas.length)),
+        h('div', { class: 'lista' }, rechazadas.map((s) => tarjeta(s, true)))));
   }
 
   async function aprobar(s, clientes, impresoras) {
-    let host = s.origen;
-    try { host = new URL(s.origen).hostname; } catch { /* se usa el origen completo */ }
-    const nombre = h('input', { type: 'text', id: 'apr-nombre', value: host });
-    const nivel = h('select', { id: 'apr-nivel' }, [1, 2].map((n) => h('option', { value: n, selected: n === 2 }, `Nivel ${n} · ${NIVELES[n].nombre}`)));
-    const existente = h('select', { id: 'apr-cliente' }, clientes.map((c) => h('option', { value: c.id }, `${c.nombre} (nivel ${c.nivel})`)));
+    const D = TS.dialogo;
+    const ctx = contextoOrigen(s.origen);
+    const nombre = UI.entrada({ value: ctx.host, autocomplete: 'off' });
+    const cNombre = UI.campo({ id: 'apr-nombre', etiqueta: D.nombre, control: nombre, validar: (v) => (v.trim() ? '' : TAp.form.nombreFalta) });
+    const niveles = opcionesNivel('apr-nivel', 2, [2, 1]);
+    const existente = UI.selector({ opciones: clientes.map((c) => [c.id, `${c.nombre} (${TAp.niveles[c.nivel].corto})`]) });
     const modo = h('div', { class: 'opciones' },
       h('label', { class: 'opcion' }, h('input', { type: 'radio', name: 'modo', value: 'nuevo', checked: true }),
-        h('span', { class: 'titulo-opcion' }, 'Crear una aplicación nueva'), h('span', { class: 'tenue' }, 'Con este origen como su página.')),
+        h('span', { class: 'titulo-opcion' }, D.nueva), h('span', { class: 'tenue' }, D.nuevaTexto)),
       clientes.length > 0 && h('label', { class: 'opcion' }, h('input', { type: 'radio', name: 'modo', value: 'existente' }),
-        h('span', { class: 'titulo-opcion' }, 'Agregar a una existente'), h('span', { class: 'tenue' }, 'Otra página de una aplicación ya registrada.')));
-    const nuevoBloque = h('div', { class: 'campos' },
-      h('label', { class: 'campo', for: 'apr-nombre' }, h('span', {}, 'Nombre'), nombre),
-      h('label', { class: 'campo', for: 'apr-nivel' }, h('span', {}, 'Nivel'), nivel));
-    const existenteBloque = h('label', { class: 'campo', for: 'apr-cliente', hidden: true }, h('span', {}, 'Aplicación'), existente);
+        h('span', { class: 'titulo-opcion' }, D.existente), h('span', { class: 'tenue' }, D.existenteTexto)));
+    const nuevoBloque = h('div', { class: 'pila-amplia' }, cNombre, h('fieldset', {}, h('legend', {}, D.nivel), niveles), h('p', { class: 'tenue pequeno' }, D.nota));
+    const existenteBloque = h('div', { hidden: true }, UI.campo({ id: 'apr-cliente', etiqueta: D.aplicacion, control: existente }));
     modo.addEventListener('change', () => {
       const v = modo.querySelector('input:checked').value;
-      nuevoBloque.hidden = v !== 'nuevo'; existenteBloque.hidden = v !== 'existente';
+      nuevoBloque.hidden = v !== 'nuevo';
+      existenteBloque.hidden = v !== 'existente';
     });
     let respuesta;
     const ok = await dialogo({
-      titulo: 'Aprobar origen', ancho: 600,
-      cuerpo: h('div', { class: 'pila' },
-        h('p', {}, h('span', { class: 'chip' }, s.origen), ' podrá imprimir con los permisos de la aplicación a la que pertenezca.'),
-        modo, nuevoBloque, existenteBloque,
-        h('p', { class: 'tenue pequeno' }, 'Una aplicación nueva puede imprimir en todas las impresoras y sin operaciones sensibles. Ajústalo después en Aplicaciones.')),
-      acciones: [{ texto: 'Cancelar', valor: false }, { texto: 'Aprobar', clase: 'primario', valor: true, antes: async () => {
+      titulo: D.titulo, ancho: 660,
+      cuerpo: h('div', { class: 'pila-amplia' },
+        h('div', { class: 'fila' }, h('span', { class: 'chip' }, s.origen), ctx.insignias),
+        h('p', {}, D.texto(s.origen)),
+        ctx.riesgos.length > 0 && UI.nota({ tipo: 'aviso', texto: ctx.riesgos.join(' ') }),
+        modo, nuevoBloque, existenteBloque),
+      acciones: [{ texto: D.cancelar, valor: false }, { texto: D.aprobar, clase: 'primario', valor: true, antes: async () => {
         const v = modo.querySelector('input:checked').value;
-        const cuerpo = v === 'nuevo' ? { origen: s.origen, nuevo: { nombre: nombre.value.trim() || host, nivel: +nivel.value } } : { origen: s.origen, cliente_id: existente.value };
+        if (v === 'nuevo' && !cNombre.revisar()) return false;
+        const cuerpo = v === 'nuevo'
+          ? { origen: s.origen, nuevo: { nombre: nombre.value.trim(), nivel: Number(niveles.querySelector('input:checked').value) } }
+          : { origen: s.origen, cliente_id: existente.value };
         respuesta = await api.post('/solicitudes/aprobar', cuerpo);
+        return true;
       } }],
     });
     if (!ok) return;
-    aviso(`${s.origen} aprobado.`, 'ok');
+    aviso(D.aprobada(s.origen), 'ok');
     if (respuesta && respuesta.llave) await mostrarLlave(respuesta.cliente, respuesta.llave, impresoras);
     await refrescarPendientes();
     recargar();

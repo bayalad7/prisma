@@ -216,7 +216,7 @@ kbd {
 /* --- 4. Componentes -------------------------------------------------------------------------- */
 .tarjeta {
   background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio);
-  padding: 18px; display: grid; gap: 14px; min-width: 0; align-content: start;
+  padding: 18px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; align-content: start;
 }
 .tarjeta-cabeza { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
 .tarjeta-titulo { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
@@ -226,8 +226,8 @@ kbd {
 .lista { display: grid; gap: var(--e-3); }
 .fila { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .fila-entre { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
-.pila { display: grid; gap: 6px; }
-.pila-amplia { display: grid; gap: var(--e-4); }
+.pila { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+.pila-amplia { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--e-4); }
 .separador { border: 0; border-top: 1px solid var(--borde); margin: 0; }
 
 /* Botones */
@@ -448,11 +448,11 @@ details.avanzado > div { display: grid; gap: 14px; }
   border-bottom: 2px solid transparent; margin-bottom: -1px; min-height: 40px;
 }
 .pestanas button[aria-selected="true"] { color: var(--acento-fuerte); border-bottom-color: var(--acento); font-weight: 600; }
-.pestanas-caja { display: grid; gap: var(--e-3); min-width: 0; }
+.pestanas-caja { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--e-3); min-width: 0; }
 [role="tabpanel"]:focus-visible { outline-offset: 4px; }
 
 /* Código */
-.codigo-caja { display: grid; gap: var(--e-2); min-width: 0; }
+.codigo-caja { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--e-2); min-width: 0; }
 .codigo-barra { display: flex; align-items: center; justify-content: space-between; gap: var(--e-2); }
 .pestanas-caja.codigo-caja .codigo-barra { justify-content: flex-end; }
 pre.codigo {
@@ -515,7 +515,7 @@ dialog {
   background: var(--superficie); color: var(--tinta); box-shadow: var(--sombra-2);
 }
 dialog::backdrop { background: var(--velo); }
-.dialogo { display: grid; gap: var(--e-4); padding: 22px; }
+.dialogo { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--e-4); padding: 22px; }
 .dialogo-cabeza { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--e-3); }
 .dialogo-cabeza .boton { margin: -4px -8px 0 0; }
 .dialogo-pie { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--e-2); }
@@ -582,6 +582,11 @@ dialog::backdrop { background: var(--velo); }
 }
 .ref { white-space: nowrap; }
 .cifra-estado { display: flex; align-items: center; gap: 12px; }
+.fila-campo { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--e-2) var(--e-3); }
+.fila-campo > .campo { flex: 1 1 260px; }
+.fila-campo > .boton { margin-top: 27px; }
+@media (max-width: 640px) { .fila-campo > .boton { margin-top: 0; } }
+.solicitud-origen { font-weight: 650; overflow-wrap: anywhere; min-width: 0; }
 .lista-impresoras { list-style: none; padding: 0; display: grid; gap: 6px; }
 .lista-impresoras li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; }
 .lista-impresoras-nombre { min-width: 0; overflow-wrap: anywhere; }
