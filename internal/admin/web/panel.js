@@ -904,7 +904,7 @@
     return h('div', { class: 'pila' }, h('div', { class: 'fila-entre' }, h('h3', {}, 'Código de integración'), bCopiar), pestanas, pre,
       h('p', { class: 'tenue pequeno' }, 'El SDK (prisma.js) está en camino; mientras tanto puedes usar fetch. ',
         cliente.nivel === 1 && 'En el nivel 1 la página debe servirse desde un origen aprobado. ',
-        cliente.nivel === 3 && 'En el nivel 3 el backend firma cada documento antes de enviarlo (ver docs/api-v1.md).'));
+        cliente.nivel === 3 && 'En el nivel 3 el backend firma cada documento antes de enviarlo (ver docs/integradores/firmar-documentos.md).'));
   }
 
   function codigoIntegracion(c, impresoras) {
@@ -1179,7 +1179,9 @@
   // ---------------------------------------------------------------------------------------------
   // 8. Ayuda
   // ---------------------------------------------------------------------------------------------
-  const DOCS = 'https://github.com/bayalad7/prisma/blob/develop/docs/';
+  // La documentación de la versión instalada: la etiqueta v<versión> si es una versión publicada, o
+  // main en una compilación de desarrollo (0.0.0-dev) o intermedia (git describe con -N-gabc).
+  const docsDe = (version) => `https://github.com/bayalad7/prisma/blob/${/^\d+\.\d+\.\d+(-rc\.\d+)?$/.test(version || '') ? `v${version}` : 'main'}/docs/`;
   const GUIAS_CERT = {
     Windows: ['Descarga el certificado (Ajustes → HTTPS) y ábrelo con doble clic.', 'Instalar certificado → Equipo local.', 'Colocar todos los certificados en el siguiente almacén → «Entidades de certificación raíz de confianza».', 'Reinicia el navegador. Chrome y Edge usan el almacén de Windows.'],
     macOS: ['Descarga el certificado y ábrelo: se agrega al llavero.', 'En Acceso a Llaveros, ábrelo y en «Confiar» elige «Confiar siempre».', 'O en Terminal: sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain certificado.pem'],
@@ -1190,7 +1192,9 @@
   };
   async function vistaAyuda(vista) {
     let huella = '';
+    let docs = docsDe('');
     try { huella = (await api.get('/ajustes')).tls.certificado?.huella || ''; } catch { /* la ayuda funciona sin huella */ }
+    try { docs = docsDe((await api.get('/resumen')).puente.version); } catch { /* sin versión, enlaza main */ }
     const pasos = h('ol', { class: 'pila' });
     const pestanas = h('div', { class: 'pestanas', role: 'tablist' });
     const elegir = (so) => {
@@ -1199,7 +1203,7 @@
     };
     agregar(pestanas, Object.keys(GUIAS_CERT).map((so) => h('button', { type: 'button', role: 'tab', onclick: () => elegir(so) }, so)));
     elegir('Windows');
-    const enlace = (archivo, texto, detalle) => h('li', {}, h('a', { href: DOCS + archivo, target: '_blank', rel: 'noopener' }, texto), ' — ', h('span', { class: 'tenue' }, detalle));
+    const enlace = (archivo, texto, detalle) => h('li', {}, h('a', { href: docs + archivo, target: '_blank', rel: 'noopener' }, texto), ' — ', h('span', { class: 'tenue' }, detalle));
     agregar(vista,
       encabezado('Ayuda', null),
       h('section', { class: 'tarjeta' }, h('h2', {}, 'Confiar en el certificado del puente'),
@@ -1213,11 +1217,14 @@
           h('li', {}, 'Copia su código de integración: incluye la dirección del puente y, si corresponde, su llave.'),
           h('li', {}, 'Arma los tickets como documentos JSON con las operaciones del contrato (texto, filas, QR, imágenes, corte…).')),
         h('ul', { class: 'pila' },
-          enlace('api-v1.md', 'API v1', 'endpoints, autorización, CORS y errores'),
-          enlace('contrato-documento-v1.md', 'Contrato del documento', 'todas las operaciones con ejemplos'),
-          enlace('tls.md', 'HTTPS y certificados', 'modos y cómo confiar en cada sistema'),
-          enlace('conectores.md', 'Conectar impresoras', 'red, USB y Bluetooth en cada sistema'),
-          enlace('solucion-de-problemas.md', 'Solución de problemas', 'errores frecuentes, acentos y columnas'))));
+          enlace('administracion/README.md', 'Manual del panel', 'impresoras, aplicaciones, solicitudes y ajustes'),
+          enlace('integradores/README.md', 'Guía para integradores', 'SDK, niveles de seguridad y firmas'),
+          enlace('referencia/api-v1.md', 'API v1', 'endpoints, autorización, CORS y errores'),
+          enlace('referencia/contrato-documento-v1.md', 'Contrato del documento', 'todas las operaciones con ejemplos'),
+          enlace('instalacion/https-y-certificados.md', 'HTTPS y certificados', 'modos y cómo confiar en cada sistema'),
+          enlace('instalacion/impresoras.md', 'Conectar impresoras', 'red, USB y Bluetooth en cada sistema'),
+          enlace('administracion/problemas-comunes.md', 'Solución de problemas', 'errores frecuentes, acentos y columnas'),
+          enlace('operacion/README.md', 'Operación', 'respaldo, actualización, bitácoras y recuperación'))));
   }
 
   const VISTAS = {
