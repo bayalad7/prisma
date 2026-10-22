@@ -276,17 +276,7 @@ kbd {
 .estado-acento { --c: var(--acento-fuerte); --c-suave: var(--acento-suave); }
 .insignia[class*="estado-"] { background: var(--c-suave); color: var(--c); }
 
-/* Pastillas y chips (versión 0.1.0 del panel; se reemplazan por insignias en la Fase 3) */
-.pastilla {
-  display: inline-flex; align-items: center; gap: 6px; padding: 1px 9px; border-radius: 999px;
-  font-size: .8rem; font-weight: 600; background: var(--superficie-2); color: var(--tenue); white-space: nowrap;
-}
-.pastilla::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-.pastilla.sin-punto::before { display: none; }
-.pastilla.ok { background: var(--ok-suave); color: var(--ok); }
-.pastilla.aviso { background: var(--aviso-suave); color: var(--aviso); }
-.pastilla.error { background: var(--error-suave); color: var(--error); }
-.pastilla.acento { background: var(--acento-suave); color: var(--acento-fuerte); }
+/* Chips */
 .chip {
   display: inline-flex; align-items: center; gap: 4px; max-width: 100%;
   padding: 2px 8px; border-radius: 4px; background: var(--superficie-2);
@@ -558,6 +548,11 @@ dialog::backdrop { background: var(--velo); }
 .soltar.encima { border-color: var(--acento); background: var(--acento-suave); }
 
 /* Acceso: inicio de sesión y configuración inicial */
+.clave { position: relative; }
+.clave input { padding-right: 46px; }
+.clave .boton { position: absolute; top: 50%; right: 4px; transform: translateY(-50%); }
+.soltar .icono { width: 28px; height: 28px; color: var(--acento); }
+.soltar:has(+ input:focus-visible) { outline: 2px solid var(--acento); outline-offset: 2px; }
 .acceso {
   min-height: 100%; display: grid; place-items: center; padding-block: 32px;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));

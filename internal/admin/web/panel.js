@@ -37,14 +37,6 @@
     return ms < 1000 ? `${ms} ms` : `${fmtNum.format(Math.round(ms / 100) / 10)} s`;
   }
 
-  const ESTADOS_IMPRESORA = {
-    en_linea: ['ok', 'En línea'], fuera_de_linea: ['error', 'Fuera de línea'],
-    ocupada: ['aviso', 'Imprimiendo'], desconocido: ['', 'Sin probar'],
-  };
-  function pastilla(mapa, clave) {
-    const [clase, texto] = mapa[clave] || ['', clave];
-    return h('span', { class: `pastilla ${clase}` }, texto);
-  }
   const PAGINAS = [
     { pagina: 'CP437', comando: 0, etiqueta: 'PC437 (EE. UU.)' },
     { pagina: 'CP850', comando: 2, etiqueta: 'PC850 (Multilingüe)' },
@@ -120,7 +112,9 @@
       estado.sesion = await api.get('/sesion');
       api.csrf = estado.sesion.csrf || '';
     } catch (e) {
-      vaciar(raiz, h('div', { class: 'acceso' }, h('div', { class: 'tarjeta' }, h('h1', {}, 'Sin conexión'), h('p', { class: 'tenue' }, e.message))));
+      const reintentar = UI.boton({ texto: TAc0.reintentar, variante: 'primario', icono: 'recargar' });
+      reintentar.addEventListener('click', arrancar);
+      pantallaAcceso(TAc0.sinConexion, TAc0.sinConexionTexto, h('div', {}, reintentar));
       return;
     }
     const s = estado.sesion;
@@ -144,76 +138,86 @@
       h('button', { type: 'button', onclick: () => ir('panel') }, 'panel'));
   }
 
-  function campoContrasena(id, etiqueta, ayuda, auto = 'current-password') {
-    const input = h('input', { type: 'password', id, name: id, autocomplete: auto, required: true });
-    return { input, el: h('label', { class: 'campo', for: id }, h('span', {}, etiqueta), input, ayuda && h('span', { class: 'ayuda' }, ayuda)) };
+  const TAc0 = window.PRISMA_TEXTOS.acceso;
+  // Campo de contraseña con botón para mostrarla (evita errores al escribirla) y error en línea.
+  function campoClave(id, etiqueta, { auto = 'current-password', ayuda, validar } = {}) {
+    const input = UI.entrada({ tipo: 'password', autocomplete: auto, name: id });
+    const ver = UI.boton({ icono: 'ojo', etiqueta: TAc0.mostrar, variante: 'texto', chico: true, 'aria-pressed': 'false' });
+    ver.addEventListener('click', () => {
+      const visible = input.type === 'password';
+      input.type = visible ? 'text' : 'password';
+      ver.setAttribute('aria-pressed', String(visible));
+      ver.setAttribute('aria-label', visible ? TAc0.ocultar : TAc0.mostrar);
+      ver.title = visible ? TAc0.ocultar : TAc0.mostrar;
+    });
+    const campo = UI.campo({ id, etiqueta, control: input, ayuda, validar });
+    const caja = h('div', { class: 'clave' });
+    input.replaceWith(caja);
+    caja.append(input, ver);
+    return { input, campo };
+  }
+  function pantallaAcceso(titulo, texto, ...contenido) {
+    vaciar(raiz, h('main', { class: 'acceso' }, h('div', { class: 'tarjeta' },
+      cintaDemo(), marca(TAc0.subtitulo), h('h1', {}, titulo), texto && h('p', { class: 'tenue' }, texto), contenido)));
   }
 
   function pantallaEntrar() {
-    const pass = campoContrasena('contrasena', 'Contraseña');
-    const error = h('p', { class: 'nota error', hidden: true });
-    const boton = h('button', { class: 'boton primario', type: 'submit' }, 'Entrar');
-    const form = h('form', { class: 'pila', onsubmit: async (ev) => {
+    const clave = campoClave('contrasena', TAc0.contrasena, { validar: (v) => (v ? '' : TAc0.falta) });
+    const error = h('div', { 'aria-live': 'assertive' });
+    const boton = UI.boton({ texto: TAc0.botonEntrar, variante: 'primario', tipo: 'submit' });
+    const form = h('form', { class: 'pila-amplia', novalidate: true, onsubmit: async (ev) => {
       ev.preventDefault();
-      error.hidden = true;
+      vaciar(error);
+      if (!UI.revisarCampos([clave.campo])) return;
       try {
         await conEspera(boton, async () => {
-          const r = await api.post('/entrar', { contrasena: pass.input.value });
+          const r = await api.post('/entrar', { contrasena: clave.input.value });
           api.csrf = r.csrf;
         });
         arrancar();
       } catch (e) {
-        error.textContent = e.sugerencia ? `${e.message} ${e.sugerencia}` : e.message;
-        error.hidden = false; pass.input.select();
+        vaciar(error, UI.nota({ tipo: 'error', titulo: e.message, texto: e.sugerencia }));
+        clave.input.select();
       }
-    } }, pass.el, error, boton);
-    vaciar(raiz, h('main', { class: 'acceso' }, h('div', { class: 'tarjeta' },
-      cintaDemo(), marca('Panel de administración'), h('h1', {}, 'Entrar al panel'), form,
-      h('p', { class: 'tenue pequeno' }, '¿Olvidaste la contraseña? En el equipo del puente ejecuta ', h('code', {}, 'prisma admin restablecer-contrasena'), '.'))));
-    pass.input.focus();
+    } }, clave.campo, error, boton);
+    pantallaAcceso(TAc0.entrar, null, form,
+      h('details', { class: 'avanzado' }, h('summary', {}, TAc0.olvido), h('div', {}, h('p', { class: 'tenue pequeno' }, TAc0.olvidoTexto))));
+    clave.input.focus();
   }
 
-  function formularioNuevaContrasena({ titulo, texto, conCodigo = false, conActual = false, ruta, boton: textoBoton }) {
-    const actual = conActual && campoContrasena('actual', 'Contraseña actual');
-    const nueva = campoContrasena('nueva', 'Contraseña nueva', 'Al menos 10 caracteres. Una frase larga es más fácil de recordar.', 'new-password');
-    const repetir = campoContrasena('repetir', 'Repite la contraseña nueva', null, 'new-password');
-    const codigo = conCodigo && h('input', { type: 'text', id: 'codigo', class: 'mono', autocomplete: 'one-time-code', inputmode: 'text' });
-    const error = h('p', { class: 'nota error', hidden: true });
-    const boton = h('button', { class: 'boton primario', type: 'submit' }, textoBoton);
-    const form = h('form', { class: 'pila', onsubmit: async (ev) => {
+  function formularioNuevaContrasena({ titulo, texto, conCodigo = false, ruta, boton: textoBoton }) {
+    const codigo = conCodigo && UI.entrada({ mono: true, autocomplete: 'one-time-code' });
+    const cCodigo = codigo && UI.campo({ id: 'codigo', etiqueta: TAc0.codigo, control: codigo, ayuda: TAc0.codigoAyuda, validar: (v) => (v.trim() ? '' : TAc0.codigoFalta) });
+    const nueva = campoClave('nueva', TAc0.nueva, { auto: 'new-password', ayuda: TAc0.nuevaAyuda, validar: (v) => (v.length >= 10 ? '' : TAc0.corta) });
+    const repetir = campoClave('repetir', TAc0.repetir, { auto: 'new-password', validar: (v) => (v === nueva.input.value ? '' : TAc0.noCoinciden) });
+    const error = h('div', { 'aria-live': 'assertive' });
+    const boton = UI.boton({ texto: textoBoton, variante: 'primario', tipo: 'submit' });
+    const campos = [cCodigo, nueva.campo, repetir.campo].filter(Boolean);
+    const form = h('form', { class: 'pila-amplia', novalidate: true, onsubmit: async (ev) => {
       ev.preventDefault();
-      error.hidden = true;
-      const mostrar = (m) => { error.textContent = m; error.hidden = false; };
-      if (nueva.input.value.length < 10) return mostrar('La contraseña debe tener al menos 10 caracteres.');
-      if (nueva.input.value !== repetir.input.value) return mostrar('Las dos contraseñas no coinciden.');
+      vaciar(error);
+      if (!UI.revisarCampos(campos)) return;
       try {
         await conEspera(boton, async () => {
-          const r = await api.post(ruta, { contrasena: nueva.input.value, actual: actual ? actual.input.value : undefined, codigo: codigo ? codigo.value.trim() : undefined });
+          const r = await api.post(ruta, { contrasena: nueva.input.value, codigo: codigo ? codigo.value.trim() : undefined });
           if (r.csrf) api.csrf = r.csrf;
         });
-        aviso('Contraseña guardada.', 'ok');
+        aviso(TAc0.guardada, 'ok');
         arrancar();
-      } catch (e) { mostrar(e.sugerencia ? `${e.message} ${e.sugerencia}` : e.message); }
-    } },
-    codigo && h('label', { class: 'campo', for: 'codigo' }, h('span', {}, 'Código de configuración'), codigo,
-      h('span', { class: 'ayuda' }, 'Estás entrando desde otro equipo. En el equipo del puente ejecuta ', h('code', {}, 'prisma admin codigo-inicial'), ' y escribe aquí el código que muestra.')),
-    actual && actual.el, nueva.el, repetir.el, error, boton);
-    vaciar(raiz, h('main', { class: 'acceso' }, h('div', { class: 'tarjeta' },
-      cintaDemo(), marca('Panel de administración'), h('h1', {}, titulo), h('p', { class: 'tenue' }, texto), form)));
+      } catch (e) {
+        if (cCodigo && /^CODIGO_/.test(e.codigo || '')) { cCodigo.ponerError([e.message, e.sugerencia].filter(Boolean).join(' ')); codigo.focus(); return; }
+        vaciar(error, UI.nota({ tipo: 'error', titulo: e.message, texto: e.sugerencia }));
+      }
+    } }, campos, error, boton);
+    pantallaAcceso(titulo, texto, form);
+    (codigo || nueva.input).focus();
   }
   function pantallaConfiguracionInicial() {
-    formularioNuevaContrasena({
-      titulo: 'Configuración inicial',
-      texto: 'Es la primera vez que se abre el panel. Crea la contraseña de administración: con ella se configuran impresoras y aplicaciones.',
-      conCodigo: !estado.sesion.local, ruta: '/configuracion-inicial', boton: 'Crear contraseña y entrar',
-    });
+    formularioNuevaContrasena({ titulo: TAc0.inicialTitulo, texto: TAc0.inicialTexto, conCodigo: !estado.sesion.local,
+      ruta: '/configuracion-inicial', boton: TAc0.inicialBoton });
   }
   function pantallaCambioObligatorio() {
-    formularioNuevaContrasena({
-      titulo: 'Cambia la contraseña',
-      texto: 'Entraste con una contraseña generada por «prisma admin restablecer-contrasena». Elige una propia para continuar.',
-      ruta: '/contrasena', boton: 'Guardar y continuar',
-    });
+    formularioNuevaContrasena({ titulo: TAc0.cambioTitulo, texto: TAc0.cambioTexto, ruta: '/contrasena', boton: TAc0.cambioBoton });
   }
 
   let app;
@@ -503,74 +507,87 @@
   // ---------------------------------------------------------------------------------------------
   // 2. Impresoras
   // ---------------------------------------------------------------------------------------------
+  const TP = window.PRISMA_TEXTOS.impresoras;
   async function vistaImpresoras(vista) {
     const lista = await api.get('/impresoras');
-    const contenedor = h('div', { class: 'lista' });
-    agregar(vista,
-      encabezado('Impresoras', 'Cada impresora tiene un alias con el que las aplicaciones la eligen.',
-        h('button', { class: 'boton primario', type: 'button', onclick: () => asistenteImpresora(vista) }, 'Agregar impresora')),
-      contenedor);
-    if (lista.length === 0) {
-      agregar(contenedor, h('div', { class: 'tarjeta vacio' }, h('p', {}, 'Todavía no hay impresoras.'),
-        h('div', { class: 'acciones' }, h('button', { class: 'boton primario', type: 'button', onclick: () => asistenteImpresora(vista) }, 'Agregar la primera'),
-          botonCrearVirtual())));
-    }
-    for (const imp of lista) agregar(contenedor, tarjetaImpresora(imp, vista));
+    const botonAgregar = () => {
+      const b = UI.boton({ texto: TP.agregar, variante: 'primario', icono: 'mas' });
+      b.addEventListener('click', () => asistenteImpresora(vista));
+      return b;
+    };
+    agregar(vista, encabezado(TP.titulo, TP.subtitulo, botonAgregar()),
+      lista.length === 0
+        ? UI.vacio({ icono: 'impresora', titulo: TP.vacio, texto: TP.vacioTexto, accion: [botonAgregar(), botonCrearVirtual()] })
+        : h('div', { class: 'lista' }, lista.map((imp) => tarjetaImpresora(imp, vista))));
   }
 
+  // Tarjeta de una impresora: la acción principal depende del estado (probar si no responde,
+  // imprimir una prueba si está lista, activar si está desactivada).
   function tarjetaImpresora(imp, vista) {
-    const resultado = h('p', { class: 'resultado', hidden: true });
-    const mostrar = (texto, tipo) => { resultado.className = `resultado nota ${tipo}`; resultado.textContent = texto; resultado.hidden = false; };
+    const A = TP.acciones, D = TP.datos, C = TP.capacidades;
     const ruta = `/impresoras/${enc(imp.alias)}`;
-    const bProbar = h('button', { class: 'boton chico', type: 'button', onclick: async () => {
-      try { const r = await conEspera(bProbar, () => api.post(`${ruta}/probar`)); mostrar(r.mensaje || 'La impresora respondió: está en línea.', 'ok'); }
-      catch (e) { mostrar(`${e.codigo ? e.codigo + ': ' : ''}${e.message} ${e.sugerencia || ''}`, 'error'); }
-    } }, 'Probar conexión');
-    const bDiag = h('button', { class: 'boton chico', type: 'button', onclick: async () => {
+    const resultado = h('div', { 'aria-live': 'polite' });
+    const ok = (titulo, tipo = 'ok') => vaciar(resultado, UI.nota({ tipo, titulo, cerrable: true }));
+    const fallo = (e) => vaciar(resultado, UI.nota({ tipo: 'error', titulo: e.message, texto: e.sugerencia, cerrable: true }));
+    const sinRespuesta = imp.activa && imp.estado === 'fuera_de_linea';
+    const accion = (texto, variante, icono, alPulsar) => {
+      const b = UI.boton({ texto, variante, icono, chico: true });
+      b.addEventListener('click', () => alPulsar(b));
+      return b;
+    };
+    const bProbar = imp.activa && accion(A.probar, sinRespuesta ? 'primario' : '', 'red', async (b) => {
+      try { await conEspera(b, () => api.post(`${ruta}/probar`)); ok(TP.respondio); } catch (e) { fallo(e); }
+    });
+    const bPrueba = imp.activa && accion(A.prueba, sinRespuesta ? '' : 'primario', 'ticket', async (b) => {
       try {
-        const r = await conEspera(bDiag, () => api.post(`${ruta}/diagnostico`));
-        if (r.aviso) mostrar(`Ticket de diagnóstico enviado (trabajo ${r.trabajo_id}), con un aviso: ${r.aviso}`, 'aviso');
-        else mostrar(`Ticket de diagnóstico enviado (trabajo ${r.trabajo_id}).`, 'ok');
-        dialogo({ titulo: 'Ticket de diagnóstico', ancho: 520, cuerpo: h('div', { class: 'pila' },
+        const r = await conEspera(b, () => api.post(`${ruta}/diagnostico`));
+        ok(r.aviso ? TP.pruebaConAviso(r.aviso) : TP.pruebaEnviada, r.aviso ? 'aviso' : 'ok');
+        await dialogo({ titulo: TI.diagnostico.titulo, ancho: 520, cuerpo: h('div', { class: 'pila' },
           h('p', { class: 'tenue pequeno' }, imp.virtual ? TV.diagnosticoVirtual : TV.diagnosticoFisica),
-          r.imagen ? UI.ticketPapel({ imagen: r.imagen, anchoMm: imp.ancho_mm })
-            : h('pre', { class: 'papel', tabindex: '0', 'aria-label': 'Vista del ticket' }, r.vista)) }).then(() => { if (imp.virtual) recargar(); });
-      } catch (e) { mostrar(`${e.codigo ? e.codigo + ': ' : ''}${e.message} ${e.sugerencia || ''}`, 'error'); }
-    } }, 'Ticket de diagnóstico');
-    const bPaginas = UI.boton({ texto: TAc.boton, chico: true });
-    bPaginas.addEventListener('click', async () => { if (await probarAcentos(imp, bPaginas)) recargar(); });
-    const perfil = `${imp.ancho_mm} mm · ${imp.columnas} columnas · ${imp.pagina_codigos} (ESC t ${imp.comando_pagina_codigos})`;
+          UI.ticketPapel({ imagen: r.imagen, anchoMm: imp.ancho_mm })) });
+        if (imp.virtual) recargar();
+      } catch (e) { fallo(e); }
+    });
+    const bAcentos = imp.activa && !imp.virtual && accion(TAc.boton, '', null, async (b) => { if (await probarAcentos(imp, b)) recargar(); });
+    const bTickets = imp.virtual && accion(TV.verTickets(imp.tickets_recibidos), '', 'ticket', () => verRollo(imp).catch(avisoError));
+    const bActivar = accion(imp.activa ? A.desactivar : A.activar, imp.activa ? '' : 'primario', null, async (b) => {
+      if (imp.activa && !(await confirmar(TP.desactivarTitulo(imp.alias), TP.desactivarTexto,
+        { boton: A.desactivar, peligro: true, consecuencias: TP.desactivarConsecuencias }))) return;
+      try {
+        await conEspera(b, () => api.put(ruta, { ...imp, activa: !imp.activa }));
+        aviso(imp.activa ? TP.desactivadaAviso(imp.alias) : TP.activada(imp.alias), 'ok');
+        recargar();
+      } catch (e) { fallo(e); }
+    });
+    const bEliminar = accion(A.eliminar, 'peligro', 'papelera', async () => {
+      // Dice qué aplicaciones se quedan sin esta impresora.
+      let usan = [];
+      try { usan = (await api.get('/clientes')).filter((c) => c.todas_las_impresoras || c.impresoras.includes(imp.alias)).map((c) => c.nombre); } catch { /* se confirma sin la lista */ }
+      const E = window.PRISMA_TEXTOS.eliminarImpresora;
+      if (!(await confirmar(E.titulo(imp.alias), E.texto, { boton: E.boton, peligro: true,
+        consecuencias: [usan.length ? E.usan(usan) : E.ninguna, E.historial] }))) return;
+      try { await api.borrar(ruta); aviso(TP.eliminada(imp.alias), 'ok'); recargar(); } catch (e) { avisoError(e); }
+    });
+    const pagina = PAGINAS.find((x) => x.pagina === imp.pagina_codigos);
     const capacidades = [
-      imp.soporta_corte ? 'cuchilla' : 'sin cuchilla', imp.soporta_cajon && 'cajón',
-      imp.soporta_qr_nativo ? 'QR nativo' : 'QR como imagen', !imp.soporta_imagen && 'sin imágenes',
-      imp.confirmar_impresion && 'confirma la impresión',
+      imp.soporta_corte ? C.corta : C.noCorta, imp.soporta_cajon && C.cajon, imp.soporta_qr_nativo ? C.qr : C.qrImagen,
+      !imp.soporta_imagen && C.sinImagenes, imp.confirmar_impresion && C.confirma,
     ].filter(Boolean).join(' · ');
-    return h('article', { class: 'tarjeta' },
-      h('div', { class: 'tarjeta-cabeza' },
-        h('div', { class: 'impresora-cabeza' }, h('span', { class: 'alias' }, imp.alias), h('span', { class: 'tenue' }, imp.nombre),
-          insigniaVirtual(imp), !imp.activa && h('span', { class: 'pastilla sin-punto' }, 'Desactivada')),
-        pastilla(ESTADOS_IMPRESORA, imp.activa ? imp.estado : 'desconocido')),
-      h('dl', { class: 'datos' },
-        h('dt', {}, 'Conexión'), imp.virtual
-          ? h('dd', {}, TV.conexion(imp.tickets_recibidos, imp.tickets_en_memoria),
-            imp.simulacion !== 'normal' && [' · ', h('strong', {}, TV.simulacionActiva[imp.simulacion])])
-          : h('dd', {}, `${TIPOS_CONEXION[imp.tipo]} · `, h('span', { class: 'mono' }, imp.destino)),
-        h('dt', {}, 'Perfil'), h('dd', {}, perfil),
-        h('dt', {}, 'Capacidades'), h('dd', {}, capacidades),
-        imp.ultimo_error && [h('dt', {}, 'Último error'), h('dd', {}, h('span', { class: 'chip aviso' }, imp.ultimo_error))]),
-      h('div', { class: 'acciones' }, bProbar, bDiag, !imp.virtual && bPaginas,
-        imp.virtual && h('button', { class: 'boton chico', type: 'button', onclick: () => verRollo(imp).catch(avisoError) }, TV.verTickets(imp.tickets_recibidos)),
-        h('button', { class: 'boton chico', type: 'button', onclick: () => formularioImpresora(vista, imp) }, 'Editar'),
-        h('button', { class: 'boton chico peligro', type: 'button', onclick: async () => {
-          // Dice qué aplicaciones se quedan sin esta impresora.
-          let usan = [];
-          try { usan = (await api.get('/clientes')).filter((c) => c.todas_las_impresoras || c.impresoras.includes(imp.alias)).map((c) => c.nombre); } catch { /* se confirma sin la lista */ }
-          const E = window.PRISMA_TEXTOS.eliminarImpresora;
-          if (!(await confirmar(E.titulo(imp.alias), E.texto, { boton: E.boton, peligro: true,
-            consecuencias: [usan.length ? E.usan(usan) : E.ninguna, E.historial] }))) return;
-          try { await api.borrar(ruta); aviso(`Impresora «${imp.alias}» eliminada.`, 'ok'); recargar(); } catch (e) { avisoError(e); }
-        } }, 'Eliminar')),
-      resultado);
+    return UI.tarjeta({ titulo: imp.alias, subtitulo: imp.nombre, icono: imp.virtual ? 'virtual' : 'impresora',
+      acciones: h('span', { class: 'fila' }, insigniaVirtual(imp),
+        imp.activa ? insigniaImpresora(imp.estado) : UI.insignia('desconocido', TP.desactivada)) },
+    h('dl', { class: 'datos' },
+      h('dt', {}, D.conexion), imp.virtual
+        ? h('dd', {}, TV.conexion(imp.tickets_recibidos, imp.tickets_en_memoria),
+          imp.simulacion !== 'normal' && [' · ', h('strong', {}, TV.simulacionActiva[imp.simulacion])])
+        : h('dd', {}, `${TA.conexion.tipos[imp.tipo] || imp.tipo} · `, h('span', { class: 'mono' }, imp.destino)),
+      h('dt', {}, D.papel), h('dd', {}, TP.papel(imp.ancho_mm, imp.columnas)),
+      !imp.virtual && [h('dt', {}, D.acentos), h('dd', {}, pagina ? pagina.etiqueta : imp.pagina_codigos)],
+      h('dt', {}, D.capacidades), h('dd', {}, capacidades),
+      imp.ultimo_error && [h('dt', {}, D.problema), h('dd', {}, (TT.codigos[imp.ultimo_error] || { que: imp.ultimo_error }).que)]),
+    h('div', { class: 'acciones' }, imp.activa ? [bPrueba, bProbar] : bActivar, bAcentos, bTickets,
+      accion(A.editar, '', 'lapiz', () => formularioImpresora(vista, imp)), imp.activa && bActivar, bEliminar),
+    resultado);
   }
 
   // Crea la impresora virtual «prueba» (o «prueba-2», …) con el perfil típico de 80 mm.
@@ -1529,29 +1546,41 @@
   // ---------------------------------------------------------------------------------------------
   // 6. Imágenes (recursos)
   // ---------------------------------------------------------------------------------------------
+  const TIm = window.PRISMA_TEXTOS.imagenes;
   async function vistaRecursos(vista) {
     const lista = await api.get('/recursos');
     let anchoVista = 576;
     let archivo = null;
-    const nombre = h('input', { type: 'text', id: 'rec-nombre', class: 'mono', placeholder: 'logo-tienda', pattern: '[a-z0-9][a-z0-9_\\-]{0,63}' });
-    const entrada = h('input', { type: 'file', id: 'rec-archivo', accept: 'image/png', hidden: true });
-    const previa = h('div', { class: 'recurso-imagen' }, h('span', { class: 'tenue pequeno' }, 'La vista previa aparece aquí, en blanco y negro como se imprimirá.'));
-    const zona = h('label', { class: 'soltar', for: 'rec-archivo' }, h('strong', {}, 'Elige un PNG'), h('span', { class: 'pequeno' }, 'o arrástralo aquí. Hasta 512 KB y 4096 px por lado.'));
-    const anchoSel = h('div', { class: 'segmentos', role: 'group', 'aria-label': 'Ancho de la vista previa' }, [[384, '58 mm'], [576, '80 mm']].map(([px, t]) =>
-      h('button', { type: 'button', 'aria-pressed': String(px === anchoVista), onclick: (ev) => {
-        anchoVista = px; for (const b of anchoSel.children) b.setAttribute('aria-pressed', String(b === ev.currentTarget)); vistaPrevia();
-      } }, t)));
+    const nombre = UI.entrada({ mono: true, autocomplete: 'off' });
+    const cNombre = UI.campo({ id: 'rec-nombre', etiqueta: TIm.nombre, control: nombre, ayuda: TIm.nombreAyuda,
+      validar: (v) => (/^[a-z0-9][a-z0-9_-]{0,63}$/.test(v) ? '' : TIm.nombreMal) });
+    const entrada = h('input', { type: 'file', id: 'rec-archivo', accept: 'image/png', class: 'solo-lector' });
+    const errorArchivo = h('p', { class: 'campo-error', hidden: true }, UI.icono('error'), h('span'));
+    const marcarArchivo = (m) => { errorArchivo.hidden = !m; errorArchivo.lastChild.textContent = m || ''; };
+    const previa = h('div', { class: 'recurso-imagen' }, h('span', { class: 'tenue pequeno' }, TIm.previaVacia));
+    const zona = h('label', { class: 'soltar', for: 'rec-archivo' }, UI.icono('imagen'), h('strong', {}, TIm.elegir), h('span', { class: 'pequeno' }, TIm.soltar));
+    const anchoSel = h('div', { class: 'segmentos', role: 'group', 'aria-label': TIm.previaAncho }, [[384, '58 mm'], [576, '80 mm']].map(([px, t]) => {
+      const b = h('button', { type: 'button', 'aria-pressed': String(px === anchoVista) }, t);
+      b.addEventListener('click', () => {
+        anchoVista = px;
+        for (const x of anchoSel.children) x.setAttribute('aria-pressed', String(x === b));
+        vistaPrevia();
+      });
+      return b;
+    }));
     const vistaPrevia = async () => {
       if (!archivo) return;
-      const fd = new FormData(); fd.append('archivo', archivo); fd.append('ancho', anchoVista);
+      const fd = new FormData();
+      fd.append('archivo', archivo); fd.append('ancho', anchoVista);
       try {
         const blob = await api.pedir('POST', '/recursos/vista-previa', fd);
-        vaciar(previa, h('img', { src: URL.createObjectURL(blob), alt: 'Vista previa en 1 bit' }));
-      } catch (e) { vaciar(previa, h('p', { class: 'nota error' }, e.message)); }
+        vaciar(previa, h('img', { src: URL.createObjectURL(blob), alt: TIm.previaTitulo }));
+      } catch (e) { vaciar(previa, UI.nota({ tipo: 'error', titulo: e.message, texto: e.sugerencia })); }
     };
     const tomar = (f) => {
       if (!f) return;
-      if (f.type !== 'image/png') { aviso('Solo se aceptan imágenes PNG.', 'error'); return; }
+      if (f.type !== 'image/png') { marcarArchivo(TIm.soloPng); return; }
+      marcarArchivo('');
       archivo = f;
       if (!nombre.value) nombre.value = f.name.replace(/\.png$/i, '').toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+/, '').slice(0, 64);
       vistaPrevia();
@@ -1560,36 +1589,36 @@
     zona.addEventListener('dragover', (ev) => { ev.preventDefault(); zona.classList.add('encima'); });
     zona.addEventListener('dragleave', () => zona.classList.remove('encima'));
     zona.addEventListener('drop', (ev) => { ev.preventDefault(); zona.classList.remove('encima'); tomar(ev.dataTransfer.files[0]); });
-    const bGuardar = h('button', { class: 'boton primario', type: 'submit' }, 'Guardar imagen');
-    const form = h('form', { class: 'tarjeta', onsubmit: async (ev) => {
+    const bGuardar = UI.boton({ texto: TIm.guardar, variante: 'primario', tipo: 'submit' });
+    const form = h('form', { class: 'pila-amplia', novalidate: true, onsubmit: async (ev) => {
       ev.preventDefault();
-      if (!archivo) { aviso('Elige primero un PNG.', 'error'); return; }
-      if (!nombre.checkValidity() || !nombre.value) { aviso('El nombre solo admite minúsculas, dígitos, - y _.', 'error'); nombre.focus(); return; }
-      const fd = new FormData(); fd.append('archivo', archivo); fd.append('nombre', nombre.value);
-      try { await conEspera(bGuardar, () => api.pedir('POST', '/recursos', fd)); aviso(`Imagen «${nombre.value}» guardada.`, 'ok'); recargar(); } catch (e) { avisoError(e); }
+      const nombreOk = UI.revisarCampos([cNombre]);
+      if (!archivo) { marcarArchivo(TIm.falta); return; }
+      if (!nombreOk) return;
+      const fd = new FormData();
+      fd.append('archivo', archivo); fd.append('nombre', nombre.value);
+      try { await conEspera(bGuardar, () => api.pedir('POST', '/recursos', fd)); aviso(TIm.guardada(nombre.value), 'ok'); recargar(); } catch (e) { avisoError(e); }
     } },
-    h('h2', {}, 'Subir una imagen'),
     h('div', { class: 'rejilla' },
-      h('div', { class: 'pila' }, zona, entrada,
-        h('label', { class: 'campo', for: 'rec-nombre' }, h('span', {}, 'Nombre'), nombre,
-          h('span', { class: 'ayuda' }, 'Las aplicaciones la usan con {"tipo": "imagen", "recurso": "nombre"}.'))),
-      h('div', { class: 'pila' }, h('div', { class: 'fila-entre' }, h('span', { class: 'pequeno tenue' }, 'Vista previa'), anchoSel), previa)),
+      h('div', { class: 'pila-amplia' }, h('div', { class: 'pila' }, zona, entrada, errorArchivo), cNombre),
+      h('div', { class: 'pila' }, h('div', { class: 'fila-entre' }, h('span', { class: 'pequeno tenue' }, TIm.previaTitulo), anchoSel), previa)),
     h('div', {}, bGuardar));
 
     agregar(vista,
-      encabezado('Imágenes', 'Logos e imágenes guardados en el puente. Se imprimen con el mismo nombre desde cualquier aplicación.'),
-      form,
-      lista.length === 0 ? h('p', { class: 'tenue' }, 'Todavía no hay imágenes guardadas.') : h('div', { class: 'recursos' }, lista.map((r) => {
+      encabezado(TIm.titulo, TIm.subtitulo),
+      UI.tarjeta({ titulo: TIm.subir, icono: 'imagen' }, form),
+      lista.length === 0 ? UI.vacio({ icono: 'imagen', titulo: TIm.vacio, texto: TIm.vacioTexto }) : h('div', { class: 'recursos' }, lista.map((r) => {
         const uso = `{"tipo": "imagen", "recurso": "${r.nombre}"}`;
+        const eliminar = UI.boton({ texto: TIm.eliminar, variante: 'peligro', icono: 'papelera', chico: true });
+        eliminar.addEventListener('click', async () => {
+          if (!(await confirmar(TIm.eliminarTitulo(r.nombre), TIm.eliminarTexto, { boton: TIm.eliminar, peligro: true, consecuencias: TIm.eliminarConsecuencias }))) return;
+          try { await api.borrar(`/recursos/${enc(r.nombre)}`); aviso(TIm.eliminada, 'ok'); recargar(); } catch (e) { avisoError(e); }
+        });
         return h('article', { class: 'tarjeta' },
-          h('div', { class: 'recurso-imagen' }, h('img', { src: api.url(`/recursos/${enc(r.nombre)}/imagen?ancho=576`), alt: `Imagen ${r.nombre} en 1 bit`, loading: 'lazy' })),
+          h('div', { class: 'recurso-imagen' }, h('img', { src: api.url(`/recursos/${enc(r.nombre)}/imagen?ancho=576`), alt: TIm.alt(r.nombre), loading: 'lazy' })),
           h('div', { class: 'pila' }, h('span', { class: 'alias' }, r.nombre),
-            h('span', { class: 'tenue pequeno numeros' }, `${r.ancho_px} × ${r.alto_px} px · ${tamanoArchivo(r.bytes)}`)),
-          h('div', { class: 'acciones' }, botonCopiar(uso, 'Copiar uso'),
-            h('button', { class: 'boton chico peligro', type: 'button', onclick: async () => {
-              if (!(await confirmar(`¿Eliminar «${r.nombre}»?`, 'Los documentos que la usen recibirán RECURSO_NO_ENCONTRADO.', { boton: 'Eliminar', peligro: true }))) return;
-              try { await api.borrar(`/recursos/${enc(r.nombre)}`); aviso('Imagen eliminada.', 'ok'); recargar(); } catch (e) { avisoError(e); }
-            } }, 'Eliminar')));
+            h('span', { class: 'tenue pequeno numeros' }, TIm.medidas(r.ancho_px, r.alto_px, tamanoArchivo(r.bytes)))),
+          h('div', { class: 'acciones' }, botonCopiar(uso, TIm.copiarUso), eliminar));
       })));
   }
 
