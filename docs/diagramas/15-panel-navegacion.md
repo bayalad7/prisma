@@ -5,14 +5,23 @@
 ```mermaid
 flowchart LR
     acceso["acceso: crear contraseña, entrar,<br/>cambiar contraseña"]:::seguridad --> inicio
-    inicio["inicio: impresoras, trabajos de hoy, solicitudes,<br/>avisos de versión y de certificado"]:::prisma
-    inicio --> imp["impresoras: agregar en 3 pasos, probar conexión,<br/>diagnóstico, páginas de códigos, editar, eliminar"]:::prisma
-    inicio --> apps["aplicaciones: crear, nivel, orígenes, impresoras,<br/>operaciones sensibles, regenerar o revocar llave"]:::seguridad
-    inicio --> sol["solicitudes: aprobar con aplicación nueva o<br/>existente, rechazar, olvidar"]:::seguridad
-    inicio --> trab["trabajos: historial filtrable,<br/>sin contenido de tickets"]:::datos
-    inicio --> rec["imágenes: vista previa en 1 bit,<br/>guardar, eliminar"]:::datos
-    inicio --> aj["ajustes: nombre, límites, retención, red local,<br/>actualizaciones, certificado, respaldo, restaurar"]:::prisma
-    inicio --> ay["ayuda: confiar en el certificado por sistema,<br/>enlaces a la documentación"]:::externo
+    subgraph operacion["Operación"]
+        inicio["/admin/ · inicio: impresoras, trabajos de hoy,<br/>solicitudes, avisos de versión y de certificado"]:::prisma
+        imp["/admin/impresoras: agregar (física o virtual), probar,<br/>diagnóstico, páginas de códigos, tickets virtuales"]:::prisma
+        sol["/admin/solicitudes: aprobar con aplicación<br/>nueva o existente, rechazar, olvidar"]:::seguridad
+        trab["/admin/trabajos: historial filtrable,<br/>sin contenido de tickets"]:::datos
+    end
+    subgraph integracion["Integración"]
+        apps["/admin/aplicaciones: crear, nivel, orígenes, impresoras,<br/>operaciones sensibles, regenerar o revocar llave"]:::seguridad
+        rec["/admin/imagenes: vista previa en 1 bit,<br/>guardar, eliminar"]:::datos
+    end
+    subgraph sistema["Sistema"]
+        aj["/admin/ajustes: nombre, límites, retención, red local,<br/>actualizaciones, certificado, respaldo, restaurar"]:::prisma
+        ay["/admin/ayuda: confiar en el certificado,<br/>enlaces a la documentación"]:::externo
+    end
+    inicio --> imp
+    inicio --> sol
+    inicio --> trab
     sol -. "aprobar" .-> apps
     imp -. "detectar o escanear la red" .-> det["internal/conector<br/>detección"]:::prisma
     classDef externo fill:#e8f0fe,stroke:#3b6db3,color:#102a43
@@ -21,17 +30,20 @@ flowchart LR
     classDef seguridad fill:#fde8e8,stroke:#c62828,color:#4a0d0d
 ```
 
-- La barra de navegación lleva las 8 secciones; *Inicio* es la de entrada después de *acceso*.
+- La navegación agrupa las 8 secciones en *Operación*, *Integración* y *Sistema*; *Inicio* es la de entrada después de *acceso*. En celular, el menú se despliega y una barra inferior lleva a Inicio, Impresoras, Solicitudes (con el número de pendientes), Trabajos y Ayuda.
+- Cada sección tiene su ruta: el puente sirve el panel en todas (`vistasPanel`) y `panel.js` dibuja la pantalla sin recargar; Atrás y Adelante funcionan. Los enlaces de 0.1.0 con `#` (`#clientes`, `#recursos`, `#impresoras`…) llevan a la ruta nueva.
+- Atajos: `g` y la letra de la sección (por ejemplo `g p`, Impresoras); `?` los muestra y permite desactivarlos.
 - *Acceso* es el primer acceso (con código desde otro equipo), el inicio de sesión y el cambio de contraseña obligatorio tras restablecerla ([16-panel-sesion.md](16-panel-sesion.md)).
 - Toda acción usa la API interna `/admin/api/…`, con sesión y CSRF; no es una API pública.
 - *Ayuda* enlaza la documentación de la versión instalada (`blob/v<versión>/docs/`).
 
 **Fuentes en el código:**
 
-- internal/admin/web/panel.js (`SECCIONES`, `VISTAS`, `vistaInicio`, `vistaAyuda`, `formularioImpresora`)
-- internal/admin/admin.go (`Handler`: rutas de `/admin/api`)
+- internal/admin/web/panel.js (`SECCIONES`, `HASH_VIEJOS`, `VISTAS`, `mostrarApp`, `vistaInicio`, `vistaAyuda`, `formularioImpresora`)
+- internal/admin/web/sistema.js (`marco`)
+- internal/admin/admin.go (`Handler`: rutas de `/admin/api`; `vistasPanel`)
 - internal/admin/impresoras.go
 - internal/admin/clientes.go
 - internal/admin/ajustes.go
 
-**Última verificación:** PRISMA 0.1.0 (rama `develop`, commit `5f67e19`), 22 de octubre de 2026.
+**Última verificación:** PRISMA 0.2.0 en desarrollo (rama `develop`), 22 de octubre de 2026.

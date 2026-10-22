@@ -22,6 +22,7 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 - El ticket de diagnóstico del panel muestra la imagen del ticket en lugar de una vista de texto que se cortaba.
 - Migración 0005 de la base de datos (se respalda sola antes de aplicarse).
 - Dependencia nueva: `golang.org/x/image`, por la fuente Go Mono del raster de tickets.
+- Navegación nueva del panel: secciones agrupadas (Operación, Integración, Sistema) con iconos, barra inferior en celular, enlace para saltar al contenido, selector de tema y atajos de teclado (`g` y una letra; se pueden desactivar). Cada sección tiene su dirección (`/admin/impresoras`, `/admin/aplicaciones`…); los enlaces viejos con `#` siguen funcionando.
 
 ### Cambiado
 

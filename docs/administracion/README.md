@@ -30,6 +30,8 @@ Si olvidas la contraseña, `prisma admin restablecer-contrasena` genera una nuev
 
 ## Secciones
 
+Están agrupadas en *Operación*, *Integración* y *Sistema*, y cada una tiene su dirección (por ejemplo `/admin/impresoras`), que se puede guardar en favoritos. Con el teclado, `g` y la letra de la sección cambia de pantalla (`?` muestra la lista y permite desactivarlos). El tema claro u oscuro se elige al pie del menú.
+
 | Sección | Para qué sirve |
 |---|---|
 | **Inicio** | Estado de las impresoras, trabajos de hoy, solicitudes pendientes, los últimos trabajos, el aviso de una versión nueva y el aviso de vencimiento del certificado. |
