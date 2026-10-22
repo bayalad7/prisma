@@ -1,6 +1,6 @@
-// Package conector envía bytes ESC/POS a una impresora por red, USB, Bluetooth (puerto serie)
-// o a un archivo. Cada tipo de conexión implementa Conector; las variantes por sistema operativo
-// están en archivos con build tags.
+// Package conector envía bytes ESC/POS a una impresora por red, USB, Bluetooth (puerto serie),
+// a un archivo o a una impresora virtual dentro del puente. Cada tipo de conexión implementa
+// Conector; las variantes por sistema operativo están en archivos con build tags.
 package conector
 
 import (
@@ -133,6 +133,8 @@ func Nuevo(imp almacen.Impresora) (Conector, error) {
 		return s, nil
 	case almacen.ConexionArchivo:
 		return NuevoArchivo(imp.Destino, imp), nil
+	case almacen.ConexionVirtual:
+		return NuevoVirtual(imp, RollosVirtuales), nil
 	}
 	return nil, fmt.Errorf("tipo de conexión %q desconocido", imp.Tipo)
 }
