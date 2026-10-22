@@ -1,6 +1,9 @@
 package admin
 
 import (
+	"encoding/json"
+	"net/url"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -39,4 +42,62 @@ func TestManualDelPanel(t *testing.T) {
 		}
 	}
 	s.exigir("GET", "/admin/ayuda/administracion/../go.mod", nil, 404)
+}
+
+func TestBuscarEnElManual(t *testing.T) {
+	b := nuevoBanco(t)
+	s := b.configurado()
+	buscar := func(q string) []resultadoManual {
+		t.Helper()
+		var r []resultadoManual
+		if err := json.Unmarshal(s.exigir("GET", "/admin/api/manual/buscar?q="+url.QueryEscape(q), nil, 200).Body.Bytes(), &r); err != nil {
+			t.Fatal(err)
+		}
+		return r
+	}
+
+	// Sin acentos ni la ñ, y por prefijo.
+	r := buscar("olvide contrasena")
+	if len(r) == 0 || r[0].Ruta != "administracion/problemas-comunes.md" || r[0].Ancla != "olvidé-la-contraseña-del-panel" {
+		t.Fatalf("«olvide contrasena» debe encontrar primero la sección del panel (las guías del dueño ganan los empates): %+v", r)
+	}
+	// Los diagramas se encuentran por su descripción del front-matter.
+	if r = buscar("mismos bytes papel"); !slices.ContainsFunc(r, func(x resultadoManual) bool { return x.Ruta == "diagramas/29-impresora-virtual.md" }) {
+		t.Fatalf("la descripción del diagrama 29 debe encontrarse: %+v", r)
+	}
+	// El título del documento pesa más que el texto.
+	if r = buscar("impresora virtual"); len(r) == 0 || !strings.Contains(r[0].Titulo+r[0].Seccion, "virtual") && !strings.Contains(r[0].Titulo+r[0].Seccion, "Virtual") {
+		t.Fatalf("el primer resultado debe hablar de la impresora virtual: %+v", r)
+	}
+	for _, x := range r {
+		if x.Extracto == "" {
+			t.Fatalf("cada resultado lleva un extracto: %+v", x)
+		}
+	}
+	if len(buscar("a")) != 0 || len(buscar("")) != 0 || len(buscar("palabraquenoexiste")) != 0 {
+		t.Fatal("sin palabras útiles o sin coincidencias no hay resultados")
+	}
+	if len(buscar("impresora")) > 20 {
+		t.Fatal("como mucho 20 resultados")
+	}
+}
+
+// TestAnclasDeLaBusqueda: cada sección que encuentra la búsqueda apunta a un ancla que existe en su
+// documento, calculada igual que en docs (y en manual.js, que lo comprueba el recorrido del panel).
+func TestAnclasDeLaBusqueda(t *testing.T) {
+	secciones, err := indiceBusqueda()
+	if err != nil || len(secciones) < 200 {
+		t.Fatalf("secciones: %d, %v", len(secciones), err)
+	}
+	vistas := map[string]bool{}
+	for _, s := range secciones {
+		if s.seccion == "" {
+			continue
+		}
+		clave := s.ruta + "#" + s.ancla
+		if vistas[clave] {
+			t.Errorf("ancla repetida: %s", clave)
+		}
+		vistas[clave] = true
+	}
 }

@@ -37,6 +37,19 @@ func TestPrimerosPasosDelResumen(t *testing.T) {
 		t.Fatal("probar páginas de códigos en una impresora virtual no prueba los acentos de una física")
 	}
 
+	// «Sí, se leen bien» del asistente: en una virtual no cuenta; en una física, sí (sin imprimir).
+	s.exigir("POST", "/admin/api/impresoras/prueba/acentos-correctos", nil, 200)
+	if pasos()["acentos_probados"] != false {
+		t.Fatal("confirmar los acentos de una virtual no prueba los de una física")
+	}
+	s.exigir("POST", "/admin/api/impresoras", map[string]any{"alias": "caja", "tipo": "archivo", "destino": t.TempDir(), "ancho_mm": 80,
+		"columnas": 48, "columnas_fuente_b": 64, "ancho_px": 576, "pagina_codigos": "CP858", "comando_pagina_codigos": 19, "activa": true}, 200)
+	s.exigir("POST", "/admin/api/impresoras/caja/acentos-correctos", nil, 200)
+	if pasos()["acentos_probados"] != true {
+		t.Fatal("confirmar en el asistente que los acentos salen bien debe completar el paso")
+	}
+	s.exigirError("POST", "/admin/api/impresoras/no-existe/acentos-correctos", nil, 404, "IMPRESORA_NO_ENCONTRADA")
+
 	hoy := s.exigir("GET", "/admin/api/resumen", nil, 200).datos["trabajos_hoy"].(map[string]any)
 	if hoy["completados"] != float64(0) || hoy["pruebas"] != float64(2) {
 		t.Fatalf("«Hoy» debe contar las pruebas del panel aparte: %v", hoy)

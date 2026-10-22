@@ -85,6 +85,7 @@ func (a *Admin) Handler() http.Handler {
 	privada("POST /admin/api/impresoras/{alias}/probar", a.probarImpresora)
 	privada("POST /admin/api/impresoras/{alias}/diagnostico", a.diagnostico)
 	privada("POST /admin/api/impresoras/{alias}/paginas-codigos", a.paginasCodigos)
+	privada("POST /admin/api/impresoras/{alias}/acentos-correctos", a.acentosCorrectos)
 	privada("GET /admin/api/impresoras/{alias}/rollo", a.listarRollo)
 	privada("DELETE /admin/api/impresoras/{alias}/rollo", a.vaciarRollo)
 	privada("GET /admin/api/impresoras/{alias}/rollo/{trabajo}/imagen", a.imagenTicket)
@@ -118,6 +119,7 @@ func (a *Admin) Handler() http.Handler {
 	privada("POST /admin/api/pruebas/permisos", a.comprobarPermisos)
 
 	privada("GET /admin/api/manual", a.listarManual)
+	privada("GET /admin/api/manual/buscar", a.buscarManual)
 
 	privada("GET /admin/api/ajustes", a.leerAjustes)
 	privada("PUT /admin/api/ajustes", a.guardarAjustes)

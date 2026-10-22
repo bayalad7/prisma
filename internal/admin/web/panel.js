@@ -846,7 +846,11 @@
         const preguntarAcentos = () => vaciar(preguntas, h('fieldset', {}, h('legend', {}, TA.probar.acentos),
           h('p', { class: 'tenue pequeno' }, TA.probar.acentosTexto),
           h('div', { class: 'acciones' },
-            boton(TA.probar.acentosSi, 'primario', () => vaciar(preguntas, final())),
+            boton(TA.probar.acentosSi, 'primario', () => {
+              // Lo comprobó en el papel: cuenta como «Revisar acentos» de Primeros pasos.
+              api.post(`/impresoras/${enc(w.imp.alias)}/acentos-correctos`).catch(() => {});
+              vaciar(preguntas, final());
+            }),
             boton(TA.probar.acentosNo, '', async (b) => {
               const actualizada = await probarAcentos(w.imp, b);
               if (actualizada) { w.imp = actualizada; vaciar(preguntas, final()); }
@@ -2510,7 +2514,7 @@
     const { grupos, documentos, orden } = await cargarManual();
     const ruta = decodeURIComponent(location.pathname.replace(/^\/admin\/ayuda\/?/, ''));
     if (!ruta) {
-      agregar(vista, encabezado(TAy.titulo, TAy.subtitulo),
+      agregar(vista, encabezado(TAy.titulo, TAy.subtitulo), buscadorManual(),
         h('div', { class: 'grupos-manual' }, grupos.map((g) => UI.tarjeta({ titulo: g.titulo, icono: 'libro', nivel: 2 },
           h('ul', { class: 'lista-manual' }, g.documentos.map((d) => h('li', {}, h('a', { href: rutaAyuda(d.ruta) }, d.titulo))))))));
       return;
@@ -2519,6 +2523,7 @@
     const indice = h('nav', { class: 'indice-manual', 'aria-label': TAy.indice },
       h('details', { class: 'avanzado', open: matchMedia('(min-width: 1024px)').matches },
         h('summary', {}, TAy.indice),
+        buscadorManual(true),
         grupos.map((g) => h('div', { class: 'pila' }, h('p', { class: 'grupo-manual' }, g.titulo),
           h('ul', { class: 'lista-manual' }, g.documentos.map((d) => h('li', {},
             h('a', { href: rutaAyuda(d.ruta), 'aria-current': d.ruta === ruta ? 'page' : undefined }, d.titulo))))))));
@@ -2578,6 +2583,55 @@
     });
     document.title = TN.tituloPagina(doc.titulo, estado.nombrePuente);
     agregar(vista, h('div', { class: 'manual' }, indice, articulo));
+  }
+  // Buscador del manual. En la portada de la Ayuda muestra los resultados al escribir (y deja la
+  // búsqueda en la dirección, ?q=…); en una página, lleva a la portada con la búsqueda.
+  function buscadorManual(compacto = false) {
+    const id = compacto ? 'ay-buscar-indice' : 'ay-buscar';
+    const entrada = UI.entrada({ tipo: 'search', autocomplete: 'off', value: compacto ? '' : new URLSearchParams(location.search).get('q') || '' });
+    const resultados = h('div', { class: 'pila', 'aria-live': 'polite' });
+    const campo = UI.campo({ id, etiqueta: TAy.buscar, control: entrada, ayuda: compacto ? undefined : TAy.buscarAyuda });
+    if (compacto) {
+      return h('form', { class: 'buscar-manual', role: 'search', onsubmit: (ev) => {
+        ev.preventDefault();
+        if (entrada.value.trim()) ir('ayuda', `?q=${enc(entrada.value.trim())}`);
+      } }, campo);
+    }
+    let turno = 0;
+    let espera;
+    const buscar = async () => {
+      const q = entrada.value.trim();
+      const mio = ++turno;
+      history.replaceState(null, '', rutaDe('ayuda') + (q ? `?q=${enc(q)}` : ''));
+      if (q.length < 2) { vaciar(resultados); return; }
+      let lista;
+      try { lista = await api.get(`/manual/buscar?q=${enc(q)}`); } catch (e) { if (mio === turno) vaciar(resultados, UI.nota({ tipo: 'error', titulo: e.message })); return; }
+      if (mio !== turno) return;
+      const palabras = q.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').split(/[^\p{L}\p{N}_]+/u).filter((p) => p.length >= 2);
+      // Resalta las palabras buscadas en el extracto, sin acentos al comparar.
+      const resaltar = (texto) => {
+        const plano = texto.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        if (plano.length !== texto.length || !palabras.length) return texto;
+        const marcas = [];
+        for (const p of palabras) { let i = plano.indexOf(p); while (i >= 0) { marcas.push([i, i + p.length]); i = plano.indexOf(p, i + p.length); } }
+        marcas.sort((a, b) => a[0] - b[0]);
+        const nodos = [];
+        let desde = 0;
+        for (const [a, b] of marcas) { if (a < desde) continue; nodos.push(texto.slice(desde, a), h('mark', {}, texto.slice(a, b))); desde = b; }
+        nodos.push(texto.slice(desde));
+        return nodos;
+      };
+      vaciar(resultados, lista.length === 0 ? h('p', { class: 'tenue' }, TAy.sinResultados(q)) : [
+        h('p', { class: 'tenue pequeno' }, TAy.resultados(lista.length)),
+        h('ol', { class: 'resultados-manual' }, lista.map((r) => h('li', {},
+          h('a', { href: rutaAyuda(r.ruta, r.ancla ? `#${r.ancla}` : '') }, r.seccion || r.titulo),
+          r.seccion && h('span', { class: 'tenue pequeno' }, ` · ${r.titulo}`),
+          h('p', { class: 'pequeno' }, resaltar(r.extracto))))),
+      ]);
+    };
+    entrada.addEventListener('input', () => { clearTimeout(espera); espera = setTimeout(buscar, 250); });
+    if (entrada.value) setTimeout(buscar);
+    return h('section', { class: 'tarjeta buscar-manual', role: 'search', 'aria-label': TAy.buscar }, campo, resultados);
   }
   // Lleva la vista a un título del manual y le da el foco (lo anuncia el lector de pantalla).
   function enfocarAncla(el) {

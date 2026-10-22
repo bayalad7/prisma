@@ -622,6 +622,11 @@ window.PRISMA_TEXTOS = {
     imagenExterna: (alt) => `Imagen en Internet: ${alt}`,
     noExiste: 'Esa página del manual no existe',
     noExisteTexto: 'Puede que el enlace sea de otra versión. Busca el tema en el índice.',
+    buscar: 'Buscar en el manual',
+    buscarAyuda: 'Por ejemplo: acentos, certificado, olvidé la contraseña.',
+    buscarBoton: 'Buscar',
+    resultados: (n) => (n === 1 ? '1 resultado' : `${n} resultados`),
+    sinResultados: (q) => `No hay resultados para «${q}». Prueba con otras palabras o revisa el índice.`,
   },
   // Probar impresión (Fase 6.2).
   pruebas: {

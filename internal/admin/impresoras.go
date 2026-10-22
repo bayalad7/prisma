@@ -472,6 +472,19 @@ func conexionDiagnostico(imp almacen.Impresora) string {
 	return imp.Tipo + " " + imp.Destino
 }
 
+// POST /admin/api/impresoras/{alias}/acentos-correctos: el dueño vio en el ticket de prueba que
+// los acentos salen bien; cuenta como el paso «Revisar acentos» de Primeros pasos, sin imprimir.
+func (a *Admin) acentosCorrectos(w http.ResponseWriter, r *http.Request) {
+	imp, ok2 := a.impresora(w, r)
+	if !ok2 {
+		return
+	}
+	if imp.Tipo != almacen.ConexionVirtual {
+		a.marcarPaso(r, almacen.AjusteAcentosProbados)
+	}
+	responder(w, ok)
+}
+
 func (a *Admin) paginasCodigos(w http.ResponseWriter, r *http.Request) {
 	imp, ok2 := a.impresoraParaImprimir(w, r)
 	if !ok2 {

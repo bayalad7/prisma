@@ -685,3 +685,8 @@ dialog::backdrop { background: var(--velo); }
 .vecino-manual { display: grid; gap: 2px; padding: var(--e-3); border: 1px solid var(--borde); border-radius: var(--radio); text-decoration: none; }
 .vecino-manual:hover { border-color: var(--acento); }
 .vecino-der { grid-column: 2; text-align: right; }
+.buscar-manual { display: grid; gap: var(--e-3); }
+.indice-manual .buscar-manual { margin-top: var(--e-3); }
+.resultados-manual { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--e-3); }
+.resultados-manual p { margin: 2px 0 0; color: var(--tenue); }
+.resultados-manual mark { background: var(--aviso-suave); color: var(--tinta); border-radius: 2px; }
