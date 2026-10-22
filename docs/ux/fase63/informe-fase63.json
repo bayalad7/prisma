@@ -1,0 +1,49 @@
+{
+  "axe": {
+    "rollo-escritorio": [],
+    "vacio-escritorio": [],
+    "rollo-celular": []
+  },
+  "desborde": {
+    "rollo-escritorio": 0,
+    "vacio-escritorio": 0,
+    "rollo-celular": 0
+  },
+  "consola": [],
+  "comprobaciones": [
+    "ok    la ruta abre el rollo con «Probar impresión» marcado ",
+    "ok    indica que está en vivo ",
+    "ok    la app imprime por /v1 {\"advertencias\":[],\"duracion_ms\":0,\"impresora\":\"prueba-2\",\"ok\":true,\"trabajo_id\":\"trb_9a7a0501f074da3f\"}",
+    "ok    el ticket aparece solo, arriba, con la app y la referencia Mi app en desarrollo · APP-001",
+    "ok    muestra el trabajo_id ",
+    "ok    se anuncia a los lectores de pantalla ",
+    "ok    los sondeos llevan la cabecera que no renueva la sesión 2 peticiones",
+    "ok    la traza se muestra al abrirla ",
+    "ok    en pausa no llegan tickets nuevos ",
+    "ok    al reanudar aparece el pendiente ",
+    "ok    al salir de la pantalla deja de sondear 0",
+    "ok    volver con «atrás» abre el rollo otra vez ",
+    "ok    vaciar deja el rollo vacío y lo explica ",
+    "ok    una impresora no virtual lo explica ",
+    "ok    celular: el ticket llega ",
+    "ok    «Ver tickets» abre el rollo "
+  ],
+  "peticiones": [
+    "GET 1 /admin/api/impresoras/prueba-2/rollo",
+    "GET 1 /admin/api/impresoras/prueba-2/rollo/trb_9a7a0501f074da3f/imagen",
+    "GET 1 /admin/api/impresoras/prueba-2/rollo",
+    "GET - /admin/api/impresoras/prueba-2/rollo/trb_9a7a0501f074da3f/traza",
+    "GET 1 /admin/api/impresoras/prueba-2/rollo",
+    "GET 1 /admin/api/impresoras/prueba-2/rollo",
+    "GET 1 /admin/api/impresoras/prueba-2/rollo/trb_c9c6b4b60ac9df10/imagen",
+    "GET 1 /admin/api/impresoras/prueba-2/rollo",
+    "GET 1 /admin/api/impresoras/prueba-2/rollo",
+    "GET 1 /admin/api/impresoras/prueba-2/rollo/trb_9a7a0501f074da3f/imagen",
+    "GET 1 /admin/api/impresoras/prueba-2/rollo/trb_c9c6b4b60ac9df10/imagen",
+    "DELETE - /admin/api/impresoras/prueba-2/rollo",
+    "GET 1 /admin/api/impresoras/prueba-2/rollo",
+    "GET 1 /admin/api/impresoras/prueba-2/rollo",
+    "GET 1 /admin/api/impresoras/prueba-2/rollo",
+    "GET - /admin/pruebas/rollo/caja"
+  ]
+}
