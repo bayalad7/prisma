@@ -1,6 +1,6 @@
 # Solución de problemas
 
-Busca lo que te pasa y sigue el enlace. ¿No sabes si el problema es de la impresora o de la aplicación? Prueba con una [impresora virtual](probar-sin-impresora.md): si la aplicación imprime bien en la virtual, el problema está en la impresora o en su conexión; si tampoco, está en la aplicación o en sus permisos.
+En el panel, *Ayuda → Mi impresora no imprime* te hace unas preguntas y te lleva a la solución. Aquí, busca lo que te pasa y sigue el enlace. ¿No sabes si el problema es de la impresora o de la aplicación? Prueba con una [impresora virtual](probar-sin-impresora.md): si la aplicación imprime bien en la virtual, el problema está en la impresora o en su conexión; si tampoco, está en la aplicación o en sus permisos.
 
 | Lo que pasa | Dónde está la solución |
 |---|---|
