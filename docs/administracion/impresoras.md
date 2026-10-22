@@ -4,18 +4,18 @@ La sección *Impresoras* agrega, prueba y ajusta las impresoras del puente. Ante
 
 ## Agregar una impresora
 
-Son 3 pasos:
+*Agregar impresora* guía en 3 pasos:
 
-1. **Conexión.** Elige una impresora detectada (USB, colas del sistema, puertos serie), busca en la red (puerto 9100) o escribe el destino a mano.
-2. **Papel.** 58 u 80 mm. Las *opciones avanzadas* fijan la página de códigos, el comando `ESC t`, las columnas de las fuentes A y B y los puntos por línea.
-3. **Capacidades y prueba.** Cuchilla, cajón, QR y códigos de barras por comando, imágenes y, en red y Bluetooth, *Confirmar impresión*. Luego pulsa *Probar conexión*.
+1. **Tipo.** De tickets de 80 mm (la más común), de 58 mm, o **virtual** para probar sin papel ([más abajo](#impresora-virtual)).
+2. **Conexión y nombre.** Elige una de las impresoras que el puente encontró (conectadas a este equipo o, con *Buscar en la red*, en la red local). Las impresoras del sistema que no son de tickets (Microsoft Print to PDF, XPS, Fax…) aparecen marcadas *No parece de tickets*. Si la tuya no aparece, *¿No aparece?* permite escribir cómo está conectada (red, USB, Bluetooth o carpeta) y su dirección, con un ejemplo para cada caso. Escribe un **nombre** («Caja principal»): el **alias** se propone solo (`caja-principal`). *Probar conexión* comprueba que responda sin imprimir. *Opciones avanzadas* tiene la cuchilla, el cajón, QR, códigos de barras, imágenes y *Preguntar a la impresora si recibió cada ticket*.
+3. **Prueba.** *Guardar y probar* guarda la impresora e imprime el ticket de diagnóstico; el panel muestra cómo debe verse y pregunta si salió y si se leen bien los acentos. Si no salió, sugiere qué revisar y permite reintentar o corregir la conexión. Si los acentos salen mal, abre la prueba de acentos.
 
-El **alias** (minúsculas, dígitos, `-` y `_`, hasta 32 caracteres) es el nombre con el que las aplicaciones eligen la impresora. Si lo cambias, las aplicaciones que usan el alias anterior reciben `IMPRESORA_NO_ENCONTRADA`.
+El **alias** (minúsculas, dígitos, `-` y `_`, hasta 32 caracteres) es el nombre con el que las aplicaciones eligen la impresora; no se puede cambiar después. Los errores (un alias con espacios, una impresora sin elegir) se muestran junto al campo.
 
 ## Diagnóstico y páginas de códigos
 
 - **Ticket de diagnóstico.** Imprime el alias, la conexión, el papel, la página de códigos, una regla que debe ocupar exactamente una línea, los acentos, las tres alineaciones y un QR (si la impresora puede imprimirlo). El panel muestra además cómo debería verse. Si la regla se parte en dos líneas, las columnas están mal configuradas.
-- **Probar páginas de códigos.** Imprime la misma línea con acentos con `ESC t 0`, `2`, `16` y `19`. Elige en el panel la que se leyó bien y el perfil se actualiza solo.
+- **Probar acentos.** Imprime 4 renglones con los mismos acentos, cada uno con una página de códigos distinta (empiezan con `ESC t 0`, `2`, `16` y `19`). En el panel eliges el renglón que se lee bien y el perfil se actualiza solo. Si ninguno se lee bien, el panel explica cómo buscar en el manual de la impresora el número correcto.
 
 Los dos quedan en el historial como trabajos de la aplicación «Panel».
 

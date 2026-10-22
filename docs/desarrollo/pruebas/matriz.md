@@ -85,7 +85,7 @@ Para cada fila, en el panel:
 1. **Impresoras → Agregar** con el preset del ancho.
 2. **Probar conexión**: «La impresora respondió: está en línea».
 3. **Ticket de diagnóstico**: sale completo. La **regla de columnas cabe en una sola línea** (32 columnas en 58 mm, 48 en 80 mm). Los acentos `áéíóú ÁÉÍÓÚ ñÑ üÜ ¿¡ € °` se leen bien, y se ven las tres alineaciones, el QR y el corte (o 4 líneas de avance si no hay cuchilla).
-4. **Probar páginas de códigos**: elegir la línea que se lee bien deja el perfil actualizado; repetir el diagnóstico para comprobar los acentos.
+4. **Probar acentos**: elegir el renglón que se lee bien deja el perfil actualizado; repetir el diagnóstico para comprobar los acentos.
 5. Imprimir [`venta-logo-qr.json`](../../../ejemplos/validos/venta-logo-qr.json) desde una aplicación: logo, QR y 2 copias.
 
 | ID | Sistema | Conexión | Ancho | Resultado | Notas |
