@@ -90,3 +90,52 @@ func TestProbarImpresion(t *testing.T) {
 	s.exigir("PUT", "/admin/api/impresoras/prueba", perfilVirtual(map[string]any{"activa": false}), 200)
 	s.exigirError("POST", "/admin/api/pruebas/imprimir", doc(texto), 409, "IMPRESORA_INACTIVA")
 }
+
+func TestComprobarPermisos(t *testing.T) {
+	b := nuevoBanco(t)
+	s := b.configurado()
+	s.exigir("POST", "/admin/api/impresoras", perfilVirtual(nil), 200)
+	cli := s.exigir("POST", "/admin/api/clientes", map[string]any{"nombre": "Tienda", "nivel": 2, "origenes": []string{"https://tienda.example"},
+		"todas_las_impresoras": true}, 200)
+	id, _ := cli.datos["id"].(string)
+	if id == "" {
+		id, _ = cli.datos["cliente"].(map[string]any)["id"].(string)
+	}
+	comprobar := func(cambios map[string]any) respuesta {
+		d := map[string]any{"cliente_id": id, "origen": "https://tienda.example", "con_llave": true, "impresora": "prueba", "operaciones": []string{"texto"}}
+		for k, v := range cambios {
+			d[k] = v
+		}
+		return s.exigir("POST", "/admin/api/pruebas/permisos", d, 200)
+	}
+
+	r := comprobar(nil)
+	if r.datos["codigo"] != "" || r.datos["identificado"].(map[string]any)["nombre"] != "Tienda" || !strings.Contains(r.Body.String(), `"id":"disponible","estado":"ok"`) {
+		t.Fatalf("todo en orden: %s", r.Body.String())
+	}
+	if r = comprobar(map[string]any{"con_llave": false}); r.datos["codigo"] != "LLAVE_REQUERIDA" || r.datos["estado_http"] != float64(401) {
+		t.Fatalf("sin llave: %s", r.Body.String())
+	}
+	if r = comprobar(map[string]any{"operaciones": []string{"texto", "abrir_cajon"}}); r.datos["codigo"] != "OPERACION_NO_PERMITIDA" {
+		t.Fatalf("cajón: %s", r.Body.String())
+	}
+	if r = comprobar(map[string]any{"impresora": "no-existe"}); r.datos["codigo"] != "IMPRESORA_NO_ENCONTRADA" {
+		t.Fatalf("impresora inexistente: %s", r.Body.String())
+	}
+
+	// Un origen desconocido falla igual que en la API, pero no queda como solicitud pendiente.
+	if r = comprobar(map[string]any{"origen": "https://otra.example"}); r.datos["codigo"] != "ORIGEN_NO_AUTORIZADO" {
+		t.Fatalf("origen desconocido: %s", r.Body.String())
+	}
+	if sol := s.exigir("GET", "/admin/api/solicitudes", nil, 200); strings.Contains(sol.Body.String(), "otra.example") {
+		t.Fatalf("el comprobador no debe registrar solicitudes: %s", sol.Body.String())
+	}
+	// El origen de otra aplicación la identifica a ella: la llave de esta ya no corresponde.
+	otra := s.exigir("POST", "/admin/api/clientes", map[string]any{"nombre": "Otra", "nivel": 2, "origenes": []string{"https://otra-app.example"},
+		"todas_las_impresoras": true}, 200)
+	if r = comprobar(map[string]any{"origen": "https://otra-app.example"}); r.datos["codigo"] != "LLAVE_INVALIDA" ||
+		r.datos["origen_de"].(map[string]any)["nombre"] != "Otra" {
+		t.Fatalf("origen de otra aplicación: %s %v", r.Body.String(), otra.datos)
+	}
+	s.exigirError("POST", "/admin/api/pruebas/permisos", map[string]any{"cliente_id": "cli_no_existe"}, 404, "NO_ENCONTRADO")
+}

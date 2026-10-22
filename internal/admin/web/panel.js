@@ -111,7 +111,7 @@
   const rutaDe = (id) => `/admin/${SECCIONES.find((s) => s.id === id).ruta}`;
   const seccionDe = (ruta) => {
     const r = ruta.replace(/^\/admin\/?/, '').replace(/\/$/, '');
-    if (/^pruebas\/rollo\/[^/]+$/.test(r)) return 'pruebas';
+    if (/^pruebas\/(permisos|rollo\/[^/]+)$/.test(r)) return 'pruebas';
     return SECCIONES.find((s) => s.ruta === r)?.id;
   };
 
@@ -1034,6 +1034,7 @@
     h('div', { class: 'acciones' },
       accion(A.codigo, 'primario', () => codigoIntegracion(c, impresoras), 'codigo'),
       accion(A.editar, '', () => formularioCliente(vista, c, impresoras), 'lapiz'),
+      accion(A.comprobar, '', () => irRuta(`/admin/pruebas/permisos?aplicacion=${enc(c.id)}`), 'escudo'),
       (c.nivel === 2 || c.llave_prefijo) && accion(c.llave_prefijo ? A.cambiarLlave : A.darLlave, '', async (b) => {
         if (c.llave_prefijo && !(await confirmar(K.cambiarTitulo(c.nombre), K.cambiarTexto, { boton: K.cambiarBoton, consecuencias: K.cambiarConsecuencias }))) return;
         try {
@@ -1636,8 +1637,11 @@
   async function vistaPruebas(vista) {
     const rollo = /^\/admin\/pruebas\/rollo\/([^/]+)$/.exec(location.pathname);
     if (rollo) return vistaRollo(vista, decodeURIComponent(rollo[1]));
+    if (location.pathname === '/admin/pruebas/permisos') return vistaPermisos(vista);
     const impresoras = (await api.get('/impresoras')).filter((i) => i.activa);
-    agregar(vista, encabezado(TPr.titulo, TPr.subtitulo));
+    const bPermisos = UI.boton({ texto: TPr.permisos.boton, icono: 'escudo' });
+    bPermisos.addEventListener('click', () => irRuta('/admin/pruebas/permisos'));
+    agregar(vista, encabezado(TPr.titulo, TPr.subtitulo, bPermisos));
     if (impresoras.length === 0) {
       const agregarImp = UI.boton({ texto: TP.agregar, variante: 'primario', icono: 'mas' });
       agregarImp.addEventListener('click', () => ir('impresoras'));
@@ -2145,6 +2149,121 @@
       anuncio, vacio, rollo);
     pintarEstado();
     await revisar();
+  }
+
+  // Comprobador de permisos (/admin/pruebas/permisos): recorre, sin imprimir, los pasos de
+  // autorización de /v1/imprimir para la situación descrita y dice dónde fallaría y qué hacer.
+  const TPe = TPr.permisos;
+  // A qué pantalla llevar según el código de rechazo.
+  const ARREGLO = {
+    ORIGEN_NO_AUTORIZADO: 'aplicaciones', CLIENTE_DESACTIVADO: 'aplicaciones', LLAVE_REQUERIDA: 'aplicaciones', LLAVE_INVALIDA: 'aplicaciones',
+    ORIGEN_REQUERIDO: 'aplicaciones', FIRMA_REQUERIDA: 'aplicaciones', FIRMA_INVALIDA: 'aplicaciones', CREDENCIALES_REQUERIDAS: 'aplicaciones',
+    IMPRESORA_NO_PERMITIDA: 'aplicaciones', OPERACION_NO_PERMITIDA: 'aplicaciones', IMPRESORA_NO_ENCONTRADA: 'impresoras',
+  };
+  async function vistaPermisos(vista) {
+    const [clientes, impresoras] = await Promise.all([api.get('/clientes'), api.get('/impresoras')]);
+    agregar(vista, encabezado(TPe.titulo, TPe.subtitulo));
+    if (clientes.length === 0) {
+      const irAp = UI.boton({ texto: TPe.irAplicaciones, variante: 'primario' });
+      irAp.addEventListener('click', () => ir('aplicaciones'));
+      agregar(vista, UI.vacio({ icono: 'aplicacion', titulo: TPe.sinAplicaciones, texto: TPe.sinAplicacionesTexto, accion: irAp }));
+      return;
+    }
+    const pedida = new URLSearchParams(location.search).get('aplicacion');
+    const selApp = UI.selector({ opciones: clientes.map((c) => [c.id, c.activo ? c.nombre : TPe.desactivada(c.nombre)]),
+      valor: (clientes.find((c) => c.id === pedida) || clientes[0]).id });
+    const cApp = UI.campo({ id: 'pe-app', etiqueta: TPe.aplicacion, control: selApp });
+    const nivel = h('p', { class: 'tenue pequeno' });
+    const desde = h('div', { class: 'pila' });
+    const otra = UI.entrada({ tipo: 'url', placeholder: 'https://', autocomplete: 'off' });
+    const cOtra = UI.campo({ id: 'pe-otra', etiqueta: TPe.otraPaginaEtiqueta, control: otra, ayuda: TPe.otraPaginaAyuda });
+    const llave = UI.casilla({ id: 'pe-llave', texto: TPe.conLlave });
+    const firmado = UI.casilla({ id: 'pe-firmado', texto: TPe.firmado });
+    const selImp = UI.selector({ opciones: impresoras.map((i) => [i.alias, i.activa ? i.alias : TPe.impresoraInactiva(i.alias)]) });
+    const cImp = UI.campo({ id: 'pe-impresora', etiqueta: TPe.impresora, control: selImp });
+    const cajon = UI.casilla({ id: 'pe-cajon', texto: TPe.cajon });
+    const raw = UI.casilla({ id: 'pe-raw', texto: TPe.raw });
+    const resultado = h('div', { class: 'pila', 'aria-live': 'polite' });
+
+    const app = () => clientes.find((c) => c.id === selApp.value);
+    // Al cambiar de aplicación se propone su caso típico: desde su página, con llave si la usa y
+    // con firma si es de nivel 3.
+    function proponer() {
+      const c = app();
+      nivel.textContent = TPe.nivel(c.nivel);
+      const opcion = (valor, texto, marcado) => h('label', { class: 'casilla' },
+        h('input', { type: 'radio', name: 'pe-desde', value: valor, checked: marcado }), h('span', {}, texto));
+      vaciar(desde, c.origenes.map((o, k) => opcion(o, TPe.suPagina(o), k === 0)),
+        opcion('otra', TPe.otraPagina, false), opcion('', TPe.servidor, c.origenes.length === 0));
+      llave.input.checked = c.nivel === 2 || (c.nivel === 3 && c.exigir_llave);
+      firmado.input.checked = c.nivel === 3;
+      const permitida = impresoras.find((i) => i.activa && (c.todas_las_impresoras || c.impresoras.includes(i.alias))) || impresoras[0];
+      if (permitida) selImp.value = permitida.alias;
+      comprobar();
+    }
+    const origenElegido = () => {
+      const v = desde.querySelector('input:checked')?.value ?? '';
+      cOtra.hidden = v !== 'otra';
+      return v === 'otra' ? otra.value.trim() : v;
+    };
+
+    let turno = 0;
+    async function comprobar() {
+      const mio = ++turno;
+      const origen = origenElegido();
+      if (cOtra.hidden === false && !origen) { vaciar(resultado); return; }
+      const datos = { cliente_id: selApp.value, origen, con_llave: llave.input.checked, firmado: firmado.input.checked, impresora: selImp.value,
+        operaciones: ['texto', cajon.input.checked && 'abrir_cajon', raw.input.checked && 'raw'].filter(Boolean) };
+      let r;
+      try { r = await api.post('/pruebas/permisos', datos); } catch (e) { if (mio === turno) vaciar(resultado, UI.nota({ tipo: 'error', titulo: e.message, texto: e.sugerencia })); return; }
+      if (mio !== turno) return;
+      const elegida = app();
+      const otraApp = r.identificado && r.identificado.id !== elegida.id ? r.identificado.nombre : null;
+      const origenDeOtra = r.origen_de && r.origen_de.id !== elegida.id ? r.origen_de.nombre : null;
+      const ORDEN = ['origen', 'llave', 'firma', 'impresora', 'operaciones', 'disponible'];
+      const lista = h('ol', { class: 'pasos-permisos' }, ORDEN.map((id) => {
+        const p = r.pasos.find((x) => x.id === id);
+        const estadoPaso = p ? p.estado : 'pendiente';
+        const ic = { ok: 'ok', falla: 'error', no_aplica: 'menos', pendiente: 'desconocido' }[estadoPaso];
+        let texto;
+        if (!p) texto = TPe.noLlego;
+        else if (p.estado === 'falla') texto = h('span', {}, h('strong', {}, p.mensaje), ' ', h('span', { class: 'mono pequeno' }, p.codigo));
+        else if (p.estado === 'no_aplica') texto = TPe.noAplica[id];
+        else if (id === 'origen' && origenDeOtra) texto = TPe.ok.origenOtra(origenDeOtra);
+        else texto = typeof TPe.ok[id] === 'function' ? TPe.ok[id](selImp.value) : TPe.ok[id];
+        return h('li', { class: `paso-permiso paso-${estadoPaso}` }, UI.icono(ic),
+          h('div', { class: 'pila' }, h('span', { class: 'titulo-paso' }, TPe.pasos[id]), h('span', { class: 'pequeno' }, texto)));
+      }));
+      const falla = r.pasos.find((p) => p.estado === 'falla');
+      let resumen;
+      if (!falla) {
+        resumen = UI.nota({ tipo: otraApp ? 'aviso' : 'ok', titulo: TPe.todoBien(r.identificado.nombre, selImp.value), texto: otraApp ? TPe.comoOtra(otraApp) : null });
+      } else {
+        const destino = ARREGLO[falla.codigo];
+        const boton = destino && UI.boton({ texto: TPe.acciones[destino], chico: true });
+        if (boton) boton.addEventListener('click', () => ir(destino));
+        resumen = UI.nota({ tipo: 'error', titulo: TPe.rechazo(r.estado_http, r.codigo),
+          texto: h('p', {}, h('strong', {}, `${TPe.resolver}: `), TPe.sugerencias[falla.codigo] ? TPe.sugerencias[falla.codigo](elegida.nombre) : falla.sugerencia), acciones: boton });
+      }
+      const docs = docsDe(estado.version);
+      vaciar(resultado, resumen, lista, h('p', { class: 'fila pequeno' },
+        h('a', { href: `${docs}diagramas/07-orden-autorizacion.md`, target: '_blank', rel: 'noopener' }, TPe.verDiagrama, UI.icono('externo')),
+        h('a', { href: `${docs}integradores/niveles-de-seguridad.md`, target: '_blank', rel: 'noopener' }, TPe.verManual, UI.icono('externo'))));
+    }
+
+    selApp.addEventListener('change', proponer);
+    desde.addEventListener('change', comprobar);
+    let espera;
+    otra.addEventListener('input', () => { clearTimeout(espera); espera = setTimeout(comprobar, 400); });
+    for (const x of [llave.input, firmado.input, selImp, cajon.input, raw.input]) x.addEventListener('change', comprobar);
+
+    agregar(vista, h('div', { class: 'area-pruebas' },
+      UI.tarjeta({ titulo: TPe.situacion, icono: 'aplicacion' }, cApp, nivel,
+        h('fieldset', { class: 'grupo-campos' }, h('legend', {}, TPe.desde), desde, cOtra),
+        h('div', { class: 'pila' }, llave, firmado), cImp,
+        h('fieldset', { class: 'grupo-campos' }, h('legend', {}, TPe.sensibles), cajon, raw)),
+      UI.tarjeta({ titulo: TPe.resultado, icono: 'escudo', clase: 'tarjeta-previa' }, resultado)));
+    proponer();
   }
 
   // ---------------------------------------------------------------------------------------------

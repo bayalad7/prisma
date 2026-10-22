@@ -225,7 +225,9 @@
   function nota({ tipo = 'info', titulo, texto, acciones, cerrable }, ...contenido) {
     const el = h('div', { class: `nota-caja estado-${tipo}`, role: tipo === 'error' ? 'alert' : 'status' },
       icono(ICONO_ESTADO[tipo] || 'info'),
-      h('div', { class: 'nota-cuerpo' }, titulo && h('strong', {}, titulo), texto && h('p', {}, texto), contenido,
+      h('div', { class: 'nota-cuerpo' }, titulo && h('strong', {}, titulo),
+        // Un texto va en un párrafo; un nodo (una lista, varios párrafos) se agrega tal cual.
+        texto && (texto instanceof Node ? texto : h('p', {}, texto)), contenido,
         acciones && h('div', { class: 'acciones' }, acciones)),
       cerrable && boton({ icono: 'cerrar', variante: 'texto', chico: true, etiqueta: T.cerrarAviso, onclick: () => el.remove() }));
     return el;

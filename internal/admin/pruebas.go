@@ -4,14 +4,17 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/bayalad7/prisma/ejemplos"
 	"github.com/bayalad7/prisma/internal/almacen"
+	"github.com/bayalad7/prisma/internal/conector"
 	"github.com/bayalad7/prisma/internal/contrato"
 	"github.com/bayalad7/prisma/internal/dev"
 	"github.com/bayalad7/prisma/internal/escpos"
+	"github.com/bayalad7/prisma/internal/seguridad"
 	"github.com/bayalad7/prisma/internal/servidor"
 )
 
@@ -130,4 +133,58 @@ func (a *Admin) imprimirDocumentoPrueba(w http.ResponseWriter, r *http.Request) 
 	if a.imprimirPrueba(w, r, imp, doc.Referencia, datos, advs) {
 		a.marcarPaso(r, almacen.AjustePrimeraPrueba)
 	}
+}
+
+// datosPermisos es la situación que describe el comprobador de permisos del panel.
+type datosPermisos struct {
+	ClienteID   string   `json:"cliente_id"`
+	Origen      string   `json:"origen"`
+	ConLlave    bool     `json:"con_llave"`
+	Firmado     bool     `json:"firmado"`
+	Impresora   string   `json:"impresora"`
+	Operaciones []string `json:"operaciones"`
+}
+
+// PasoDisponible es el último paso del comprobador: después de autorizar, /v1/imprimir exige que
+// la impresora exista y esté activa.
+const PasoDisponible = "disponible"
+
+// POST /admin/api/pruebas/permisos: «¿Por qué mi app no puede imprimir?». Simula, sin imprimir ni
+// registrar nada, los pasos de autorización de /v1/imprimir para la situación descrita. No pide la
+// llave ni la firma de la aplicación: supone que son las correctas.
+func (a *Admin) comprobarPermisos(w http.ResponseWriter, r *http.Request) {
+	var d datosPermisos
+	if err := leerJSON(w, r, &d); err != nil {
+		a.error(w, r, err)
+		return
+	}
+	ctx := r.Context()
+	c, err := a.op.Servidor.Autorizador().Comprobar(ctx, seguridad.Situacion{ClienteID: d.ClienteID, Origen: d.Origen,
+		ConLlave: d.ConLlave, Firmado: d.Firmado, Impresora: d.Impresora, Operaciones: d.Operaciones})
+	if err != nil {
+		a.error(w, r, err)
+		return
+	}
+	if c.Codigo == "" {
+		imp, err := a.op.Almacen.Impresoras.Obtener(ctx, d.Impresora)
+		switch {
+		case errors.Is(err, almacen.ErrNoEncontrado) || (err == nil && !imp.Activa):
+			c.Pasos = append(c.Pasos, seguridad.Paso{ID: PasoDisponible, Estado: seguridad.PasoFalla, Codigo: conector.ErrImpresoraNoEncontrada,
+				Mensaje: fmt.Sprintf("No hay ninguna impresora activa con el alias %q.", d.Impresora), Sugerencia: "Consulta GET /v1/impresoras para ver las impresoras disponibles."})
+			c.Codigo, c.Estado = conector.ErrImpresoraNoEncontrada, http.StatusNotFound
+		case err != nil:
+			a.error(w, r, err)
+			return
+		default:
+			c.Pasos = append(c.Pasos, seguridad.Paso{ID: PasoDisponible, Estado: seguridad.PasoOK})
+		}
+	}
+	resp := map[string]any{"pasos": c.Pasos, "codigo": c.Codigo, "estado_http": c.Estado}
+	if c.Identificado != nil {
+		resp["identificado"] = map[string]string{"id": c.Identificado.ID, "nombre": c.Identificado.Nombre}
+	}
+	if c.DuenioOrigen != nil {
+		resp["origen_de"] = map[string]string{"id": c.DuenioOrigen.ID, "nombre": c.DuenioOrigen.Nombre}
+	}
+	responder(w, resp)
 }

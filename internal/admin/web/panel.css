@@ -636,3 +636,17 @@ dialog::backdrop { background: var(--velo); }
 .ticket-rollo.recien { animation: llega .6s ease-out; }
 @keyframes llega { from { transform: translateY(-8px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .en-vivo .punto, .ticket-rollo.recien { animation: none; } }
+
+/* Comprobador de permisos */
+.grupo-campos { border: 0; padding: 0; margin: 0; display: grid; gap: var(--e-2); min-width: 0; }
+.grupo-campos legend { font-weight: 600; font-size: .9rem; padding: 0; margin-bottom: var(--e-2); }
+.pasos-permisos { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--e-2); }
+.paso-permiso { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--e-2); align-items: start; padding: 10px 12px;
+  border: 1px solid var(--borde); border-radius: var(--radio); }
+.paso-permiso > .icono { margin-top: 2px; }
+.paso-permiso .titulo-paso { font-weight: 600; }
+.paso-ok > .icono { color: var(--ok); }
+.paso-falla { border-color: var(--error); background: var(--error-suave); }
+.paso-falla > .icono { color: var(--error); }
+.paso-no_aplica > .icono, .paso-pendiente > .icono { color: var(--tenue); }
+.paso-pendiente { color: var(--tenue); border-style: dashed; }

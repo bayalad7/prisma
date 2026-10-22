@@ -115,6 +115,7 @@ func (a *Admin) Handler() http.Handler {
 	privada("GET /admin/api/pruebas/plantillas", a.plantillas)
 	privada("POST /admin/api/pruebas/vista-previa", a.vistaPreviaPrueba)
 	privada("POST /admin/api/pruebas/imprimir", a.imprimirDocumentoPrueba)
+	privada("POST /admin/api/pruebas/permisos", a.comprobarPermisos)
 
 	privada("GET /admin/api/ajustes", a.leerAjustes)
 	privada("PUT /admin/api/ajustes", a.guardarAjustes)
@@ -167,12 +168,13 @@ var paginasDesarrollo = map[string]struct{ archivo, tipo string }{
 // la pantalla según la ruta (deben coincidir con SECCIONES de panel.js).
 var vistasPanel = []string{"impresoras", "solicitudes", "trabajos", "pruebas", "aplicaciones", "imagenes", "ajustes", "ayuda"}
 
-// rutaRollo es la pantalla del rollo en vivo de una impresora virtual: /admin/pruebas/rollo/{alias}.
-var rutaRollo = regexp.MustCompile(`^pruebas/rollo/[a-z0-9][a-z0-9_-]{0,31}$`)
+// subvistas son pantallas dentro de una sección: el comprobador de permisos y el rollo en vivo de
+// una impresora virtual (/admin/pruebas/rollo/{alias}).
+var subvistas = regexp.MustCompile(`^pruebas/(permisos|rollo/[a-z0-9][a-z0-9_-]{0,31})$`)
 
 func servirEstatico(w http.ResponseWriter, r *http.Request, estaticos fs.FS, desarrollo bool) {
 	nombre := strings.TrimPrefix(r.URL.Path, "/admin/")
-	if nombre == "" || slices.Contains(vistasPanel, nombre) || rutaRollo.MatchString(nombre) {
+	if nombre == "" || slices.Contains(vistasPanel, nombre) || subvistas.MatchString(nombre) {
 		nombre = "index.html"
 	}
 	tipo, ok := tiposEstaticos[nombre]
