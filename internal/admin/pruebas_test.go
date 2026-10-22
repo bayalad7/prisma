@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"bytes"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -138,4 +139,40 @@ func TestComprobarPermisos(t *testing.T) {
 		t.Fatalf("origen de otra aplicación: %s %v", r.Body.String(), otra.datos)
 	}
 	s.exigirError("POST", "/admin/api/pruebas/permisos", map[string]any{"cliente_id": "cli_no_existe"}, 404, "NO_ENCONTRADO")
+}
+
+// TestProbarImpresionNoGuardaElContenido: lo que se prueba desde el panel (vista previa, envío a la
+// virtual, documentos con errores, el rollo y su traza) nunca deja el contenido del ticket en la
+// bitácora ni en la base; el respaldo que descarga el panel tampoco lo tiene.
+func TestProbarImpresionNoGuardaElContenido(t *testing.T) {
+	b := nuevoBanco(t)
+	s := b.configurado()
+	conector.RollosVirtuales.Vaciar("prueba")
+	t.Cleanup(func() { conector.RollosVirtuales.Vaciar("prueba") })
+	s.exigir("POST", "/admin/api/impresoras", perfilVirtual(nil), 200)
+
+	const secreto = "Cliente Ramírez · tarjeta 4111"
+	doc := func(ops ...map[string]any) map[string]any {
+		return map[string]any{"version": "1", "id": "0b6a3d4e-5f60-4a1b-8c2d-3e4f5a6b7c8d", "impresora": "prueba", "operaciones": ops}
+	}
+	texto := map[string]any{"tipo": "texto", "valor": secreto}
+	s.exigir("POST", "/admin/api/pruebas/vista-previa", doc(texto, map[string]any{"tipo": "cortar"}), 200)
+	r := s.exigir("POST", "/admin/api/pruebas/imprimir", doc(texto, map[string]any{"tipo": "qr", "valor": secreto}), 200)
+	trabajo, _ := r.datos["trabajo_id"].(string)
+	s.exigir("POST", "/admin/api/pruebas/vista-previa", doc(texto, map[string]any{"tipo": "codigo_barras", "simbologia": "EAN13", "valor": secreto}), 400)
+	s.exigir("POST", "/admin/api/pruebas/imprimir", doc(map[string]any{"tipo": "inventado", "valor": secreto}), 400)
+	s.exigir("GET", "/admin/api/impresoras/prueba/rollo", nil, 200)
+	s.exigir("GET", "/admin/api/impresoras/prueba/rollo/"+trabajo+"/traza", nil, 200)
+	s.exigir("GET", "/admin/api/impresoras/prueba/rollo/"+trabajo+"/imagen", nil, 200)
+
+	if ticket, ok := conector.RollosVirtuales.Ticket("prueba", trabajo); !ok || !bytes.Contains(ticket.Datos, []byte("tarjeta 4111")) {
+		t.Fatal("el ticket debe estar en el rollo, en memoria")
+	}
+	if bit := b.bitacora.String(); strings.Contains(bit, "Ramírez") || strings.Contains(bit, "4111") || !strings.Contains(bit, `"virtual":true`) {
+		t.Fatalf("la bitácora no debe tener el contenido del ticket y sí la marca virtual:\n%s", bit)
+	}
+	respaldo := s.exigir("GET", "/admin/api/respaldo", nil, 200).Body.Bytes()
+	if len(respaldo) == 0 || bytes.Contains(respaldo, []byte("Ramírez")) || bytes.Contains(respaldo, []byte("tarjeta 4111")) {
+		t.Fatalf("el respaldo no debe tener el contenido del ticket (%d bytes)", len(respaldo))
+	}
 }

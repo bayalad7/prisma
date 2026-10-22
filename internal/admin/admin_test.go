@@ -50,6 +50,26 @@ type banco struct {
 
 	mu    sync.Mutex
 	ahora time.Time
+
+	bitacora *bitacoraPrueba // lo que el puente y el panel escriben en la bitácora
+}
+
+// bitacoraPrueba guarda la bitácora en memoria; la cola y los manejadores escriben a la vez.
+type bitacoraPrueba struct {
+	mu  sync.Mutex
+	buf bytes.Buffer
+}
+
+func (b *bitacoraPrueba) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.Write(p)
+}
+
+func (b *bitacoraPrueba) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.String()
 }
 
 func (b *banco) reloj() time.Time {
@@ -76,10 +96,12 @@ func nuevoBanco(t *testing.T) *banco {
 	t.Cleanup(q.Cerrar)
 	cfg := config.PorDefecto()
 	cfg.Datos.Ruta = t.TempDir()
-	srv := servidor.Nuevo(servidor.Opciones{Almacen: alm, Cola: q, Limites: config.Limites{}, Version: "prueba", TiempoRespuesta: 10 * time.Second})
-	b := &banco{t: t, alm: alm, srv: srv, ahora: time.Date(2026, 10, 19, 12, 0, 0, 0, time.Local)}
+	bitacora := &bitacoraPrueba{}
+	log := slog.New(slog.NewJSONHandler(bitacora, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	srv := servidor.Nuevo(servidor.Opciones{Almacen: alm, Cola: q, Limites: config.Limites{}, Version: "prueba", TiempoRespuesta: 10 * time.Second, Log: log})
+	b := &banco{t: t, alm: alm, srv: srv, ahora: time.Date(2026, 10, 19, 12, 0, 0, 0, time.Local), bitacora: bitacora}
 	b.aviso = &actualizacion.Aviso{}
-	b.adm = Nuevo(Opciones{Almacen: alm, Servidor: srv, Cola: q, Config: cfg, Version: "prueba", Ahora: b.reloj, Aviso: b.aviso})
+	b.adm = Nuevo(Opciones{Almacen: alm, Servidor: srv, Cola: q, Config: cfg, Version: "prueba", Ahora: b.reloj, Aviso: b.aviso, Log: log})
 	srv.MontarPanel(b.adm.Handler())
 	b.h = srv.Handler()
 	return b
