@@ -173,7 +173,9 @@
     el.quitarError = () => { error.hidden = true; control.removeAttribute('aria-invalid'); describir(); };
     el.revisar = () => { const m = validar ? validar(control.value) : ''; el.ponerError(m); return !m; };
     if (validar) {
-      control.addEventListener('blur', el.revisar);
+      // Si el foco pasa a un botón, ese botón valida el formulario: mostrar el error aquí movería el
+      // botón bajo el cursor y el clic se perdería.
+      control.addEventListener('blur', (ev) => { if (!ev.relatedTarget?.closest('button, a')) el.revisar(); });
       control.addEventListener('input', () => { if (!error.hidden) el.revisar(); });
     }
     describir();

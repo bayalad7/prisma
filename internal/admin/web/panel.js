@@ -556,7 +556,8 @@
             : h('pre', { class: 'papel', tabindex: '0', 'aria-label': 'Vista del ticket' }, r.vista)) }).then(() => { if (imp.virtual) recargar(); });
       } catch (e) { mostrar(`${e.codigo ? e.codigo + ': ' : ''}${e.message} ${e.sugerencia || ''}`, 'error'); }
     } }, 'Ticket de diagnóstico');
-    const bPaginas = h('button', { class: 'boton chico', type: 'button', onclick: () => probarPaginas(imp, bPaginas, vista) }, 'Probar páginas de códigos');
+    const bPaginas = UI.boton({ texto: TAc.boton, chico: true });
+    bPaginas.addEventListener('click', async () => { if (await probarAcentos(imp, bPaginas)) recargar(); });
     const perfil = `${imp.ancho_mm} mm · ${imp.columnas} columnas · ${imp.pagina_codigos} (ESC t ${imp.comando_pagina_codigos})`;
     const capacidades = [
       imp.soporta_corte ? 'cuchilla' : 'sin cuchilla', imp.soporta_cajon && 'cajón',
@@ -638,93 +639,260 @@
     recargar();
   }
 
-  async function probarPaginas(imp, boton, vista) {
-    let r;
-    try { r = await conEspera(boton, () => api.post(`/impresoras/${enc(imp.alias)}/paginas-codigos`)); } catch (e) { avisoError(e); return; }
-    const opciones = h('div', { class: 'opciones' }, PAGINAS.map((p) => h('label', { class: 'opcion' },
-      h('input', { type: 'radio', name: 'pagina', value: p.pagina, checked: p.pagina === imp.pagina_codigos }),
-      h('span', { class: 'titulo-opcion mono' }, `ESC t ${p.comando}`), h('span', { class: 'tenue' }, p.etiqueta))));
-    const elegida = await dialogo({
-      titulo: 'Elige la página de códigos', ancho: 620,
-      cuerpo: h('div', { class: 'pila' },
-        h('p', {}, 'Se imprimió la misma línea con cuatro páginas de códigos. Busca en el papel la que muestra bien todos los caracteres y elígela.'),
-        h('pre', { class: 'papel', tabindex: '0', 'aria-label': 'Vista del ticket' }, r.vista), opciones),
-      acciones: [{ texto: 'Cancelar', valor: null }, { texto: 'Usar la elegida', clase: 'primario', valor: 'elegir' }],
+  // Prueba de acentos: imprime la línea de prueba con las 4 páginas de códigos, una por renglón, y
+  // la persona elige el renglón que se lee bien. Devuelve la impresora actualizada, o null.
+  const TAc = window.PRISMA_TEXTOS.acentos;
+  async function probarAcentos(imp, b) {
+    try { await conEspera(b, () => api.post(`/impresoras/${enc(imp.alias)}/paginas-codigos`)); } catch (e) { avisoError(e); return null; }
+    const opciones = h('div', { class: 'opciones', role: 'radiogroup', 'aria-label': TAc.pregunta }, PAGINAS.map((p, k) => h('label', { class: 'opcion' },
+      h('input', { type: 'radio', name: 'renglon', value: p.pagina, checked: p.pagina === imp.pagina_codigos }),
+      h('span', { class: 'titulo-opcion' }, TAc.renglon(k + 1)), h('span', { class: 'tenue mono' }, TAc.empieza(`ESC t ${p.comando} ${p.pagina}`)))));
+    const ninguno = h('div', { hidden: true }, UI.nota({ tipo: 'info', texto: TAc.ningunoTexto }));
+    const eleccion = await dialogo({
+      titulo: TAc.titulo, ancho: 640,
+      cuerpo: h('div', { class: 'pila-amplia' }, h('p', {}, TAc.pregunta), opciones, ninguno),
+      acciones: [
+        { texto: TAc.ninguno, clase: 'texto', valor: null, antes: () => { ninguno.hidden = false; return false; } },
+        { texto: 'Cancelar', valor: null },
+        { texto: TAc.usar, clase: 'primario', valor: 'usar', antes: () => {
+          if (opciones.querySelector('input:checked')) return true;
+          aviso(TAc.elegirUno, 'aviso');
+          return false;
+        } },
+      ],
     });
-    if (elegida !== 'elegir') return;
-    const sel = opciones.querySelector('input:checked');
-    if (!sel) return;
-    const p = PAGINAS.find((x) => x.pagina === sel.value);
+    if (eleccion !== 'usar') return null;
+    const p = PAGINAS.find((x) => x.pagina === opciones.querySelector('input:checked').value);
     try {
-      await api.put(`/impresoras/${enc(imp.alias)}`, { ...imp, pagina_codigos: p.pagina, comando_pagina_codigos: p.comando });
-      aviso(`«${imp.alias}» ahora usa ${p.etiqueta}.`, 'ok'); recargar();
-    } catch (e) { avisoError(e); }
+      const actualizada = await api.put(`/impresoras/${enc(imp.alias)}`, { ...imp, pagina_codigos: p.pagina, comando_pagina_codigos: p.comando });
+      aviso(TAc.guardado(imp.alias), 'ok');
+      return actualizada;
+    } catch (e) { avisoError(e); return null; }
   }
 
-  // Alta guiada: 1) cómo está conectada, 2) perfil, 3) probar y guardar.
-  function asistenteImpresora(vista) {
-    const borrador = { tipo: 'red', destino: '', baudios: 0 };
-    const pasos = h('div', { class: 'pasos', 'aria-label': 'Pasos' },
-      h('span', { 'aria-current': 'step' }, '1. Conexión'), h('span', {}, '2. Perfil'), h('span', {}, '3. Probar y guardar'));
-    const cuerpo = h('div', { class: 'pila' });
-    vaciar(vista, cintaDemo(),
-      encabezado('Agregar impresora', 'Elige cómo está conectada la impresora a este equipo.',
-        h('button', { class: 'boton', type: 'button', onclick: recargar }, 'Cancelar')),
-      pasos, cuerpo);
-
-    const elegir = (tipo, destino, baudios = 0) => {
-      Object.assign(borrador, { tipo, destino, baudios });
-      pasos.children[0].removeAttribute('aria-current'); pasos.children[1].setAttribute('aria-current', 'step');
-      formularioImpresora(vista, null, borrador, pasos);
-    };
-    const filaDetectada = (d) => h('button', { class: 'opcion', type: 'button', onclick: () => elegir(d.tipo, d.destino) },
-      h('span', { class: 'fila' }, h('span', { class: 'pastilla sin-punto acento' }, TIPOS_CONEXION[d.tipo]), h('span', { class: 'titulo-opcion mono' }, d.destino)),
-      h('span', { class: 'tenue' }, d.detalle || ''));
-
-    const detectadas = h('div', { class: 'opciones' }, h('p', { class: 'tenue' }, 'Buscando…'));
-    const redResultados = h('div', { class: 'opciones' });
-    const bRed = h('button', { class: 'boton', type: 'button', onclick: async () => {
-      try {
-        const lista = await conEspera(bRed, () => api.get('/detectar?red=1'));
-        vaciar(redResultados, lista.length ? lista.map(filaDetectada) : h('p', { class: 'tenue' }, 'Ningún equipo de la red respondió en el puerto 9100.'));
-      } catch (e) { avisoError(e); }
-    } }, 'Buscar en la red (puerto 9100)');
-
-    const tipoManual = h('select', { id: 'tipo-manual' }, Object.entries(TIPOS_CONEXION).filter(([v]) => v !== 'virtual').map(([v, t]) => h('option', { value: v }, t)));
-    const destinoManual = h('input', { type: 'text', id: 'destino-manual', class: 'mono', placeholder: '192.168.1.50:9100' });
-    const ejemplos = { red: '192.168.1.50:9100', usb: 'Nombre en Windows, /dev/usb/lp0 o cola de CUPS', bluetooth: 'COM5, /dev/rfcomm0 o /dev/cu.Impresora', archivo: 'Carpeta, p. ej. C:\\tickets' };
-    tipoManual.addEventListener('change', () => { destinoManual.placeholder = ejemplos[tipoManual.value]; });
-
-    agregar(cuerpo,
-      h('section', { class: 'tarjeta' }, h('div', { class: 'fila-entre' }, h('div', { class: 'pila' }, h('h2', {}, TV.crearTitulo),
-        h('p', { class: 'tenue pequeno' }, TV.crearTexto)), botonCrearVirtual())),
-      h('section', { class: 'tarjeta' }, h('h2', {}, 'Detectadas en este equipo'),
-        h('p', { class: 'tenue pequeno' }, 'Impresoras instaladas (USB) y puertos serie (Bluetooth emparejado).'), detectadas),
-      h('section', { class: 'tarjeta' }, h('h2', {}, 'Impresoras de red'),
-        h('p', { class: 'tenue pequeno' }, 'Revisa las direcciones de la red local que aceptan conexiones en el puerto 9100. Tarda hasta 15 segundos.'),
-        h('div', {}, bRed), redResultados),
-      h('section', { class: 'tarjeta' }, h('h2', {}, 'Escribir la dirección'),
-        h('div', { class: 'campos' },
-          h('label', { class: 'campo', for: 'tipo-manual' }, h('span', {}, 'Tipo de conexión'), tipoManual),
-          h('label', { class: 'campo', for: 'destino-manual' }, h('span', {}, 'Destino'), destinoManual)),
-        h('div', {}, h('button', { class: 'boton primario', type: 'button', onclick: () => {
-          if (!destinoManual.value.trim()) { destinoManual.focus(); aviso('Escribe el destino de la impresora.', 'error'); return; }
-          elegir(tipoManual.value, destinoManual.value.trim());
-        } }, 'Continuar'))));
-
-    api.get('/detectar').then((lista) => {
-      vaciar(detectadas, lista.length ? lista.map(filaDetectada) : h('p', { class: 'tenue' }, 'No se encontraron impresoras USB ni puertos serie.'));
-    }).catch((e) => vaciar(detectadas, h('p', { class: 'nota error' }, e.message)));
+  // ---------------------------------------------------------------------------------------------
+  // Asistente para agregar una impresora: 1) qué impresora es, 2) cómo está conectada y su nombre,
+  // 3) ticket de prueba con las preguntas «¿salió?» y «¿se leen los acentos?».
+  // ---------------------------------------------------------------------------------------------
+  const TA = window.PRISMA_TEXTOS.asistente;
+  // Impresoras del sistema que la detección encuentra pero no son de tickets (PDF, XPS, fax…).
+  const NO_TICKETS = /pdf|xps|onenote|fax|document writer|send to|enviar a|microsoft/i;
+  const ICONO_CONEXION = { red: 'red', usb: 'usb', bluetooth: 'bluetooth', archivo: 'carpeta' };
+  const PATRON_ALIAS = /^[a-z0-9][a-z0-9_-]{0,31}$/;
+  // Propone un alias a partir del nombre: «Caja principal» → caja-principal (único).
+  function aliasDe(nombre, usados) {
+    const base = nombre.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 28) || 'impresora';
+    let alias = base;
+    for (let n = 2; usados.has(alias); n++) alias = `${base}-${n}`;
+    return alias;
   }
 
-  // Formulario de perfil: alta (después del asistente) o edición.
-  function formularioImpresora(vista, existente, borrador, pasos) {
-    const i = existente ? { ...existente } : {
-      alias: '', nombre: '', tipo: borrador.tipo, destino: borrador.destino, ancho_mm: 80, ...PERFILES[80],
-      pagina_codigos: 'CP858', comando_pagina_codigos: 19, soporta_corte: true, soporta_cajon: false, soporta_qr_nativo: true,
-      soporta_codigo_barras_nativo: true, soporta_imagen: true, baudios: borrador.baudios || 0, activa: true,
-      confirmar_impresion: false, simulacion: 'normal', simulacion_retraso_ms: 3000, simulacion_falla_pct: 30, tickets_en_memoria: 20,
+  async function asistenteImpresora(vista) {
+    const usados = new Set((await api.get('/impresoras')).map((x) => x.alias));
+    const w = { tipo: '80' };
+    const indicador = UI.pasos(TA.pasos, 0);
+    const cuerpo = h('div', { class: 'pila-amplia' });
+    vaciar(vista, cintaDemo(), encabezado(TA.titulo, TA.subtitulo, h('a', { class: 'boton', href: rutaDe('impresoras') }, TA.cancelar)), indicador, cuerpo);
+    const titulo = vista.querySelector('h1');
+    titulo.tabIndex = -1;
+    const irPaso = (n, pintar) => { indicador.ir(n); vaciar(cuerpo, pintar()); titulo.focus({ preventScroll: true }); window.scrollTo(0, 0); };
+    const boton = (texto, variante, alPulsar, extra = {}) => {
+      const b = UI.boton({ texto, variante, ...extra });
+      b.addEventListener('click', () => alPulsar(b));
+      return b;
     };
+
+    function pasoTipo() {
+      const opcion = (valor, ic, t, d) => h('label', { class: 'opcion' },
+        h('input', { type: 'radio', name: 'tipo-imp', value: valor, checked: w.tipo === valor }),
+        UI.icono(ic), h('span', { class: 'titulo-opcion' }, t), h('span', { class: 'tenue' }, d));
+      const grupo = h('div', { class: 'opciones' },
+        opcion('80', 'impresora', TA.tipo.ochenta, TA.tipo.ochentaTexto),
+        opcion('58', 'ticket', TA.tipo.cincuenta, TA.tipo.cincuentaTexto),
+        opcion('virtual', 'virtual', TA.tipo.virtual, TA.tipo.virtualTexto));
+      return h('div', { class: 'pila-amplia' },
+        h('fieldset', {}, h('legend', {}, TA.tipo.pregunta), grupo),
+        h('p', { class: 'tenue pequeno' }, TA.tipo.ayuda),
+        h('div', { class: 'fila-entre' }, h('span'), boton(TA.continuar, 'primario', () => {
+          w.tipo = grupo.querySelector('input:checked').value;
+          irPaso(1, pasoConexion);
+        }, { icono: 'flecha-der' })));
+    }
+
+    function pasoConexion() {
+      const virtual = w.tipo === 'virtual';
+      const nombre = UI.entrada({ value: w.nombre || (virtual ? TV.nombre : ''), autocomplete: 'off' });
+      const alias = UI.entrada({ mono: true, autocomplete: 'off', value: w.alias || (virtual ? aliasDe('prueba', usados) : '') });
+      let aliasEditado = Boolean(w.alias);
+      alias.addEventListener('input', () => { aliasEditado = true; });
+      nombre.addEventListener('input', () => { if (!aliasEditado) alias.value = aliasDe(nombre.value, usados); });
+      const cNombre = UI.campo({ id: 'as-nombre', etiqueta: TA.conexion.nombre, control: nombre, ayuda: TA.conexion.nombreAyuda,
+        validar: (v) => (v.trim() ? '' : TA.conexion.nombreFalta) });
+      const cAlias = UI.campo({ id: 'as-alias', etiqueta: TA.conexion.alias, control: alias, ayuda: TA.conexion.aliasAyuda,
+        info: { texto: TA.conexion.aliasInfo },
+        validar: (v) => (!v ? TA.conexion.aliasFalta : !PATRON_ALIAS.test(v) ? TA.conexion.aliasMal : usados.has(v) ? TA.conexion.aliasUsado : '') });
+      const nombres = h('div', { class: 'campos' }, cNombre, cAlias);
+      const resultado = h('div', { 'aria-live': 'polite' });
+      const atras = boton(TA.atras, '', () => irPaso(0, pasoTipo), { icono: 'flecha-izq' });
+      const datosBase = () => {
+        const mm = virtual ? 80 : Number(w.tipo);
+        return { alias: alias.value.trim(), nombre: nombre.value.trim(), ancho_mm: mm, ...PERFILES[mm], pagina_codigos: 'CP858',
+          comando_pagina_codigos: 19, soporta_corte: true, soporta_cajon: false, soporta_qr_nativo: true, soporta_codigo_barras_nativo: true,
+          soporta_imagen: true, activa: true, confirmar_impresion: false };
+      };
+      const guardar = async (b, datos) => {
+        w.nombre = datos.nombre; w.alias = datos.alias;
+        try {
+          w.imp = await conEspera(b, () => api.post('/impresoras', datos));
+          usados.add(w.imp.alias);
+          irPaso(2, pasoProbar);
+        } catch (e) {
+          if (e.codigo === 'ALIAS_DUPLICADO') { usados.add(datos.alias); cAlias.revisar(); alias.focus(); return; }
+          vaciar(resultado, UI.nota({ tipo: 'error', titulo: e.message, texto: e.sugerencia }));
+        }
+      };
+
+      if (virtual) {
+        return h('div', { class: 'pila-amplia' }, UI.nota({ tipo: 'info', titulo: TV.crearTitulo, texto: TV.crearTexto }), nombres, resultado,
+          h('div', { class: 'fila-entre' }, atras, boton(TA.conexion.guardarVirtual, 'primario', (b) => {
+            if (UI.revisarCampos([cNombre, cAlias])) guardar(b, { ...datosBase(), tipo: 'virtual', destino: '' });
+          })));
+      }
+
+      // Impresora física: detectadas, escaneo de red o dirección escrita a mano.
+      let elegida = w.conexion || null;
+      const falta = h('p', { class: 'campo-error', hidden: true }, UI.icono('error'), h('span', {}, TA.conexion.faltaDestino));
+      const listaDet = h('div', { class: 'opciones', role: 'radiogroup', 'aria-label': TA.conexion.detectadas }, h('p', { class: 'tenue' }, TA.conexion.buscando));
+      let detectadas = [];
+      const opcionDetectada = (d) => {
+        const tickets = !NO_TICKETS.test(`${d.destino} ${d.detalle || ''}`);
+        const input = h('input', { type: 'radio', name: 'detectada', checked: Boolean(elegida && elegida.destino === d.destino && elegida.tipo === d.tipo) });
+        input.addEventListener('change', () => {
+          elegida = { tipo: d.tipo, destino: d.destino };
+          destinoManual.value = ''; falta.hidden = true;
+          if (!nombre.value.trim()) { nombre.value = d.destino; nombre.dispatchEvent(new Event('input')); }
+        });
+        return { tickets, el: h('label', { class: 'opcion' }, input,
+          h('span', { class: 'fila' }, UI.icono(ICONO_CONEXION[d.tipo] || 'impresora'), h('span', { class: 'titulo-opcion' }, d.destino),
+            !tickets && UI.insignia('desconocido', TA.conexion.noTickets, { icono: 'info' })),
+          h('span', { class: 'tenue' }, [TA.conexion.tipos[d.tipo], d.detalle].filter(Boolean).join(' · '))) };
+      };
+      const pintarDetectadas = () => {
+        const ops = detectadas.map(opcionDetectada).sort((a, b) => Number(b.tickets) - Number(a.tickets));
+        vaciar(listaDet, ops.length ? ops.map((o) => o.el) : h('p', { class: 'tenue' }, TA.conexion.ninguna));
+      };
+      api.get('/detectar').then((l) => { detectadas = l; pintarDetectadas(); })
+        .catch((e) => vaciar(listaDet, UI.nota({ tipo: 'error', titulo: e.message, texto: e.sugerencia })));
+      const bRed = boton(TA.conexion.buscarRed, '', async (b) => {
+        try {
+          const l = await conEspera(b, () => api.get('/detectar?red=1'));
+          const nuevas = l.filter((x) => !detectadas.some((y) => y.tipo === x.tipo && y.destino === x.destino));
+          detectadas = [...detectadas, ...nuevas];
+          pintarDetectadas();
+          if (!l.some((x) => x.tipo === 'red')) aviso(TA.conexion.redNinguna);
+        } catch (e) { avisoError(e); }
+      }, { icono: 'buscar', chico: true, title: TA.conexion.buscarRedTexto });
+
+      const tipoManual = UI.selector({ opciones: Object.entries(TA.conexion.tipos), valor: elegida ? elegida.tipo : 'red' });
+      const destinoManual = UI.entrada({ mono: true, autocomplete: 'off' });
+      const cTipo = UI.campo({ id: 'as-tipo', etiqueta: TA.conexion.tipo, control: tipoManual });
+      const cDestino = UI.campo({ id: 'as-destino', etiqueta: TA.conexion.destino, control: destinoManual, ayuda: TA.conexion.ayudas[tipoManual.value] });
+      tipoManual.addEventListener('change', () => { cDestino.querySelector('.ayuda').textContent = TA.conexion.ayudas[tipoManual.value]; });
+      destinoManual.addEventListener('input', () => {
+        if (!destinoManual.value.trim()) return;
+        elegida = null; falta.hidden = true;
+        for (const i of listaDet.querySelectorAll('input')) i.checked = false;
+      });
+      const manual = h('details', { class: 'avanzado' }, h('summary', {}, TA.conexion.manual), h('div', {}, h('div', { class: 'campos' }, cTipo, cDestino)));
+      const conexion = () => (destinoManual.value.trim() ? { tipo: tipoManual.value, destino: destinoManual.value.trim() } : elegida);
+
+      const casilla = (id, texto, marcado) => UI.casilla({ id, texto, marcado });
+      const caps = {
+        corte: casilla('as-corte', TA.conexion.cuchilla, true), cajon: casilla('as-cajon', TA.conexion.cajon, false),
+        qr: casilla('as-qr', TA.conexion.qr, true), barras: casilla('as-barras', TA.conexion.barras, true), imagen: casilla('as-imagen', TA.conexion.imagenes, true),
+      };
+      const confirmarImp = UI.interruptor({ id: 'as-confirmar', texto: TA.conexion.confirmar, ayuda: TA.conexion.confirmarAyuda, marcado: false });
+      const avanzadas = h('details', { class: 'avanzado' }, h('summary', {}, TA.conexion.avanzadas),
+        h('div', {}, h('p', { class: 'tenue pequeno' }, TA.conexion.avanzadasTexto), h('fieldset', {}, Object.values(caps)), confirmarImp));
+
+      const bProbar = boton(TA.conexion.probar, '', async (b) => {
+        const c = conexion();
+        if (!c) { falta.hidden = false; return; }
+        try {
+          await conEspera(b, () => api.post('/impresoras/probar-destino', { tipo: c.tipo, destino: c.destino, baudios: 0 }));
+          vaciar(resultado, UI.nota({ tipo: 'ok', titulo: TA.conexion.probarOk }));
+        } catch (e) { vaciar(resultado, UI.nota({ tipo: 'error', titulo: e.message, texto: e.sugerencia })); }
+      }, { icono: 'red' });
+      const bGuardar = boton(TA.conexion.guardar, 'primario', (b) => {
+        const c = conexion();
+        const nombresOk = UI.revisarCampos([cNombre, cAlias]);
+        if (!c) { falta.hidden = false; if (nombresOk) listaDet.scrollIntoView({ block: 'center' }); return; }
+        if (!nombresOk) return;
+        w.conexion = c;
+        guardar(b, { ...datosBase(), tipo: c.tipo, destino: c.destino, soporta_corte: caps.corte.input.checked,
+          soporta_cajon: caps.cajon.input.checked, soporta_qr_nativo: caps.qr.input.checked, soporta_codigo_barras_nativo: caps.barras.input.checked,
+          soporta_imagen: caps.imagen.input.checked, confirmar_impresion: confirmarImp.input.checked });
+      });
+
+      return h('div', { class: 'pila-amplia' },
+        UI.tarjeta({ titulo: TA.conexion.detectadas, subtitulo: TA.conexion.detectadasTexto, icono: 'buscar', acciones: bRed }, listaDet, manual, falta),
+        nombres, avanzadas, resultado,
+        h('div', { class: 'fila-entre' }, atras, h('div', { class: 'acciones' }, bProbar, bGuardar)));
+    }
+
+    function pasoProbar() {
+      const imp = w.imp;
+      const caja = h('div', { class: 'pila-amplia' });
+      const fallo = () => h('div', { class: 'acciones' },
+        boton(TA.probar.reintentar, 'primario', imprimir, { icono: 'recargar' }),
+        boton(TA.probar.editar, '', () => formularioImpresora(vista, w.imp), { icono: 'lapiz' }));
+      const final = () => UI.nota({ tipo: 'ok', titulo: TA.probar.listo(w.imp.alias), texto: TA.probar.listoTexto, acciones: [
+        h('a', { class: 'boton chico primario', href: rutaDe('aplicaciones') }, TA.probar.autorizar),
+        h('a', { class: 'boton chico', href: rutaDe('impresoras') }, TA.probar.irImpresoras),
+        boton(TA.probar.otra, 'texto', () => asistenteImpresora(vista), { chico: true }),
+      ] });
+      function mostrar(r) {
+        const ticket = UI.tarjeta({ titulo: imp.virtual ? TA.probar.enviadoVirtual : TA.probar.asiDebeVerse, icono: 'ticket' },
+          UI.ticketPapel({ imagen: r.imagen, anchoMm: imp.ancho_mm }));
+        if (imp.virtual) {
+          vaciar(caja, h('div', { class: 'rejilla' }, ticket, h('div', {}, final())));
+          return;
+        }
+        const preguntas = h('div', { class: 'pila-amplia' });
+        const preguntarAcentos = () => vaciar(preguntas, h('fieldset', {}, h('legend', {}, TA.probar.acentos),
+          h('p', { class: 'tenue pequeno' }, TA.probar.acentosTexto),
+          h('div', { class: 'acciones' },
+            boton(TA.probar.acentosSi, 'primario', () => vaciar(preguntas, final())),
+            boton(TA.probar.acentosNo, '', async (b) => {
+              const actualizada = await probarAcentos(w.imp, b);
+              if (actualizada) { w.imp = actualizada; vaciar(preguntas, final()); }
+            }))));
+        vaciar(preguntas, h('fieldset', {}, h('legend', {}, TA.probar.salio), h('div', { class: 'acciones' },
+          boton(TA.probar.si, 'primario', preguntarAcentos),
+          boton(TA.probar.no, '', () => vaciar(preguntas, UI.nota({ tipo: 'aviso', titulo: TA.probar.noSalio, acciones: fallo() },
+            h('ul', {}, TA.probar.ayudaNoSalio.map((t) => h('li', {}, t)))))))));
+        vaciar(caja, UI.nota({ tipo: r.aviso ? 'aviso' : 'ok', titulo: TA.probar.enviado, texto: r.aviso }),
+          h('div', { class: 'rejilla' }, ticket, UI.tarjeta({ titulo: TA.probar.revisa, icono: 'check' }, preguntas)));
+      }
+      async function imprimir() {
+        vaciar(caja, h('p', { class: 'tenue', role: 'status' }, TA.probar.imprimiendo), UI.esqueleto({ lineas: 4 }));
+        try {
+          mostrar(await api.post(`/impresoras/${enc(imp.alias)}/diagnostico`));
+        } catch (e) {
+          vaciar(caja, UI.nota({ tipo: 'error', titulo: TA.probar.noSalio, texto: [e.message, e.sugerencia].filter(Boolean).join(' '), acciones: fallo() }));
+        }
+      }
+      imprimir();
+      return caja;
+    }
+
+    irPaso(0, pasoTipo);
+  }
+
+  // Formulario para editar el perfil de una impresora (las altas usan el asistente).
+  function formularioImpresora(vista, existente) {
+    const i = { ...existente };
     const campo = (id, etiqueta, control, ayuda) => h('label', { class: 'campo', for: id }, h('span', {}, etiqueta), control, ayuda && h('span', { class: 'ayuda' }, ayuda));
     const alias = h('input', { type: 'text', id: 'alias', class: 'mono', value: i.alias, required: true, pattern: '[a-z0-9][a-z0-9_\\-]{0,31}', autocomplete: 'off', placeholder: 'caja' });
     const nombre = h('input', { type: 'text', id: 'nombre', value: i.nombre, placeholder: 'Caja principal' });
@@ -802,14 +970,14 @@
       } catch (e) { resultado.className = 'resultado nota error'; resultado.textContent = `${e.message} ${e.sugerencia || ''}`; }
       resultado.hidden = false;
     } }, 'Probar conexión');
-    const bGuardar = h('button', { class: 'boton primario', type: 'submit' }, existente ? 'Guardar cambios' : 'Guardar impresora');
+    const bGuardar = h('button', { class: 'boton primario', type: 'submit' }, 'Guardar cambios');
     const form = h('form', { class: 'pila', onsubmit: async (ev) => {
       ev.preventDefault();
       if (!alias.checkValidity()) { aviso('El alias solo admite minúsculas, dígitos, - y _ (hasta 32 caracteres).', 'error'); alias.focus(); return; }
       const d = leer();
       try {
-        await conEspera(bGuardar, () => existente ? api.put(`/impresoras/${enc(existente.alias)}`, d) : api.post('/impresoras', d));
-        aviso(existente ? 'Cambios guardados.' : `Impresora «${d.alias}» agregada. Imprime el ticket de diagnóstico para comprobarla.`, 'ok');
+        await conEspera(bGuardar, () => api.put(`/impresoras/${enc(existente.alias)}`, d));
+        aviso('Cambios guardados.', 'ok');
         ir('impresoras');
       } catch (e) { avisoError(e); }
     } },
@@ -823,7 +991,7 @@
       h('div', { class: 'fila' }, ancho, h('span', { class: 'tenue pequeno' }, '58 mm: 32 columnas · 80 mm: 48 columnas')),
       h('details', { class: 'avanzado' }, h('summary', {}, 'Opciones avanzadas'),
         h('div', {},
-          h('div', { class: 'campos' }, campo('pagina', 'Página de códigos', pagina, 'Si los acentos salen mal, usa «Probar páginas de códigos».'), campo('comando', 'Comando ESC t', comando)),
+          h('div', { class: 'campos' }, campo('pagina', 'Página de códigos', pagina, 'Si los acentos salen mal, usa «Probar acentos».'), campo('comando', 'Comando ESC t', comando)),
           h('div', { class: 'campos' }, campo('columnas', 'Columnas (fuente A)', columnas), campo('columnas-b', 'Columnas (fuente B)', columnasB), campo('ancho-px', 'Puntos por línea', anchoPx))))),
     h('section', { class: 'tarjeta' }, h('h2', {}, 'Capacidades'),
       h('fieldset', {}, h('legend', { class: 'tenue pequeno' }, 'Lo que no tenga, PRISMA lo resuelve de otra forma o lo omite con un aviso.'),
@@ -831,13 +999,7 @@
     resultado,
     h('div', { class: 'acciones' }, bProbar, bGuardar));
 
-    if (pasos) {
-      vaciar(vista, cintaDemo(), encabezado('Agregar impresora', 'Revisa el perfil y prueba la conexión antes de guardar.',
-        h('button', { class: 'boton', type: 'button', onclick: recargar }, 'Cancelar')), pasos, form);
-      bProbar.addEventListener('click', () => { pasos.children[1].removeAttribute('aria-current'); pasos.children[2].setAttribute('aria-current', 'step'); });
-    } else {
-      vaciar(vista, cintaDemo(), encabezado(`Editar «${i.alias}»`, null, h('button', { class: 'boton', type: 'button', onclick: recargar }, 'Cancelar')), form);
-    }
+    vaciar(vista, cintaDemo(), encabezado(`Editar «${i.alias}»`, null, h('button', { class: 'boton', type: 'button', onclick: recargar }, 'Cancelar')), form);
     alias.focus();
   }
 
