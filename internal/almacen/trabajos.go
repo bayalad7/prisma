@@ -144,7 +144,16 @@ func (r *RepoTrabajos) Listar(ctx context.Context, f FiltroTrabajos) ([]Trabajo,
 
 // Contar devuelve cuántos trabajos hay en cada estado entre los creados desde la fecha indicada.
 func (r *RepoTrabajos) Contar(ctx context.Context, desde time.Time) (map[string]int, error) {
-	filas, err := r.a.bd().QueryContext(ctx, `SELECT estado, count(*) FROM trabajos WHERE creado >= ? GROUP BY estado`, ms(desde))
+	return r.contar(ctx, `SELECT estado, count(*) FROM trabajos WHERE creado >= ? GROUP BY estado`, ms(desde))
+}
+
+// ContarDe es Contar limitado a los trabajos de un cliente.
+func (r *RepoTrabajos) ContarDe(ctx context.Context, desde time.Time, clienteID string) (map[string]int, error) {
+	return r.contar(ctx, `SELECT estado, count(*) FROM trabajos WHERE creado >= ? AND cliente_id = ? GROUP BY estado`, ms(desde), clienteID)
+}
+
+func (r *RepoTrabajos) contar(ctx context.Context, consulta string, args ...any) (map[string]int, error) {
+	filas, err := r.a.bd().QueryContext(ctx, consulta, args...)
 	if err != nil {
 		return nil, err
 	}
