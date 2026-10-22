@@ -1,0 +1,42 @@
+{
+  "axe": {
+    "asistente-escritorio": [],
+    "diagnostico-escritorio": [],
+    "rollo-escritorio": [],
+    "formulario-escritorio": [],
+    "trabajos-escritorio": [],
+    "rollo-celular": [],
+    "trabajos-celular": []
+  },
+  "desborde": {
+    "asistente-escritorio": 0,
+    "diagnostico-escritorio": 0,
+    "rollo-escritorio": 0,
+    "formulario-escritorio": 0,
+    "trabajos-escritorio": 0,
+    "rollo-celular": 0,
+    "trabajos-celular": 0
+  },
+  "consola": [],
+  "api": [
+    {
+      "archivo": "venta-simple.json",
+      "estado": 200,
+      "trabajo": "trb_0b8a97cef59f741f",
+      "advertencias": []
+    },
+    {
+      "archivo": "comanda-cocina.json",
+      "estado": 200,
+      "trabajo": "trb_c6542d73e0ca5985",
+      "advertencias": []
+    },
+    {
+      "archivo": "venta-simple.json",
+      "estado": 503,
+      "codigo": "IMPRESORA_INALCANZABLE",
+      "trabajo": "trb_8afc3ccf39c22094",
+      "advertencias": []
+    }
+  ]
+}

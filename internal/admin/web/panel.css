@@ -480,7 +480,8 @@ pre.codigo {
   -webkit-mask: radial-gradient(circle 5px at 50% 100%, transparent 98%, #000) 0 0 / 12px 100% repeat-x;
           mask: radial-gradient(circle 5px at 50% 100%, transparent 98%, #000) 0 0 / 12px 100% repeat-x;
 }
-.ticket-papel img { display: block; max-width: 100%; height: auto; image-rendering: pixelated; }
+/* Al reducir el raster, el suavizado conserva las letras; pixelated solo sirve para ampliar. */
+.ticket-papel img { display: block; max-width: 100%; height: auto; image-rendering: auto; }
 
 /* Visor de diagramas */
 .visor { margin: 0; display: grid; gap: var(--e-2); min-width: 0; }

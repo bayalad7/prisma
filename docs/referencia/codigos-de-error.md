@@ -150,6 +150,8 @@ Los genera `internal/admin` en la API interna `/admin/api`, que **no es pública
 | `ORIGEN_DUPLICADO` | 409 | El origen ya pertenece a otra aplicación. |
 | `DUPLICADO` | 409 | Ya existe un registro con ese nombre (por ejemplo, una imagen). |
 | `IMPRESORA_INACTIVA` | 409 | Se pidió imprimir desde el panel (diagnóstico o páginas de códigos) en una impresora desactivada. |
+| `IMPRESORA_NO_VIRTUAL` | 409 | Se pidió el rollo de una impresora que no es virtual: sus tickets salen en papel y el puente no los guarda. |
+| `TICKET_NO_ENCONTRADO` | 404 | El ticket ya no está en el rollo de la impresora virtual: solo recuerda los últimos y los olvida al reiniciar el puente. |
 | `TLS_NO_AUTOFIRMADO` | 409 | Solo se puede regenerar el certificado autofirmado. |
 | `SIN_CERTIFICADO` | 404 | No hay archivo de certificado que descargar (por ejemplo, en el modo `solo_localhost_http`). |
 | `CLIENTE_NO_ENCONTRADO` | 404 | La aplicación ya no existe. |

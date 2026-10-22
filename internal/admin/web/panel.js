@@ -7,6 +7,8 @@
 
   // Utilidades de DOM y componentes del sistema de diseño (sistema.js).
   const { h, agregar, vaciar, logo, aviso, avisoError, dialogo, confirmar, copiar, botonCopiar, conEspera } = window.PrismaUI;
+  const UI = window.PrismaUI;
+  const TV = window.PRISMA_TEXTOS.virtual;
 
   // ---------------------------------------------------------------------------------------------
   // Formatos
@@ -58,7 +60,8 @@
     { pagina: 'CP858', comando: 19, etiqueta: 'PC858 (Multilingüe con €)' },
   ];
   const PERFILES = { 58: { columnas: 32, columnas_fuente_b: 42, ancho_px: 384 }, 80: { columnas: 48, columnas_fuente_b: 64, ancho_px: 576 } };
-  const TIPOS_CONEXION = { red: 'Red', usb: 'USB', bluetooth: 'Bluetooth', archivo: 'Archivo' };
+  const TIPOS_CONEXION = { red: 'Red', usb: 'USB', bluetooth: 'Bluetooth', archivo: 'Archivo', virtual: TV.tipo };
+  const insigniaVirtual = (imp) => imp.virtual && UI.insignia('virtual', TV.insignia);
 
   // ---------------------------------------------------------------------------------------------
   // API interna
@@ -308,9 +311,10 @@
           h('div', { class: 'tarjeta-cabeza' }, h('h2', { id: 't-imp' }, 'Impresoras'),
             h('span', { class: 'tenue pequeno numeros' }, `${enLinea} de ${r.impresoras.length} en línea`)),
           r.impresoras.length === 0
-            ? h('p', { class: 'tenue' }, 'Todavía no hay impresoras. ', h('a', { href: '#impresoras' }, 'Agrega la primera.'))
+            ? h('div', { class: 'pila' }, h('p', { class: 'tenue' }, TV.inicioVacio, ' ', h('a', { href: '#impresoras' }, TV.inicioAgregar), ' ', TV.inicioVirtual, '.'),
+              h('div', {}, botonCrearVirtual()))
             : h('div', { class: 'pila' }, r.impresoras.map((i) => h('div', { class: 'fila-entre' },
-              h('span', {}, h('span', { class: 'mono' }, i.alias), ' ', h('span', { class: 'tenue pequeno' }, i.nombre)),
+              h('span', { class: 'fila' }, h('span', {}, h('span', { class: 'mono' }, i.alias), ' ', h('span', { class: 'tenue pequeno' }, i.nombre)), insigniaVirtual(i)),
               h('span', { class: 'fila' }, i.pendientes > 0 && h('span', { class: 'tenue pequeno numeros' }, `${i.pendientes} en cola`), pastilla(ESTADOS_IMPRESORA, i.estado)))))),
         h('section', { class: 'tarjeta', 'aria-labelledby': 't-hoy' }, h('h2', { id: 't-hoy' }, 'Hoy'),
           h('div', { class: 'cifras' },
@@ -322,12 +326,12 @@
 
   function tablaTrabajos(lista) {
     if (lista.length === 0) return h('div', { class: 'tabla-caja' }, h('p', { class: 'vacio' }, 'No hay trabajos con estos filtros.'));
-    return h('div', { class: 'tabla-caja' }, h('table', {},
+    return h('div', { class: 'tabla-caja', tabindex: '0', role: 'region', 'aria-label': 'Tabla (se puede desplazar)' }, h('table', {},
       h('thead', {}, h('tr', {}, ['Fecha', 'Aplicación', 'Impresora', 'Estado', 'Referencia', 'Error / avisos', 'Duración'].map((t) => h('th', { scope: 'col' }, t)))),
       h('tbody', {}, lista.map((t) => h('tr', {},
         h('td', { class: 'numeros' }, fechaHora(t.creado)),
         h('td', {}, t.cliente_nombre || h('span', { class: 'mono' }, t.cliente_id)),
-        h('td', { class: 'mono' }, t.impresora_alias),
+        h('td', {}, h('span', { class: 'fila' }, h('span', { class: 'mono' }, t.impresora_alias), insigniaVirtual(t))),
         h('td', {}, pastilla(ESTADOS_TRABAJO, t.estado)),
         h('td', { class: 'mono' }, t.referencia || '—'),
         h('td', {}, t.codigo_error && h('span', { class: 'chip aviso' }, t.codigo_error), (t.advertencias || []).map((a) => h('span', { class: 'chip' }, a)), !t.codigo_error && !(t.advertencias || []).length && '—'),
@@ -346,7 +350,8 @@
       contenedor);
     if (lista.length === 0) {
       agregar(contenedor, h('div', { class: 'tarjeta vacio' }, h('p', {}, 'Todavía no hay impresoras.'),
-        h('button', { class: 'boton primario', type: 'button', onclick: () => asistenteImpresora(vista) }, 'Agregar la primera')));
+        h('div', { class: 'acciones' }, h('button', { class: 'boton primario', type: 'button', onclick: () => asistenteImpresora(vista) }, 'Agregar la primera'),
+          botonCrearVirtual())));
     }
     for (const imp of lista) agregar(contenedor, tarjetaImpresora(imp, vista));
   }
@@ -364,9 +369,10 @@
         const r = await conEspera(bDiag, () => api.post(`${ruta}/diagnostico`));
         if (r.aviso) mostrar(`Ticket de diagnóstico enviado (trabajo ${r.trabajo_id}), con un aviso: ${r.aviso}`, 'aviso');
         else mostrar(`Ticket de diagnóstico enviado (trabajo ${r.trabajo_id}).`, 'ok');
-        dialogo({ titulo: 'Ticket de diagnóstico', ancho: 460, cuerpo: h('div', { class: 'pila' },
-          h('p', { class: 'tenue pequeno' }, 'Así se ve el ticket que se acaba de imprimir. Compara la regla de columnas y los acentos con el papel.'),
-          h('pre', { class: 'papel', tabindex: '0', 'aria-label': 'Vista del ticket' }, r.vista)) });
+        dialogo({ titulo: 'Ticket de diagnóstico', ancho: 520, cuerpo: h('div', { class: 'pila' },
+          h('p', { class: 'tenue pequeno' }, imp.virtual ? TV.diagnosticoVirtual : TV.diagnosticoFisica),
+          r.imagen ? UI.ticketPapel({ imagen: r.imagen, anchoMm: imp.ancho_mm })
+            : h('pre', { class: 'papel', tabindex: '0', 'aria-label': 'Vista del ticket' }, r.vista)) }).then(() => { if (imp.virtual) recargar(); });
       } catch (e) { mostrar(`${e.codigo ? e.codigo + ': ' : ''}${e.message} ${e.sugerencia || ''}`, 'error'); }
     } }, 'Ticket de diagnóstico');
     const bPaginas = h('button', { class: 'boton chico', type: 'button', onclick: () => probarPaginas(imp, bPaginas, vista) }, 'Probar páginas de códigos');
@@ -379,20 +385,76 @@
     return h('article', { class: 'tarjeta' },
       h('div', { class: 'tarjeta-cabeza' },
         h('div', { class: 'impresora-cabeza' }, h('span', { class: 'alias' }, imp.alias), h('span', { class: 'tenue' }, imp.nombre),
-          !imp.activa && h('span', { class: 'pastilla sin-punto' }, 'Desactivada')),
+          insigniaVirtual(imp), !imp.activa && h('span', { class: 'pastilla sin-punto' }, 'Desactivada')),
         pastilla(ESTADOS_IMPRESORA, imp.activa ? imp.estado : 'desconocido')),
       h('dl', { class: 'datos' },
-        h('dt', {}, 'Conexión'), h('dd', {}, `${TIPOS_CONEXION[imp.tipo]} · `, h('span', { class: 'mono' }, imp.destino)),
+        h('dt', {}, 'Conexión'), imp.virtual
+          ? h('dd', {}, TV.conexion(imp.tickets_recibidos, imp.tickets_en_memoria),
+            imp.simulacion !== 'normal' && [' · ', h('strong', {}, TV.simulacionActiva[imp.simulacion])])
+          : h('dd', {}, `${TIPOS_CONEXION[imp.tipo]} · `, h('span', { class: 'mono' }, imp.destino)),
         h('dt', {}, 'Perfil'), h('dd', {}, perfil),
         h('dt', {}, 'Capacidades'), h('dd', {}, capacidades),
         imp.ultimo_error && [h('dt', {}, 'Último error'), h('dd', {}, h('span', { class: 'chip aviso' }, imp.ultimo_error))]),
-      h('div', { class: 'acciones' }, bProbar, bDiag, bPaginas,
+      h('div', { class: 'acciones' }, bProbar, bDiag, !imp.virtual && bPaginas,
+        imp.virtual && h('button', { class: 'boton chico', type: 'button', onclick: () => verRollo(imp).catch(avisoError) }, TV.verTickets(imp.tickets_recibidos)),
         h('button', { class: 'boton chico', type: 'button', onclick: () => formularioImpresora(vista, imp) }, 'Editar'),
         h('button', { class: 'boton chico peligro', type: 'button', onclick: async () => {
           if (!(await confirmar(`¿Eliminar «${imp.alias}»?`, 'Las aplicaciones que imprimen en esta impresora empezarán a recibir IMPRESORA_NO_ENCONTRADA. El historial de trabajos se conserva.', { boton: 'Eliminar', peligro: true }))) return;
           try { await api.borrar(ruta); aviso(`Impresora «${imp.alias}» eliminada.`, 'ok'); recargar(); } catch (e) { avisoError(e); }
         } }, 'Eliminar')),
       resultado);
+  }
+
+  // Crea la impresora virtual «prueba» (o «prueba-2», …) con el perfil típico de 80 mm.
+  function botonCrearVirtual() {
+    const b = UI.boton({ texto: TV.crearBoton, icono: 'virtual' });
+    b.addEventListener('click', async () => {
+      try {
+        await conEspera(b, async () => {
+          const existentes = new Set((await api.get('/impresoras')).map((x) => x.alias));
+          let alias = 'prueba';
+          for (let n = 2; existentes.has(alias); n++) alias = `prueba-${n}`;
+          await api.post('/impresoras', { alias, nombre: TV.nombre, tipo: 'virtual', destino: '', ancho_mm: 80, ...PERFILES[80],
+            pagina_codigos: 'CP858', comando_pagina_codigos: 19, soporta_corte: true, soporta_cajon: true, soporta_qr_nativo: true,
+            soporta_codigo_barras_nativo: true, soporta_imagen: true, activa: true });
+          aviso(TV.creada(alias), 'ok');
+        });
+        if (location.hash === '#impresoras') recargar(); else location.hash = '#impresoras';
+      } catch (e) { avisoError(e); }
+    });
+    return b;
+  }
+
+  // Tickets que recibió una impresora virtual (solo en la memoria del puente).
+  async function verRollo(imp) {
+    const ruta = `/impresoras/${enc(imp.alias)}/rollo`;
+    const lista = await api.get(ruta);
+    const ticket = (t) => {
+      const base = `${ruta}/${enc(t.trabajo_id)}`;
+      const traza = h('pre', { class: 'codigo', tabindex: '0', 'aria-label': TV.verTraza }, '…');
+      const detalles = h('details', { class: 'avanzado' }, h('summary', {}, TV.verTraza), h('div', {}, traza));
+      detalles.addEventListener('toggle', async () => {
+        if (!detalles.open || traza.dataset.listo) return;
+        try { traza.textContent = (await api.get(`${base}/traza`)).traza; traza.dataset.listo = '1'; } catch (e) { traza.textContent = e.message; }
+      });
+      return h('article', { class: 'tarjeta' },
+        h('div', { class: 'fila-entre' },
+          h('div', { class: 'pila' }, h('strong', {}, [t.cliente_nombre, t.referencia].filter(Boolean).join(' · ') || t.trabajo_id),
+            h('span', { class: 'tenue pequeno numeros' }, `${fechaHora(t.recibido)} · ${t.trabajo_id} · ${TV.bytes(t.bytes)}`)),
+          t.advertencias.length > 0 && h('span', { class: 'fila' }, t.advertencias.map((a) => h('span', { class: 'chip aviso' }, a)))),
+        UI.ticketPapel({ imagen: api.url(`${base}/imagen`), anchoMm: imp.ancho_mm }),
+        h('div', { class: 'acciones' }, enlaceDescarga(`${base}/imagen?descargar=1`, TV.descargarPNG), enlaceDescarga(`${base}/bin`, TV.descargarBin)),
+        detalles);
+    };
+    const cuerpo = h('div', { class: 'pila-amplia' }, UI.nota({ tipo: 'info', texto: TV.rolloAviso }),
+      lista.length === 0 ? UI.vacio({ icono: 'ticket', titulo: TV.rolloVacio, texto: TV.rolloVacioTexto }) : lista.map(ticket));
+    const accion = await dialogo({ titulo: TV.rolloTitulo(imp.alias), ancho: 720, cuerpo,
+      acciones: [lista.length > 0 && { texto: TV.vaciar, clase: 'peligro', valor: 'vaciar' }, { texto: 'Cerrar', valor: null }].filter(Boolean) });
+    if (accion !== 'vaciar') return;
+    if (!(await confirmar(TV.vaciarTitulo, TV.vaciarTexto, { boton: TV.vaciar, peligro: true, consecuencias: TV.vaciarConsecuencias }))) return;
+    await api.borrar(ruta);
+    aviso(TV.vaciado, 'ok');
+    recargar();
   }
 
   async function probarPaginas(imp, boton, vista) {
@@ -447,12 +509,14 @@
       } catch (e) { avisoError(e); }
     } }, 'Buscar en la red (puerto 9100)');
 
-    const tipoManual = h('select', { id: 'tipo-manual' }, Object.entries(TIPOS_CONEXION).map(([v, t]) => h('option', { value: v }, t)));
+    const tipoManual = h('select', { id: 'tipo-manual' }, Object.entries(TIPOS_CONEXION).filter(([v]) => v !== 'virtual').map(([v, t]) => h('option', { value: v }, t)));
     const destinoManual = h('input', { type: 'text', id: 'destino-manual', class: 'mono', placeholder: '192.168.1.50:9100' });
     const ejemplos = { red: '192.168.1.50:9100', usb: 'Nombre en Windows, /dev/usb/lp0 o cola de CUPS', bluetooth: 'COM5, /dev/rfcomm0 o /dev/cu.Impresora', archivo: 'Carpeta, p. ej. C:\\tickets' };
     tipoManual.addEventListener('change', () => { destinoManual.placeholder = ejemplos[tipoManual.value]; });
 
     agregar(cuerpo,
+      h('section', { class: 'tarjeta' }, h('div', { class: 'fila-entre' }, h('div', { class: 'pila' }, h('h2', {}, TV.crearTitulo),
+        h('p', { class: 'tenue pequeno' }, TV.crearTexto)), botonCrearVirtual())),
       h('section', { class: 'tarjeta' }, h('h2', {}, 'Detectadas en este equipo'),
         h('p', { class: 'tenue pequeno' }, 'Impresoras instaladas (USB) y puertos serie (Bluetooth emparejado).'), detectadas),
       h('section', { class: 'tarjeta' }, h('h2', {}, 'Impresoras de red'),
@@ -478,7 +542,7 @@
       alias: '', nombre: '', tipo: borrador.tipo, destino: borrador.destino, ancho_mm: 80, ...PERFILES[80],
       pagina_codigos: 'CP858', comando_pagina_codigos: 19, soporta_corte: true, soporta_cajon: false, soporta_qr_nativo: true,
       soporta_codigo_barras_nativo: true, soporta_imagen: true, baudios: borrador.baudios || 0, activa: true,
-      confirmar_impresion: false,
+      confirmar_impresion: false, simulacion: 'normal', simulacion_retraso_ms: 3000, simulacion_falla_pct: 30, tickets_en_memoria: 20,
     };
     const campo = (id, etiqueta, control, ayuda) => h('label', { class: 'campo', for: id }, h('span', {}, etiqueta), control, ayuda && h('span', { class: 'ayuda' }, ayuda));
     const alias = h('input', { type: 'text', id: 'alias', class: 'mono', value: i.alias, required: true, pattern: '[a-z0-9][a-z0-9_\\-]{0,31}', autocomplete: 'off', placeholder: 'caja' });
@@ -514,11 +578,27 @@
         for (const b of ancho.children) b.setAttribute('aria-pressed', String(b === ev.currentTarget));
         columnas.value = PERFILES[mm].columnas; columnasB.value = PERFILES[mm].columnas_fuente_b; anchoPx.value = PERFILES[mm].ancho_px;
       } }, `${mm} mm`)));
+    const filaDestino = campo('destino', 'Destino', destino);
+    const simulacion = h('select', { id: 'simulacion' }, Object.entries(TV.simulaciones).map(([v, t]) => h('option', { value: v, selected: v === i.simulacion }, t)));
+    const retraso = h('input', { type: 'number', id: 'sim-retraso', min: 0, max: 30000, step: 500, value: i.simulacion_retraso_ms });
+    const falla = h('input', { type: 'number', id: 'sim-falla', min: 0, max: 100, value: i.simulacion_falla_pct });
+    const tickets = h('input', { type: 'number', id: 'sim-tickets', min: 1, max: 200, value: i.tickets_en_memoria });
+    const filaRetraso = campo('sim-retraso', TV.retraso, retraso);
+    const filaFalla = campo('sim-falla', TV.falla, falla);
+    const bloqueVirtual = h('section', { class: 'tarjeta' }, h('h2', {}, TV.simulacionTitulo), h('p', { class: 'tenue pequeno' }, TV.simulacionAyuda),
+      campo('simulacion', TV.simulacionEtiqueta, simulacion), h('div', { class: 'campos' }, filaRetraso, filaFalla),
+      campo('sim-tickets', TV.tickets, tickets, TV.ticketsAyuda));
     const actualizarTipo = () => {
+      const virtual = tipo.value === 'virtual';
       filaBaudios.hidden = tipo.value !== 'bluetooth';
       filaConfirmar.hidden = tipo.value !== 'red' && tipo.value !== 'bluetooth';
+      filaDestino.hidden = virtual; destino.required = !virtual;
+      bloqueVirtual.hidden = !virtual;
+      filaRetraso.hidden = simulacion.value !== 'lenta';
+      filaFalla.hidden = simulacion.value !== 'falla_aleatoria';
     };
     tipo.addEventListener('change', actualizarTipo);
+    simulacion.addEventListener('change', actualizarTipo);
     actualizarTipo();
 
     const leer = () => ({
@@ -530,6 +610,7 @@
       soporta_imagen: caps.imagen.querySelector('input').checked, activa: caps.activa.querySelector('input').checked,
       baudios: tipo.value === 'bluetooth' ? +baudios.value : 0,
       confirmar_impresion: (tipo.value === 'red' || tipo.value === 'bluetooth') && confirmarImp.querySelector('input').checked,
+      simulacion: simulacion.value, simulacion_retraso_ms: +retraso.value, simulacion_falla_pct: +falla.value, tickets_en_memoria: +tickets.value,
     });
     const resultado = h('p', { class: 'resultado', hidden: true });
     const bProbar = h('button', { class: 'boton', type: 'button', onclick: async () => {
@@ -555,7 +636,8 @@
       h('div', { class: 'campos' },
         campo('alias', 'Alias', alias, 'Con este nombre la eligen las aplicaciones: minúsculas, dígitos, - o _.'),
         campo('nombre', 'Nombre descriptivo', nombre)),
-      h('div', { class: 'campos' }, campo('tipo', 'Tipo de conexión', tipo), campo('destino', 'Destino', destino), filaBaudios)),
+      h('div', { class: 'campos' }, campo('tipo', 'Tipo de conexión', tipo), filaDestino, filaBaudios)),
+    bloqueVirtual,
     h('section', { class: 'tarjeta' }, h('h2', {}, 'Papel'),
       h('div', { class: 'fila' }, ancho, h('span', { class: 'tenue pequeno' }, '58 mm: 32 columnas · 80 mm: 48 columnas')),
       h('details', { class: 'avanzado' }, h('summary', {}, 'Opciones avanzadas'),
@@ -818,7 +900,7 @@
     estado.pendientes = pendientes.length; pintarNav();
     const tabla = (lista, rechazada) => lista.length === 0
       ? h('div', { class: 'tabla-caja' }, h('p', { class: 'vacio' }, rechazada ? 'No hay orígenes rechazados.' : 'No hay solicitudes pendientes.'))
-      : h('div', { class: 'tabla-caja' }, h('table', {},
+      : h('div', { class: 'tabla-caja', tabindex: '0', role: 'region', 'aria-label': 'Tabla (se puede desplazar)' }, h('table', {},
         h('thead', {}, h('tr', {}, ['Origen', 'Intentos', 'Primera vez', 'Última vez', ''].map((t) => h('th', { scope: 'col' }, t)))),
         h('tbody', {}, lista.map((s) => h('tr', {},
           h('td', { class: 'mono' }, s.origen), h('td', { class: 'numeros' }, fmtNum.format(s.intentos)),

@@ -49,11 +49,12 @@ func (a *Admin) resumen(w http.ResponseWriter, r *http.Request) {
 		Nombre     string `json:"nombre"`
 		Estado     any    `json:"estado"`
 		Pendientes int    `json:"pendientes"`
+		Virtual    bool   `json:"virtual"`
 	}
 	imps := []impresoraResumen{}
 	for _, imp := range lista {
 		j := a.aJSON(imp)
-		imps = append(imps, impresoraResumen{j.Alias, j.Nombre, j.Estado, j.Pendientes})
+		imps = append(imps, impresoraResumen{j.Alias, j.Nombre, j.Estado, j.Pendientes, j.Virtual})
 	}
 	pendientes, err := a.op.Almacen.Solicitudes.Listar(ctx, "pendiente")
 	if err != nil {
@@ -95,6 +96,7 @@ type trabajoJSON struct {
 	ClienteID      string   `json:"cliente_id"`
 	ClienteNombre  string   `json:"cliente_nombre"`
 	ImpresoraAlias string   `json:"impresora_alias"`
+	Virtual        bool     `json:"virtual"`
 	Referencia     string   `json:"referencia"`
 	Estado         string   `json:"estado"`
 	CodigoError    string   `json:"codigo_error"`
@@ -120,7 +122,7 @@ func (a *Admin) trabajosJSON(r *http.Request, f almacen.FiltroTrabajos) ([]traba
 	}
 	resp := []trabajoJSON{}
 	for _, t := range lista {
-		j := trabajoJSON{ID: t.ID, ClienteID: t.ClienteID, ImpresoraAlias: t.ImpresoraAlias, Referencia: t.Referencia,
+		j := trabajoJSON{ID: t.ID, ClienteID: t.ClienteID, ImpresoraAlias: t.ImpresoraAlias, Virtual: t.Virtual, Referencia: t.Referencia,
 			Estado: t.Estado, CodigoError: t.CodigoError, Advertencias: t.Advertencias, Creado: fecha(t.Creado)}
 		if j.ClienteNombre = nombres[t.ClienteID]; j.ClienteNombre == "" {
 			if j.ClienteNombre = nombresEspeciales[t.ClienteID]; j.ClienteNombre == "" {
