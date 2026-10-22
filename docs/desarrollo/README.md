@@ -48,7 +48,7 @@ $env:GOOS="darwin"; go vet ./...              # PowerShell (luego: Remove-Item E
 
 1. Crea `config.dev.toml` con una carpeta de datos local y `modo_desarrollo = true` (ver [primeros-pasos.md](primeros-pasos.md#2-crear-una-configuración-de-desarrollo)). Tanto `config.dev.toml` como `datos-dev/` están en `.gitignore`.
 2. Agrega impresoras a esa base con `prisma impresoras agregar --config config.dev.toml …`.
-3. Para trabajar sin hardware, usa la impresora virtual (`prisma dev impresora-virtual`) o el conector de archivo (`--tipo archivo --destino ./tickets`).
+3. Para trabajar sin hardware, agrega una impresora virtual (`prisma impresoras agregar --alias prueba --tipo virtual`, o desde el panel): vive dentro del puente y muestra cada ticket en el panel. También están la impresora virtual de red (`prisma dev impresora-virtual`, útil para probar el conector de red) y el conector de archivo (`--tipo archivo --destino ./tickets`).
 
 ### Herramientas de `prisma dev`
 

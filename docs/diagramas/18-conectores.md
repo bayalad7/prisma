@@ -11,6 +11,9 @@ flowchart LR
     u -- "linux y macOS, nombre de cola" --> cups["cups: lp -d cola -o raw"]:::prisma
     t -- bluetooth --> ser["serie: puerto serie, 9600 baudios<br/>por defecto"]:::prisma
     t -- archivo --> arc["archivo: .bin y vista .txt<br/>en una carpeta"]:::datos
+    t -- virtual --> vir["virtual: rollo en la memoria<br/>del puente, sin papel"]:::datos
+    vir --> sim["simulación opcional: fuera de línea,<br/>lenta o falla aleatoria"]:::prisma
+    vir --> panel["panel: imagen del ticket,<br/>.bin y comandos"]:::externo
     red --> conf["Confirmar impresión opcional:<br/>DLE EOT 1"]:::seguridad
     ser --> conf
     red --> imp["impresora"]:::externo
@@ -29,6 +32,7 @@ flowchart LR
 - Winspool: si vence el plazo, cancela el trabajo con `AbortPrinter` ([25-confirmar-impresion.md](25-confirmar-impresion.md) explica por qué USB no confirma).
 - Confirmar impresión solo existe en red y serie: winspool, CUPS y `/dev/usb` no devuelven la respuesta de la impresora.
 - El conector de archivo es para desarrollo y auditoría: guarda los bytes exactos y su previsualización.
+- El conector virtual vive dentro del puente: recibe los mismos bytes que una impresora física y los guarda solo en memoria (los últimos 20 por defecto, como mucho 16 MB por impresora) para que el panel los dibuje a 203 ppp. Un ticket que falla por la simulación no se guarda, y su `id` se libera como en cualquier trabajo fallido.
 
 **Fuentes en el código:**
 
@@ -38,5 +42,7 @@ flowchart LR
 - internal/conector/usb_windows.go
 - internal/conector/usb_unix.go (`nuevoUSB`, `Dispositivo`, `CUPS`)
 - internal/conector/archivo.go
+- internal/conector/virtual.go (`Virtual`, `Rollos`)
+- internal/dev/raster.go (`Rasterizar`)
 
-**Última verificación:** PRISMA 0.1.0 (rama `develop`, commit `5f67e19`), 22 de octubre de 2026.
+**Última verificación:** PRISMA 0.2.0 en desarrollo (rama `develop`), 22 de octubre de 2026.

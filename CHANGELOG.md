@@ -17,6 +17,11 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 - `CONTRIBUTING.md` y `SECURITY.md`.
 - Sistema de diseño del panel: tokens de color con contraste AA verificado por pruebas, tema oscuro con selector manual, componentes accesibles (`sistema.js`), textos en un solo archivo (`textos.js`) y un sprite de iconos propios. Con `modo_desarrollo`, `/admin/estilos` muestra la galería de componentes y los prototipos de las pantallas.
 - Análisis de experiencia del panel en `docs/ux/` (hallazgos, flujos, accesibilidad e inventario de diagramas).
+- **Impresora virtual** (tipo `virtual`): vive dentro del puente, recibe los mismos bytes que una impresora física y muestra cada ticket en el panel como saldría en el papel (203 ppp), con descarga del PNG y del `.bin` y los comandos ESC/POS. Sus tickets se guardan solo en memoria (los últimos 20 por defecto), nunca en la base ni en la bitácora. Puede simular fallas (fuera de línea, lenta, falla aleatoria) con los códigos que la API ya informa. Se crea desde el panel o con `prisma impresoras agregar --tipo virtual`.
+- `GET /v1/impresoras` incluye el campo `virtual` (aditivo). Los trabajos del historial indican si fueron a una impresora virtual.
+- El ticket de diagnóstico del panel muestra la imagen del ticket en lugar de una vista de texto que se cortaba.
+- Migración 0005 de la base de datos (se respalda sola antes de aplicarse).
+- Dependencia nueva: `golang.org/x/image`, por la fuente Go Mono del raster de tickets.
 
 ### Cambiado
 

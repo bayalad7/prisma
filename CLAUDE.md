@@ -64,6 +64,8 @@ según el perfil de la impresora y lo imprime por USB, red (TCP 9100) o Bluetoot
 - Nada costoso (esquema completo, imágenes, render) antes de identificar al cliente.
 - Los instaladores nunca activan `modo_desarrollo` (TestConfiguracionDeLosInstaladores).
 - Ninguna goroutine de la cola sobrevive a Quitar/Cerrar (TestSinFugasDeGoroutines).
+- Los tickets de las impresoras virtuales viven solo en memoria (conector.RollosVirtuales): nunca en la
+  base, la bitácora ni los respaldos (TestImpresoraVirtualDePrincipioAFin).
 - Permisos: base y llave del certificado 0600; datos solo para el usuario del servicio
   (en Windows, SYSTEM y Administradores).
 
@@ -102,7 +104,7 @@ internal/config/        carga y validación de config.toml
 internal/rutas/         rutas por sistema (configuración, datos, bitácoras)
 internal/contrato/      tipos del documento v1 y validación (JSON Schema + reglas)
 internal/escpos/        renderizador operaciones → bytes, codificación de caracteres
-internal/conector/      red, usb, bluetooth, archivo (build tags por sistema) y detección
+internal/conector/      red, usb, bluetooth, archivo, virtual (build tags por sistema) y detección
 internal/cola/          cola secuencial por impresora
 internal/almacen/       SQLite: impresoras, clientes, orígenes, solicitudes, trabajos, ajustes, respaldos
 internal/seguridad/     niveles, llaves, firma Ed25519 (JCS), anti-repetición, permisos, límites

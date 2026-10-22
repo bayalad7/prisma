@@ -10,7 +10,7 @@ Un solo binario, `prisma`, con estos paquetes. La columna *Importa* sale de `go 
 | `internal/almacen` | SQLite (modernc): migraciones embebidas, un repositorio por tabla, respaldo y restauración en caliente, normalización de orígenes. | — |
 | `internal/contrato` | Tipos del documento v1, `LeerSobre` (lo mínimo para autorizar) y `Decodificar` (JSON estricto, versión, esquema y reglas). | `schema` |
 | `internal/escpos` | `Renderizar(doc, perfil, recursos)`: operaciones → bytes ESC/POS y advertencias; codificación de caracteres, filas, QR, códigos de barras e imágenes. | `almacen`, `contrato` |
-| `internal/conector` | `Conector{Enviar, Probar}` por red, USB (winspool, CUPS, `/dev/usb`), Bluetooth/serie y archivo; Confirmar impresión (`DLE EOT`); detección de impresoras. | `almacen`, `dev` |
+| `internal/conector` | `Conector{Enviar, Probar}` por red, USB (winspool, CUPS, `/dev/usb`), Bluetooth/serie, archivo y virtual (rollo en memoria); Confirmar impresión (`DLE EOT`); detección de impresoras. | `almacen`, `dev` |
 | `internal/cola` | Una goroutine por impresora (FIFO), límite de trabajos, pruebas periódicas y estado. | `conector` |
 | `internal/seguridad` | Autorización (origen, llave, firma, permisos), firma Ed25519 sobre JCS, argon2id, límites (cubetas de fichas), código inicial. | `almacen`, `contrato` |
 | `internal/servidor` | HTTPS (autofirmado, archivos, solo localhost), API pública `/v1`, CORS, cabeceras de seguridad y traducción de errores. Monta el panel. | `almacen`, `cola`, `conector`, `config`, `contrato`, `dev`, `escpos`, `seguridad` |

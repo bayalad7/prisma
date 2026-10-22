@@ -14,6 +14,8 @@ erDiagram
         TEXT pagina_codigos
         INTEGER confirmar_impresion
         INTEGER activa
+        TEXT simulacion
+        INTEGER tickets_en_memoria
     }
     clientes {
         TEXT id PK
@@ -47,6 +49,7 @@ erDiagram
         TEXT documento_id
         TEXT cliente_id
         TEXT impresora_alias
+        INTEGER virtual
         TEXT referencia
         TEXT estado
         TEXT codigo_error
@@ -89,6 +92,7 @@ erDiagram
 - internal/almacen/migraciones/0002_llaves_argon2id.sql
 - internal/almacen/migraciones/0003_nivel2_sin_llave.sql
 - internal/almacen/migraciones/0004_confirmar_impresion.sql
+- internal/almacen/migraciones/0005_impresora_virtual.sql
 - internal/almacen/ajustes.go
 
-**Última verificación:** PRISMA 0.1.0 (rama `develop`, commit `5f67e19`), 22 de octubre de 2026.
+**Última verificación:** PRISMA 0.2.0 en desarrollo (rama `develop`), 22 de octubre de 2026.

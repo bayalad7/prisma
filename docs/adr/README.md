@@ -19,6 +19,7 @@ Cada archivo registra una decisión que ya está tomada en el código: el contex
 | 0013 | [Panel sin frameworks ni CDN, con sesiones en memoria](0013-panel-sin-frameworks.md) | 2026-10-19 |
 | 0014 | [CI y publicación con el último parche de Go 1.26](0014-go-ultimo-parche-en-ci.md) | 2026-10-22 |
 | 0015 | [Sistema de diseño propio para el panel](0015-sistema-de-diseno-del-panel.md) | 2026-10-22 |
+| 0016 | [Impresora virtual dentro del puente, con tickets solo en memoria](0016-impresora-virtual-en-el-puente.md) | 2026-10-22 |
 
 ## Cómo agregar una decisión
 

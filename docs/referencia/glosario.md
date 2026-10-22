@@ -12,7 +12,8 @@ Los términos que usan el código, la API, el panel y esta documentación. Cuand
 | **Perfil** | La configuración de una impresora: tipo de conexión, destino, ancho del papel, columnas, puntos por línea, página de códigos y capacidades. |
 | **Destino** | Dónde está la impresora: IP y puerto, nombre en Windows, cola de CUPS, `/dev/usb/lpN`, puerto serie o carpeta. |
 | **Capacidades** | Lo que la impresora puede hacer: cuchilla, cajón, QR y códigos de barras por comando, imágenes y *Confirmar impresión*. Lo que no tenga, el puente lo resuelve de otra forma o lo omite con una advertencia. |
-| **Conector** | La parte del puente que entrega los bytes a una impresora: red, USB, Bluetooth (puerto serie) o archivo. |
+| **Conector** | La parte del puente que entrega los bytes a una impresora: red, USB, Bluetooth (puerto serie), archivo o virtual. |
+| **Impresora virtual** | Impresora que vive dentro del puente: recibe los mismos bytes que una física y muestra el ticket en el panel, sin papel. Sirve para probar sin impresora y puede simular fallas. Sus tickets solo se guardan en memoria. |
 | **Cola** | La fila de trabajos de una impresora: uno a la vez, en orden de llegada, hasta 20. |
 | **Cliente** · **aplicación** | Un programa autorizado a imprimir, con un nivel de seguridad, orígenes, impresoras permitidas y operaciones permitidas. La API y la CLI dicen *cliente*; el panel dice *aplicación*. Su id tiene la forma `cli_…`. |
 | **Nivel** | Cómo se identifica un cliente: 1 (origen), 2 (llave, por defecto) o 3 (firma). Ver [integradores/niveles-de-seguridad.md](../integradores/niveles-de-seguridad.md). |

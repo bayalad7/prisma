@@ -215,6 +215,7 @@ Crea tu rama desde `develop` y abre el pull request hacia `develop`; `main` solo
 - [x] Validación del documento y firma Ed25519 (JCS)
 - [x] Renderizador ESC/POS, páginas de códigos y previsualización
 - [x] Conectores de red, USB, Bluetooth y archivo
+- [x] Impresora virtual dentro del puente, con simulación de fallas (0.2.0)
 - [x] Cola por impresora
 - [x] Servidor HTTPS, API pública `/v1` y autorización por niveles
 - [x] Panel de administración

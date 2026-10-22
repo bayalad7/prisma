@@ -29,6 +29,25 @@ Actívala y usa *Ticket de diagnóstico* para comprobar que tu impresora respond
 
 Cada tarjeta muestra el estado (*en línea*, *fuera de línea*, *ocupada* o *desconocido*) y el último error. El puente prueba cada impresora cada 30 s, salvo mientras imprime.
 
+## Impresora virtual
+
+Una impresora virtual vive dentro del puente: recibe los tickets igual que una de verdad, pero en lugar de imprimirlos los muestra en el panel. Sirve para probar el puente antes de tener la impresora, y para que quien programa una aplicación la pruebe sin papel.
+
+- **Crearla:** en *Agregar impresora*, pulsa *Crear impresora virtual de prueba* (alias `prueba`). También se puede elegir el tipo *Virtual* al editar una impresora, o desde la terminal: `prisma impresoras agregar --alias prueba --tipo virtual`.
+- **Usarla:** las aplicaciones la eligen por su alias, como cualquier otra. En `GET /v1/impresoras` aparece con `"virtual": true`, y en *Trabajos* sus trabajos llevan la insignia *Virtual*.
+- **Ver los tickets:** *Ver tickets* muestra cada ticket como saldría en el papel (203 ppp), con la aplicación y la referencia, y permite descargar la imagen (PNG), los bytes exactos (`.bin`, para `prisma dev decodificar`) y ver los comandos ESC/POS.
+- **Privacidad:** los tickets se guardan **solo en la memoria del puente**: nunca en la base de datos, la bitácora ni los respaldos. Se conservan los últimos 20 (se puede cambiar de 1 a 200) y se borran al reiniciar el puente o con *Vaciar rollo*.
+- **Simular fallas:** al editarla, *Simulación* permite probar cómo responde una aplicación cuando algo sale mal, con los mismos errores que una impresora física:
+
+| Simulación | Qué responde |
+|---|---|
+| Normal | Recibe todos los tickets. |
+| Fuera de línea | Rechaza todo con `IMPRESORA_INALCANZABLE` (también *Probar conexión*). |
+| Lenta | Tarda el retraso indicado (hasta 30 s) en recibir cada ticket. |
+| Falla aleatoria | Rechaza con `IMPRESORA_INALCANZABLE` el porcentaje indicado de tickets. |
+
+Un ticket rechazado no se guarda y su `id` queda libre: la aplicación puede reintentarlo sin que salga dos veces.
+
 ## Desactivar y eliminar
 
 - **Desactivar** (desmarcar *Activa* al editarla) la oculta a las aplicaciones (`IMPRESORA_NO_ENCONTRADA`) sin perder su perfil.
