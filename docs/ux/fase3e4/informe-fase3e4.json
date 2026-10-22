@@ -1,0 +1,36 @@
+{
+  "axe": {
+    "aplicaciones-escritorio": [],
+    "nueva-escritorio": [],
+    "llave-escritorio": [],
+    "codigo-escritorio": [],
+    "solicitudes-escritorio": [],
+    "aprobar-escritorio": [],
+    "aplicaciones-celular": [],
+    "solicitudes-celular": []
+  },
+  "desborde": {
+    "aplicaciones-escritorio": 0,
+    "nueva-escritorio": 0,
+    "llave-escritorio": 0,
+    "codigo-escritorio": 0,
+    "solicitudes-escritorio": 0,
+    "aprobar-escritorio": 0,
+    "aplicaciones-celular": 0,
+    "solicitudes-celular": 0
+  },
+  "consola": [],
+  "comprobaciones": [
+    "ok    sin nombre: error junto al campo ",
+    "ok    nivel 1 sin página: error junto al campo ",
+    "ok    origen mal escrito: explica el formato ",
+    "ok    descarga la llave en un archivo de texto llave-tienda-8872.txt",
+    "ok    el código usa el SDK real ",
+    "ok    cambiar la impresora cambia el código barra",
+    "ok    desactivar pide confirmación y dice qué pasa ",
+    "ok    marca el sitio de Internet ",
+    "ok    marca el equipo de la red sin cifrar ",
+    "ok    aprobar un sitio de Internet advierte el riesgo ",
+    "ok    eliminar una impresora lista las aplicaciones afectadas "
+  ]
+}
