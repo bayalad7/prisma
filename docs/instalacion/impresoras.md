@@ -45,7 +45,7 @@ La opción **Confirmar impresión** del perfil (casilla en el panel, o `--confir
 - **Funciona con:** red (puerto 9100) y Bluetooth o serie. Casi todas las impresoras ESC/POS responden a `DLE EOT`.
 - **No funciona con:** USB por winspool (Windows), CUPS ni `/dev/usb/lp*`, porque esos caminos no devuelven la respuesta de la impresora. Para ellas la casilla no aparece.
 - **Está desactivada por defecto.** Algunas impresoras económicas no responden a la consulta, y con ella activada todos sus trabajos fallarían.
-- **Cómo probarlo:** actívala y usa *Ticket de diagnóstico*. Si falla con `TIEMPO_AGOTADO` aunque el ticket salió, la impresora no admite la consulta: desactívala.
+- **Cómo probarlo:** actívala y usa *Ticket de prueba* en el panel. Si falla con `TIEMPO_AGOTADO` aunque el ticket salió, la impresora no admite la consulta: desactívala.
 - La impresora virtual (`prisma dev impresora-virtual`) responde como una impresora en línea.
 
 ### Darle una IP fija (imprescindible)

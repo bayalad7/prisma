@@ -1,0 +1,52 @@
+{
+  "axe": {
+    "entrar-escritorio": [],
+    "configuracion-escritorio": [],
+    "sin-conexion-escritorio": [],
+    "entrar-celular": [],
+    "configuracion-celular": [],
+    "sin-conexion-celular": [],
+    "impresoras-escritorio": [],
+    "impresoras-celular": [],
+    "imagenes-escritorio": [],
+    "imagenes-celular": []
+  },
+  "desborde": {
+    "entrar-escritorio": 0,
+    "configuracion-escritorio": 0,
+    "sin-conexion-escritorio": 0,
+    "entrar-celular": 0,
+    "configuracion-celular": 0,
+    "sin-conexion-celular": 0,
+    "impresoras-escritorio": 0,
+    "impresoras-celular": 0,
+    "imagenes-escritorio": 0,
+    "imagenes-celular": 0
+  },
+  "consola": [],
+  "comprobaciones": [
+    "ok    escritorio: sin contraseña, error junto al campo ",
+    "ok    escritorio: «mostrar» deja ver la contraseña ",
+    "ok    escritorio: contraseña equivocada explicada ",
+    "ok    escritorio: configuración inicial marca código y contraseña ",
+    "ok    escritorio: código equivocado marcado en su campo ",
+    "ok    escritorio: sin conexión ofrece reintentar ",
+    "ok    escritorio: al reintentar vuelve a pedir la contraseña ",
+    "ok    celular: sin contraseña, error junto al campo ",
+    "ok    celular: «mostrar» deja ver la contraseña ",
+    "ok    celular: contraseña equivocada explicada ",
+    "ok    celular: configuración inicial marca código y contraseña ",
+    "ok    celular: código equivocado marcado en su campo ",
+    "ok    celular: sin conexión ofrece reintentar ",
+    "ok    celular: al reintentar vuelve a pedir la contraseña ",
+    "ok    escritorio: tarjetas con insignias, sin pastillas ",
+    "ok    desactivar pide confirmación con consecuencias ",
+    "ok    desactivada: insignia y «Activar» como acción principal ",
+    "ok    activar la devuelve ",
+    "ok    celular: tarjetas con insignias, sin pastillas ",
+    "ok    escritorio: guardar sin imagen lo explica junto a la zona ",
+    "ok    escritorio: nombre inválido marcado en su campo ",
+    "ok    celular: guardar sin imagen lo explica junto a la zona ",
+    "ok    celular: nombre inválido marcado en su campo "
+  ]
+}

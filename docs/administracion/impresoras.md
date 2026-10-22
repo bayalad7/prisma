@@ -14,7 +14,7 @@ El **alias** (minúsculas, dígitos, `-` y `_`, hasta 32 caracteres) es el nombr
 
 ## Diagnóstico y páginas de códigos
 
-- **Ticket de diagnóstico.** Imprime el alias, la conexión, el papel, la página de códigos, una regla que debe ocupar exactamente una línea, los acentos, las tres alineaciones y un QR (si la impresora puede imprimirlo). El panel muestra además cómo debería verse. Si la regla se parte en dos líneas, las columnas están mal configuradas.
+- **Ticket de prueba** (ticket de diagnóstico). Imprime el alias, la conexión, el papel, la página de códigos, una regla que debe ocupar exactamente una línea, los acentos, las tres alineaciones y un QR (si la impresora puede imprimirlo). El panel muestra además cómo debería verse. Si la regla se parte en dos líneas, las columnas están mal configuradas.
 - **Probar acentos.** Imprime 4 renglones con los mismos acentos, cada uno con una página de códigos distinta (empiezan con `ESC t 0`, `2`, `16` y `19`). En el panel eliges el renglón que se lee bien y el perfil se actualiza solo. Si ninguno se lee bien, el panel explica cómo buscar en el manual de la impresora el número correcto.
 
 Los dos quedan en el historial como trabajos de la aplicación «Panel».
@@ -23,11 +23,13 @@ Los dos quedan en el historial como trabajos de la aplicación «Panel».
 
 Solo en impresoras de red y Bluetooth. Después de cada ticket, el puente pregunta a la impresora si lo recibió; si no responde, el trabajo falla en vez de darse por impreso. Si responde que está fuera de línea (tapa abierta, sin papel), el trabajo se completa con la advertencia `IMPRESORA_FUERA_DE_LINEA`, porque el ticket saldrá al resolverlo.
 
-Actívala y usa *Ticket de diagnóstico* para comprobar que tu impresora responde. Si el diagnóstico falla con `TIEMPO_AGOTADO` aunque el ticket salió, la impresora no admite la consulta: desactívala. Detalles en [instalacion/impresoras.md](../instalacion/impresoras.md#confirmar-impresión).
+Actívala y usa *Ticket de prueba* para comprobar que tu impresora responde. Si el diagnóstico falla con `TIEMPO_AGOTADO` aunque el ticket salió, la impresora no admite la consulta: desactívala. Detalles en [instalacion/impresoras.md](../instalacion/impresoras.md#confirmar-impresión).
 
 ## Estado
 
-Cada tarjeta muestra el estado (*en línea*, *fuera de línea*, *ocupada* o *desconocido*) y el último error. El puente prueba cada impresora cada 30 s, salvo mientras imprime.
+Cada tarjeta muestra el estado con una insignia (*En línea*, *No responde*, *Imprimiendo*, *Sin probar* o *Desactivada*), cómo está conectada, el papel, la página de códigos, lo que la impresora sabe hacer y, si lo hubo, el último problema explicado en palabras. El puente prueba cada impresora cada 30 s, salvo mientras imprime.
+
+La acción principal cambia con el estado: si la impresora no responde, *Probar conexión* (comprueba que responda sin imprimir); si está lista, *Ticket de prueba*; si está desactivada, *Activar*. Los resultados aparecen dentro de la tarjeta con lo que conviene revisar.
 
 ## Impresora virtual
 
@@ -50,5 +52,5 @@ Un ticket rechazado no se guarda y su `id` queda libre: la aplicación puede rei
 
 ## Desactivar y eliminar
 
-- **Desactivar** (desmarcar *Activa* al editarla) la oculta a las aplicaciones (`IMPRESORA_NO_ENCONTRADA`) sin perder su perfil.
+- **Desactivar** (en la tarjeta, o desmarcando *Activa* al editarla) la oculta a las aplicaciones (`IMPRESORA_NO_ENCONTRADA`) sin perder su perfil. Pide confirmación y dice qué pasará; *Activar* la devuelve.
 - **Eliminar** la borra con sus permisos; el historial de trabajos se conserva.

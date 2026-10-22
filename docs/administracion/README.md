@@ -26,7 +26,9 @@ La primera vez que se abre el panel hay que crear la contraseña de administrado
 
 Así, aunque el puente quede encendido sin configurar, nadie de la red puede adueñarse del panel sin acceso al equipo.
 
-Si olvidas la contraseña, `prisma admin restablecer-contrasena` genera una nueva. El panel obliga a cambiarla al entrar y cierra las sesiones abiertas.
+Las pantallas de acceso permiten mostrar la contraseña mientras se escribe, marcan junto al campo lo que falta o no coincide (también un código de configuración equivocado) y, si el puente no responde, ofrecen *Volver a intentar*.
+
+Si olvidas la contraseña, `prisma admin restablecer-contrasena` genera una nueva (el panel lo recuerda en *¿Olvidaste la contraseña?*). El panel obliga a cambiarla al entrar y cierra las sesiones abiertas.
 
 ## Secciones
 
@@ -35,11 +37,11 @@ Están agrupadas en *Operación*, *Integración* y *Sistema*, y cada una tiene s
 | Sección | Para qué sirve |
 |---|---|
 | **Inicio** | El estado de un vistazo: impresoras listas o que no responden, solicitudes pendientes, tickets de hoy de tus aplicaciones (las pruebas del panel se cuentan aparte), días para que venza el certificado y los últimos trabajos, cada tarjeta con su acción. Mientras falte algo, **Primeros pasos** lista lo que queda (agregar una impresora, imprimir una prueba, revisar los acentos en una impresora física, autorizar una aplicación) con un botón para hacerlo; se puede ocultar y retomar. Avisa además de una versión nueva o de un certificado por vencer. |
-| **[Impresoras](impresoras.md)** | Agregar una impresora en 3 pasos: el tipo (80 mm, 58 mm o virtual), la conexión (detectadas, búsqueda en la red o a mano) con su nombre, y un ticket de prueba con la revisión de los acentos. Por impresora: **Probar conexión** (sin imprimir), **Ticket de diagnóstico**, **Probar acentos**, editar, desactivar y eliminar; las virtuales, además, **Ver tickets**. |
+| **[Impresoras](impresoras.md)** | Agregar una impresora en 3 pasos: el tipo (80 mm, 58 mm o virtual), la conexión (detectadas, búsqueda en la red o a mano) con su nombre, y un ticket de prueba con la revisión de los acentos. Por impresora: una insignia con su estado y la acción que toca según él: **Probar conexión** (sin imprimir), **Ticket de prueba**, **Probar acentos**, editar, activar o desactivar (con confirmación) y eliminar; las virtuales, además, **Ver tickets**. |
 | **[Aplicaciones](aplicaciones-y-solicitudes.md)** | Las aplicaciones autorizadas a imprimir (en la API se llaman *clientes*). Nivel de seguridad, orígenes, impresoras permitidas y operaciones sensibles. |
 | **[Solicitudes](aplicaciones-y-solicitudes.md#solicitudes-de-origen)** | Orígenes desconocidos que intentaron imprimir. Se aprueban (con una aplicación nueva o existente), se rechazan o se olvidan. |
 | **Trabajos** | Historial con filtros (todos, fallidos, con aviso, en cola; y por aplicación, impresora y fechas). Al tocar un trabajo se ve **qué pasó, por qué suele pasar y qué hacer**, con *Probar la impresora* ahí mismo; los avisos (un acento que no existe, sin cuchilla…) también se explican, y el de una impresora virtual muestra su ticket. Las pruebas del panel aparecen como «Panel (prueba)». Nunca muestra el contenido de los tickets: el puente no lo guarda. |
-| **Imágenes** | PNG guardados en el puente para usarlos con `"recurso"` en la operación `imagen`. Muestra cómo quedarán en 1 bit antes de guardarlos. |
+| **Imágenes** | PNG guardados en el puente para usarlos con `"recurso"` en la operación `imagen`. Muestra cómo quedarán en 1 bit antes de guardarlos (en 58 u 80 mm) y explica junto al campo un nombre o un archivo que no sirven. |
 | **[Ajustes](ajustes.md)** | En cuatro pestañas: General (nombre, límite de tickets, historial, versiones nuevas), Seguridad y acceso (contraseña, acceso solo desde la red del negocio), HTTPS (certificado) y Respaldo (descargar y restaurar). |
 | **Ayuda** | Cómo confiar en el certificado en cada sistema y enlaces a esta documentación. |
 

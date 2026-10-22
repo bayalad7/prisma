@@ -145,7 +145,7 @@ Lo mismo que hiciste con la CLI se puede hacer desde el navegador. Con el puente
 3. La primera vez el panel pide crear la contraseña de administrador (al menos 10 caracteres). Desde el propio equipo no hace falta ningún código.
 4. Prueba el recorrido completo:
    - En *Impresoras → Agregar impresora → Escribir a mano*, usa el tipo **Red** con destino `127.0.0.1:9100` (la impresora virtual de la sección 4) o el tipo **Archivo** con una carpeta.
-   - Pulsa **Ticket de diagnóstico**. La regla de columnas debe ocupar una sola línea.
+   - Pulsa **Ticket de prueba**. La regla de columnas debe ocupar una sola línea.
    - En *Aplicaciones*, crea una de nivel 2 y copia la llave `pk_…`, que se muestra una sola vez.
 
 Con `escuchar = "127.0.0.1"`, como en `config.dev.toml`, el panel solo se abre desde este equipo. Para entrar desde un celular u otra computadora de la red:
