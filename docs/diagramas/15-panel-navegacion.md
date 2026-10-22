@@ -6,7 +6,7 @@
 flowchart LR
     acceso["acceso: crear contraseña, entrar,<br/>cambiar contraseña"]:::seguridad --> inicio
     subgraph operacion["Operación"]
-        inicio["/admin/ · inicio: impresoras, trabajos de hoy,<br/>solicitudes, avisos de versión y de certificado"]:::prisma
+        inicio["/admin/ · inicio: primeros pasos, impresoras,<br/>solicitudes, hoy, certificado, últimos trabajos"]:::prisma
         imp["/admin/impresoras: agregar (física o virtual), probar,<br/>diagnóstico, páginas de códigos, tickets virtuales"]:::prisma
         sol["/admin/solicitudes: aprobar con aplicación<br/>nueva o existente, rechazar, olvidar"]:::seguridad
         trab["/admin/trabajos: historial filtrable,<br/>sin contenido de tickets"]:::datos
@@ -32,6 +32,7 @@ flowchart LR
 
 - La navegación agrupa las 8 secciones en *Operación*, *Integración* y *Sistema*; *Inicio* es la de entrada después de *acceso*. En celular, el menú se despliega y una barra inferior lleva a Inicio, Impresoras, Solicitudes (con el número de pendientes), Trabajos y Ayuda.
 - Cada sección tiene su ruta: el puente sirve el panel en todas (`vistasPanel`) y `panel.js` dibuja la pantalla sin recargar; Atrás y Adelante funcionan. Los enlaces de 0.1.0 con `#` (`#clientes`, `#recursos`, `#impresoras`…) llevan a la ruta nueva.
+- *Primeros pasos* sale de los datos del puente (impresoras, aplicaciones y las marcas `panel.primera_prueba` y `panel.acentos_probados`), así que se ve igual en cualquier equipo; ocultarla solo afecta al navegador.
 - Atajos: `g` y la letra de la sección (por ejemplo `g p`, Impresoras); `?` los muestra y permite desactivarlos.
 - *Acceso* es el primer acceso (con código desde otro equipo), el inicio de sesión y el cambio de contraseña obligatorio tras restablecerla ([16-panel-sesion.md](16-panel-sesion.md)).
 - Toda acción usa la API interna `/admin/api/…`, con sesión y CSRF; no es una API pública.

@@ -34,7 +34,7 @@ Están agrupadas en *Operación*, *Integración* y *Sistema*, y cada una tiene s
 
 | Sección | Para qué sirve |
 |---|---|
-| **Inicio** | Estado de las impresoras, trabajos de hoy, solicitudes pendientes, los últimos trabajos, el aviso de una versión nueva y el aviso de vencimiento del certificado. |
+| **Inicio** | El estado de un vistazo: impresoras listas o que no responden, solicitudes pendientes, tickets de hoy de tus aplicaciones (las pruebas del panel se cuentan aparte), días para que venza el certificado y los últimos trabajos, cada tarjeta con su acción. Mientras falte algo, **Primeros pasos** lista lo que queda (agregar una impresora, imprimir una prueba, revisar los acentos en una impresora física, autorizar una aplicación) con un botón para hacerlo; se puede ocultar y retomar. Avisa además de una versión nueva o de un certificado por vencer. |
 | **[Impresoras](impresoras.md)** | Agregar una impresora en 3 pasos: elegir la conexión (detectadas, escaneo de red en el puerto 9100 o a mano), elegir el papel (58 u 80 mm, con opciones avanzadas) y probar. Por impresora: **Probar conexión** (sin imprimir), **Ticket de diagnóstico**, **Probar páginas de códigos**, editar, desactivar y eliminar. |
 | **[Aplicaciones](aplicaciones-y-solicitudes.md)** | Las aplicaciones autorizadas a imprimir (en la API se llaman *clientes*). Nivel de seguridad, orígenes, impresoras permitidas y operaciones sensibles. |
 | **[Solicitudes](aplicaciones-y-solicitudes.md#solicitudes-de-origen)** | Orígenes desconocidos que intentaron imprimir. Se aprueban (con una aplicación nueva o existente), se rechazan o se olvidan. |
