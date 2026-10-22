@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -188,15 +189,35 @@ func (s *Servidor) SincronizarImpresoras(ctx context.Context) error {
 // ruta asocia métodos con manejadores para una misma ruta.
 type ruta map[string]http.HandlerFunc
 
-// Handler devuelve el manejador HTTP completo: cabeceras de seguridad, límite por IP, bitácora
-// y las rutas de la API.
-func (s *Servidor) Handler() http.Handler {
-	rutas := map[string]ruta{
+// rutas son las de la API pública v1. docs/referencia/openapi.yaml debe listar las mismas (lo
+// comprueba la prueba de docs/).
+func (s *Servidor) rutas() map[string]ruta {
+	return map[string]ruta{
 		"/v1/salud":         {http.MethodGet: s.salud},
 		"/v1/impresoras":    {http.MethodGet: s.impresoras},
 		"/v1/imprimir":      {http.MethodPost: s.imprimir},
 		"/v1/previsualizar": {http.MethodPost: s.previsualizar},
 	}
+}
+
+// RutasPublicas devuelve cada ruta de la API v1 con sus métodos, sin OPTIONS (el preflight de CORS
+// lo atienden todas).
+func RutasPublicas() map[string][]string {
+	var s *Servidor // los métodos solo se nombran, no se llaman
+	salida := map[string][]string{}
+	for ruta, metodos := range s.rutas() {
+		for m := range metodos {
+			salida[ruta] = append(salida[ruta], m)
+		}
+		slices.Sort(salida[ruta])
+	}
+	return salida
+}
+
+// Handler devuelve el manejador HTTP completo: cabeceras de seguridad, límite por IP, bitácora
+// y las rutas de la API.
+func (s *Servidor) Handler() http.Handler {
+	rutas := s.rutas()
 	enrutar := func(w http.ResponseWriter, r *http.Request) {
 		if s.panel != nil && (r.URL.Path == "/admin" || strings.HasPrefix(r.URL.Path, "/admin/")) {
 			s.panel.ServeHTTP(w, r)
