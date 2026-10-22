@@ -1,6 +1,6 @@
 # HTTPS y certificados
 
-Los navegadores solo permiten que una página HTTPS llame a otra dirección HTTPS. Por eso PRISMA sirve su API por HTTPS en la red local. El modo se elige con `servidor.modo_tls` en `config.toml` ([configuracion.md](configuracion.md)).
+Los navegadores solo permiten que una página HTTPS llame a otra dirección HTTPS. Por eso PRISMA sirve su API por HTTPS en la red local. El modo se elige con `servidor.modo_tls` en `config.toml` ([configuracion.md](../referencia/configuracion.md)).
 
 | Modo | Certificado | Cuándo usarlo |
 |---|---|---|

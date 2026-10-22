@@ -1,48 +1,16 @@
-# Solución de problemas
+# Problemas comunes: impresión y panel
 
-Cuando un comando falla, PRISMA muestra un código y una **sugerencia**. Busca el código en esta página o en [conectores.md](conectores.md#errores-de-conexión).
+Cuando algo falla, PRISMA muestra un código y una **sugerencia**. Todos los códigos están en [referencia/codigos-de-error.md](../referencia/codigos-de-error.md).
 
-## Instalación y arranque
-
-### «la configuración tiene N problema(s)»
-
-`config.toml` tiene claves mal escritas o valores inválidos. El mensaje lista cada clave con su problema. Corrígelas y comprueba el resultado con `prisma config validar`. La referencia completa está en [configuracion.md](configuracion.md).
-
-### «datos.ruta: debe ser una ruta absoluta»
-
-Usa una ruta completa. En Windows, escríbela entre comillas simples: `ruta = 'D:\PRISMA\datos'`.
-
-### «la base de datos usa el esquema N, pero esta versión de PRISMA solo conoce hasta el M»
-
-Una versión más nueva de PRISMA ya migró la base. Instala esa versión o una posterior, o restaura el respaldo hecho antes de actualizar.
-
-### El servicio no puede abrir `prisma.db` (permiso denegado)
-
-La base la creó otro usuario, normalmente root al ejecutar un comando con `sudo`. Hay que devolvérsela al usuario del servicio:
-
-```sh
-sudo chown -R prisma:prisma /var/lib/prisma                                   # Linux
-sudo chown -R _prisma:_prisma "/Library/Application Support/PRISMA/datos"    # macOS
-```
-
-A partir de entonces, ejecuta los comandos de administración como ese usuario: `sudo -u prisma prisma …` en Linux, `sudo -u _prisma prisma …` en macOS. Los problemas de instalación (SmartScreen, firewall, el servicio que no arranca) están en [instalacion.md](instalacion.md#problemas-comunes).
-
-### Windows bloquea el ejecutable (SmartScreen) o macOS dice que no se puede abrir
-
-El binario no está firmado:
-
-- **Windows:** en las *Propiedades* del archivo, marca **Desbloquear**.
-- **macOS:** ejecuta `sudo xattr -d com.apple.quarantine /usr/local/bin/prisma`.
-
-### «prisma imprimir solo está disponible con [dev] modo_desarrollo = true»
-
-Es intencional: en producción, las aplicaciones imprimen por la API con su autorización. Para pruebas, usa una configuración de desarrollo aparte (`--config config.dev.toml`).
+- Los problemas al instalar o al arrancar el servicio están en [instalacion/problemas-comunes.md](../instalacion/problemas-comunes.md).
+- Los que ve una aplicación (certificado, CORS, permiso de red local, Safari) están en [integradores/problemas-comunes.md](../integradores/problemas-comunes.md).
+- Recuperarse de una falla grave (base dañada, certificado vencido, restauración fallida) está en [operacion/recuperacion.md](../operacion/recuperacion.md).
 
 ## La aplicación no puede imprimir (API)
 
 ### El navegador dice «NET::ERR_CERT_AUTHORITY_INVALID» o «la conexión no es privada»
 
-El equipo no confía en el certificado autofirmado del puente. Instálalo como confiable siguiendo [tls.md](tls.md). Una excepción temporal del navegador no sirve: las llamadas `fetch` de la aplicación siguen fallando.
+El equipo no confía en el certificado autofirmado del puente. Instálalo como confiable siguiendo [instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md). Una excepción temporal del navegador no sirve: las llamadas `fetch` de la aplicación siguen fallando.
 
 ### Error de certificado con la IP correcta
 
@@ -51,7 +19,7 @@ Si el equipo del puente cambió de IP, el certificado no la incluye: el puente l
 ### `fetch` falla con «TypeError: Failed to fetch» y la consola menciona CORS
 
 El origen de la página no está aprobado. El puente no le envía cabeceras CORS y el navegador no deja leer la respuesta. El origen quedó como **solicitud pendiente**. Apruébalo:
-- en el [panel](panel.md), sección *Solicitudes*;
+- en el [panel](README.md), sección *Solicitudes*;
 - o con la CLI: `prisma clientes agregar … --origen https://tu-app.example`.
 
 El origen debe coincidir **exactamente**: esquema (`https`), nombre y puerto.
@@ -64,11 +32,11 @@ El origen debe coincidir **exactamente**: esquema (`https`), nombre y puerto.
 | `LLAVE_INVALIDA` | La llave es incorrecta o se regeneró. Pide la nueva (`prisma clientes regenerar-llave`). |
 | `CREDENCIALES_REQUERIDAS` | La petición no trae origen, llave ni documento firmado. Desde un servidor, envía la llave. |
 | `ORIGEN_REQUERIDO` | La aplicación es de nivel 1: solo puede imprimir desde un navegador. |
-| `FIRMA_INVALIDA` | El documento cambió después de firmarlo, se firmó con otra llave o `cliente_id` no corresponde. Prueba tu firmador con [testdata/vector-firma](../testdata/vector-firma/LEEME.md). |
+| `FIRMA_INVALIDA` | El documento cambió después de firmarlo, se firmó con otra llave o `cliente_id` no corresponde. Prueba tu firmador con [testdata/vector-firma](../../testdata/vector-firma/LEEME.md). |
 | `FIRMA_EXPIRADA` | Pasaron más de `expira` + 30 s. Firma justo antes de enviar y revisa la hora del servidor que firma. |
 | `IMPRESORA_NO_PERMITIDA` · `OPERACION_NO_PERMITIDA` | La aplicación no tiene permiso para esa impresora o para `abrir_cajon` / `raw`. |
 
-La referencia completa de errores está en [api-v1.md](api-v1.md#códigos-de-error-de-la-api).
+La referencia completa de errores está en [referencia/codigos-de-error.md](../referencia/codigos-de-error.md).
 
 ### La respuesta dice `"duplicado": true` y no imprimió
 
@@ -76,18 +44,38 @@ El documento llegó con el mismo `id` que otro de los últimos 10 minutos. Es la
 
 ### 429 `DEMASIADAS_PETICIONES`
 
-Se superó el límite de peticiones por minuto. Respeta `Retry-After`, o ajusta `[limites]` en [configuracion.md](configuracion.md).
+Se superó el límite de peticiones por minuto. Respeta `Retry-After`, o ajusta `[limites]` en [configuracion.md](../referencia/configuracion.md).
+
+### 503 `PUENTE_OCUPADO`
+
+Otro programa tiene bloqueada la base de datos del puente, por ejemplo un visor de SQLite abierto sobre `prisma.db` o una copia de respaldo hecha con otra herramienta. No se imprimió nada. Cierra ese programa; el puente vuelve a responder solo. Para copiar la base usa *Ajustes → Respaldo*, que no la bloquea.
+
+### Todas las aplicaciones dejaron de conectarse el mismo día
+
+Lo más probable es que **venciera el certificado** del puente. *Inicio* lo avisa desde 60 días antes. Con el certificado autofirmado, el puente genera uno nuevo al arrancar: reinicia el servicio y vuelve a instalarlo en cada equipo que imprime ([instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md#vencimiento)).
 
 ## La impresora no imprime
 
 | Código | Causa típica | Qué hacer |
 |---|---|---|
 | `IMPRESORA_NO_ENCONTRADA` | El alias no existe en el puente, o el destino (nombre, cola, puerto) no existe en el sistema. | `prisma impresoras listar` y `prisma impresoras detectar`; el destino debe coincidir exactamente. |
-| `IMPRESORA_INALCANZABLE` | Está apagada, desconectada, en otra red o marcada «sin conexión» en Windows. | Revisa encendido, cable o red, y su IP. Ver [conectores.md](conectores.md). |
+| `IMPRESORA_INALCANZABLE` | Está apagada, desconectada, en otra red o marcada «sin conexión» en Windows. | Revisa encendido, cable o red, y su IP. Ver [instalacion/impresoras.md](../instalacion/impresoras.md). |
 | `TIEMPO_AGOTADO` | Dejó de aceptar datos: sin papel, tapa abierta, atasco o Bluetooth fuera de alcance. | Revisa el papel y la tapa; acércate si es Bluetooth. |
 | `PUERTO_OCUPADO` | Otro programa tiene abierto el puerto serie o el dispositivo USB. | Cierra el otro programa; en Linux, usa la cola de CUPS. |
 | `PERMISO_DENEGADO` | El usuario del servicio no tiene acceso. | Linux: grupos `lp` y `dialout`. Windows: permiso de impresión. |
 | `COLA_LLENA` | Hay 20 trabajos pendientes en esa impresora. | La impresora no avanza: revisa el estado con `prisma impresoras probar`. |
+
+### Dice «impreso», pero no salió (impresora de red)
+
+Con impresoras de red, el puente da un ticket por impreso cuando lo entregó al sistema, no cuando la impresora lo recibió. Si la impresora se apaga justo mientras recibe un ticket corto, la aplicación recibe `ok`. Activa **Confirmar impresión** en el perfil de la impresora ([impresoras.md](impresoras.md#confirmar-impresión)).
+
+### Advertencia `IMPRESORA_FUERA_DE_LINEA`
+
+Solo con Confirmar impresión. La impresora recibió el ticket, pero tiene la tapa abierta, no tiene papel o está en error. Lo imprimirá en cuanto se resuelva: **no** lo reenvíes.
+
+### Con Confirmar impresión, todos los tickets fallan con `TIEMPO_AGOTADO`
+
+La impresora no responde a la consulta de estado `DLE EOT`. Desactiva *Confirmar impresión* en su perfil.
 
 ### Windows dice que imprimió, pero no salió nada
 
@@ -146,7 +134,7 @@ Si el código de barras no cabe en el papel, el documento se rechaza con `OPERAC
 
 ### Errores del documento
 
-`FILA_NO_CABE`, `DOCUMENTO_INVALIDO`, `CODIGO_BARRAS_INVALIDO`, etc. son problemas del JSON, no de la impresora. Cada error indica el campo (`/operaciones/3/columnas`) y la regla que falló. Las reglas están en el [contrato](contrato-documento-v1.md), y [ejemplos/invalidos](../ejemplos/invalidos/) tiene un ejemplo de cada error.
+`FILA_NO_CABE`, `DOCUMENTO_INVALIDO`, `CODIGO_BARRAS_INVALIDO`, etc. son problemas del JSON, no de la impresora. Cada error indica el campo (`/operaciones/3/columnas`) y la regla que falló. Las reglas están en el [contrato](../referencia/contrato-documento-v1.md), y [ejemplos/invalidos](../../ejemplos/invalidos/) tiene un ejemplo de cada error.
 
 Para ver el resultado antes de imprimir:
 

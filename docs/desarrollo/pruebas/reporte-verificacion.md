@@ -36,7 +36,7 @@ Lo que se ejecutó:
 
 - **Evidencia:** CI *Servicio (macos-latest)*. El LaunchDaemon queda en `spawn scheduled` y el panel no responde. La bitácora repite: `stat /Library/Application Support/PRISMA/config.toml: permission denied`.
 - **Causa:** `servicio instalar` creaba la carpeta de datos con `MkdirAll(…, 0750)`, y eso creaba también su carpeta padre, `/Library/Application Support/PRISMA`, como root con 0750. El usuario `_prisma` no podía entrar ni a leer `config.toml`. En Linux no pasa porque `/var/lib` ya existe con 0755.
-- **Corrección:** [`internal/servicio/sistema_darwin.go`](../../internal/servicio/sistema_darwin.go) crea la carpeta padre con 0755 (de root; solo contiene `config.toml`) y la repara si una instalación anterior la dejó en 0750. La carpeta de datos sigue en 0750 para `_prisma`.
+- **Corrección:** [`internal/servicio/sistema_darwin.go`](../../../internal/servicio/sistema_darwin.go) crea la carpeta padre con 0755 (de root; solo contiene `config.toml`) y la repara si una instalación anterior la dejó en 0750. La carpeta de datos sigue en 0750 para `_prisma`.
 - **✅ Confirmado en el CI** (ejecución `39671479591`): el LaunchDaemon queda `state = running` con el usuario `_prisma` y el panel responde 200.
 
 ### C2. Tickets perdidos en silencio después de un reinicio con trabajos en cola
@@ -56,7 +56,7 @@ Lo que se ejecutó:
   | Antes (`9872a39`) | 4 × `200 ok, duplicado, estado=fallido` | **1 de 5** |
   | Corregido | 4 × `200` impresos | **5 de 5** |
 
-- **Corrección:** [`MarcarInterrumpidos`](../../internal/almacen/trabajos.go) libera, en la misma transacción, los `id` de los trabajos que marca, como ya ocurría con cualquier trabajo fallido.
+- **Corrección:** [`MarcarInterrumpidos`](../../../internal/almacen/trabajos.go) libera, en la misma transacción, los `id` de los trabajos que marca, como ya ocurría con cualquier trabajo fallido.
 - **Prueba nueva:** `TestReintentoDespuesDeReiniciarConTrabajosEnCola` (`internal/servidor`).
 
 ---
@@ -95,7 +95,7 @@ Quien sigue la guía obtiene `Prisma is not defined` y el botón no hace nada, s
 - La bitácora avisa al arrancar: `Warn` desde 60 días antes y `Error` si ya venció.
 - *Inicio* del panel muestra un aviso con el botón *Ir a Ajustes*, y en *Ajustes* la fila *Vence* lo marca.
 - Con `modo_tls = "autofirmado"`, un certificado vencido se regenera al arrancar.
-- Pruebas: `TestVencimientoDelCertificado` y `TestAvisoDeCertificadoVencido`. Ver [tls.md](../tls.md#vencimiento).
+- Pruebas: `TestVencimientoDelCertificado` y `TestAvisoDeCertificadoVencido`. Ver [instalacion/https-y-certificados.md](../../instalacion/https-y-certificados.md#vencimiento).
 
 ---
 
@@ -138,7 +138,7 @@ Quien sigue la guía obtiene `Prisma is not defined` y el botón no hace nada, s
   - Desactivada por defecto, porque algunas impresoras no responden a `DLE EOT`.
   - No aplica a USB (winspool, CUPS, `/dev/usb/lp*`), que no devuelven la respuesta.
   - La impresora virtual responde a la consulta.
-- **Documentado:** [conectores.md](../conectores.md#confirmar-impresión), [problemas-comunes.md](../integradores/problemas-comunes.md#impreso-pero-no-salió) y [panel.md](../panel.md).
+- **Documentado:** [instalacion/impresoras.md](../../instalacion/impresoras.md#confirmar-impresión), [problemas-comunes.md](../../integradores/problemas-comunes.md#impreso-pero-no-salió) y [administracion/](../../administracion/README.md).
 - **Pruebas:** `TestRedConfirmarImpresion` (responde, fuera de línea, sin respuesta, cierra), `TestConfirmarConImpresoraVirtual`, `TestAvisoDelConectorEsExito` y `TestConfirmarImpresionFueraDeLinea`.
 - **✅ Probado con impresoras reales:** los casos R1 y R1b de la matriz pasaron.
 
@@ -221,7 +221,7 @@ Contra el binario real, con impresoras de red simuladas que leen a la velocidad 
 
 ## Experiencia del integrador: inicio rápido al pie de la letra
 
-Se siguió [inicio-rapido.md](../integradores/inicio-rapido.md) con un puente real, `npx serve -l 3000` y Edge. Las acciones del dueño se hicieron con la misma API del panel. Usando `@develop` en lugar de las URLs de la guía (A1), el resultado es el esperado:
+Se siguió [inicio-rapido.md](../../integradores/inicio-rapido.md) con un puente real, `npx serve -l 3000` y Edge. Las acciones del dueño se hicieron con la misma API del panel. Usando `@develop` en lugar de las URLs de la guía (A1), el resultado es el esperado:
 
 1. el primer clic muestra «El puente responde, pero no ha autorizado el origen http://localhost:3000…»;
 2. la solicitud aparece en *Solicitudes*;
@@ -233,11 +233,11 @@ Pasos confusos (todos ✅ corregidos en la guía):
 | # | Paso | Qué confunde | Propuesta |
 |---|---|---|---|
 | 1 | Página, `<script src>` | Las dos URLs dan 404 y no se ve ningún error en la página (A1). | Ver A1. |
-| 2 | Lo que necesitas, punto 1 | Supone un puente ya instalado. Un desarrollador sin el equipo del negocio no sabe cómo conseguir uno para probar. | Enlazar [primeros-pasos.md](../primeros-pasos.md) (puente en la propia PC) e [instalacion.md](../instalacion.md). |
+| 2 | Lo que necesitas, punto 1 | Supone un puente ya instalado. Un desarrollador sin el equipo del negocio no sabe cómo conseguir uno para probar. | Enlazar [primeros-pasos.md](../primeros-pasos.md) (puente en la propia PC) e [instalacion/](../../instalacion/README.md). |
 | 3 | Lo que necesitas, punto 1 | Menciona la impresora virtual, pero no cómo agregarla (*Red* con destino `127.0.0.1:9100`). | Agregar el comando y el paso del panel. |
 | 4 | Página | El alias `"caja"` está fijo y no se explica dónde verlo. | «Usa el alias que aparece en el panel, en *Impresoras*, o lista los disponibles con `await prisma.impresoras()`». |
 | 5 | Paso 2, primer clic | Si no se cumplió el punto 2 (certificado), el mensaje es otro («No se pudo conectar…») y la guía no lo anticipa. | Una línea: «Si ves *No se pudo conectar…*, falta confiar en el certificado (punto 2)». |
-| 6 | Paso 3 | Si el desarrollador es también el dueño y abre el panel desde su laptop, la primera vez el panel pide un código de configuración que la guía no menciona. | Enlazar [panel.md, Primer acceso](../panel.md#primer-acceso). |
+| 6 | Paso 3 | Si el desarrollador es también el dueño y abre el panel desde su laptop, la primera vez el panel pide un código de configuración que la guía no menciona. | Enlazar [panel.md, Primer acceso](../../administracion/README.md#primer-acceso). |
 | 7 | Paso 2 | La cita del mensaje está abreviada: el real añade «Si la aplicación ya estaba aprobada, puede estar desactivada». | Copiar el mensaje completo. |
 
 ---

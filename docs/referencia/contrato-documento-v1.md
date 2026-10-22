@@ -3,9 +3,9 @@
 Esta especificación describe el JSON que cualquier aplicación envía a un puente PRISMA para imprimir un ticket.
 Va dirigida a quienes integran PRISMA en sus sistemas.
 
-- Esquema formal: [`schema/documento-v1.schema.json`](../schema/documento-v1.schema.json) (JSON Schema draft 2020-12).
-- Ejemplos válidos: [`ejemplos/validos/`](../ejemplos/validos/).
-- Ejemplos inválidos, uno por regla: [`ejemplos/invalidos/`](../ejemplos/invalidos/), con su índice en `indice.json`.
+- Esquema formal: [`schema/documento-v1.schema.json`](../../schema/documento-v1.schema.json) (JSON Schema draft 2020-12).
+- Ejemplos válidos: [`ejemplos/validos/`](../../ejemplos/validos/).
+- Ejemplos inválidos, uno por regla: [`ejemplos/invalidos/`](../../ejemplos/invalidos/), con su índice en `indice.json`.
 
 Las palabras DEBE, NO DEBE y PUEDE tienen el sentido normativo de RFC 2119.
 
@@ -422,7 +422,7 @@ Para los clientes de nivel 1 y 2, los cuatro campos de firma son opcionales. Si 
 | Llave pública (hex) | `d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a` |
 | Llave pública (base64), tal como se registra en el panel | `11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcHURo=` |
 
-Documento enviado ([`ejemplos/validos/firmado.json`](../ejemplos/validos/firmado.json)):
+Documento enviado ([`ejemplos/validos/firmado.json`](../../ejemplos/validos/firmado.json)):
 
 ```json
 {
@@ -571,7 +571,7 @@ Los errores de autenticación, permisos, orígenes e impresoras inexistentes no 
 
 ### Negociación y soporte a largo plazo
 
-- **Negociación:** `GET /v1/estado` anuncia `versiones_documento` (por ejemplo `["1", "1.1"]`). El SDK la consulta y genera la versión más alta que entienden tanto el SDK como el puente, sin pasar de la mínima que necesita el documento.
+- **Negociación** (⏳ política futura, **no implementada en 0.1.0**): cuando exista una versión menor (`"1.1"`), el puente anunciará sus `versiones_documento` en una ruta de la API y el SDK generará la más alta que entiendan los dos, sin pasar de la mínima que necesita el documento. Hoy solo existe la versión `"1"` (`contrato.VersionesSoportadas`), `GET /v1/salud` no anuncia versiones y el SDK siempre envía `"1"`.
 - **Convivencia:** un puente v2 seguirá aceptando documentos `"1"` durante, al menos, todo el ciclo de vida de la v2. Así, las integraciones existentes no se rompen al actualizar el puente.
 - **Esquemas publicados:** cada versión tiene su propio esquema inmutable (`documento-v1.schema.json`, `documento-v1.1.schema.json`, …).
 
@@ -581,16 +581,16 @@ Los errores de autenticación, permisos, orígenes e impresoras inexistentes no 
 
 | Archivo | Qué muestra |
 |---|---|
-| [`venta-simple.json`](../ejemplos/validos/venta-simple.json) | Ticket de venta con filas, pares y corte. |
-| [`venta-logo-qr.json`](../ejemplos/validos/venta-logo-qr.json) | Logo PNG en línea, QR para facturar y 2 copias. |
-| [`comanda-cocina.json`](../ejemplos/validos/comanda-cocina.json) | Comanda para cocina: texto grande, invertido y notas. |
-| [`todas-las-operaciones.json`](../ejemplos/validos/todas-las-operaciones.json) | Cada operación y cada atributo al menos una vez. |
-| [`con-raw.json`](../ejemplos/validos/con-raw.json) | Operaciones sensibles: `raw` y `abrir_cajon`. |
-| [`firmado.json`](../ejemplos/validos/firmado.json) | Documento de nivel 3 con firma real (ver [§7](#7-firma-nivel-3)). |
+| [`venta-simple.json`](../../ejemplos/validos/venta-simple.json) | Ticket de venta con filas, pares y corte. |
+| [`venta-logo-qr.json`](../../ejemplos/validos/venta-logo-qr.json) | Logo PNG en línea, QR para facturar y 2 copias. |
+| [`comanda-cocina.json`](../../ejemplos/validos/comanda-cocina.json) | Comanda para cocina: texto grande, invertido y notas. |
+| [`todas-las-operaciones.json`](../../ejemplos/validos/todas-las-operaciones.json) | Cada operación y cada atributo al menos una vez. |
+| [`con-raw.json`](../../ejemplos/validos/con-raw.json) | Operaciones sensibles: `raw` y `abrir_cajon`. |
+| [`firmado.json`](../../ejemplos/validos/firmado.json) | Documento de nivel 3 con firma real (ver [§7](#7-firma-nivel-3)). |
 
 ### Inválidos
 
-[`ejemplos/invalidos/`](../ejemplos/invalidos/) contiene un archivo por regla, nombrado según la regla que viola. Para cada archivo, [`indice.json`](../ejemplos/invalidos/indice.json) indica:
+[`ejemplos/invalidos/`](../../ejemplos/invalidos/) contiene un archivo por regla, nombrado según la regla que viola. Para cada archivo, [`indice.json`](../../ejemplos/invalidos/indice.json) indica:
 
 - `codigo`: el código de error esperado;
 - `detecta`: quién lo detecta (`esquema` si basta el JSON Schema, `puente` si hace falta el puente);

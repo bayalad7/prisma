@@ -1,12 +1,12 @@
 # Guía de desarrollo
 
-Esta guía cubre cómo compilar, probar y contribuir a PRISMA. Las reglas del proyecto están en [CLAUDE.md](../CLAUDE.md): decisiones técnicas que no se cambian sin preguntar, convenciones de nombres y estructura.
+Esta guía cubre cómo compilar y probar PRISMA. Para contribuir, ver también [CONTRIBUTING.md](../../CONTRIBUTING.md). Las reglas del proyecto están en [CLAUDE.md](../../CLAUDE.md): decisiones técnicas que no se cambian sin preguntar, convenciones de nombres y estructura.
 
 ## Requisitos
 
 | Herramienta | Versión | Para qué |
 |---|---|---|
-| Go | 1.26 o superior | compilar y probar |
+| Go | 1.26 o superior; **1.26.4 o superior** para `deb` (nfpm v2.48.0 lo exige) | compilar y probar |
 | Git | cualquiera | control de versiones |
 | `make` | opcional (Linux/macOS) | tareas con el `Makefile` |
 | PowerShell | 5.1 o superior (Windows) | tareas con `build.ps1` |
@@ -29,7 +29,7 @@ No se necesita CGO ni un compilador de C: todo es Go puro, incluida la base de d
 
 La versión, el commit, la fecha y la llave pública de las versiones (`empaquetado/llave-releases.pub`) se inyectan al compilar con `-ldflags`. La versión sale de `git describe`, sin la «v». Un binario compilado con `go build` a secas muestra `0.0.0-dev` y no puede usar `prisma actualizar`.
 
-**CI** ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)) corre en cada push a `main` y `develop` y en cada pull request:
+**CI** ([`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)) corre en cada push a `main` y `develop` y en cada pull request, con el último parche de Go 1.26 (`go-version: '1.26.x'`), no con el mínimo de `go.mod`:
 
 - `go vet`, staticcheck y `go test -race` en Windows, Ubuntu y macOS;
 - las pruebas del SDK en los tres sistemas, y las de los firmadores;
@@ -63,42 +63,11 @@ La previsualización no es una maqueta aparte: ejecuta los mismos bytes que reci
 
 ## Pruebas
 
-```sh
-go test ./...                       # todo
-go test ./internal/escpos/ -run Fila -v
-go test ./internal/dev -actualizar  # regenera los archivos golden
-```
-
-- **SQLite en memoria:** las pruebas de `internal/almacen` usan una base en memoria y un reloj controlado.
-- **Ejemplos del contrato:** las pruebas recorren `ejemplos/validos/*.json` y `ejemplos/invalidos/indice.json`. Si agregas una regla al contrato, agrega su ejemplo inválido y su entrada en el índice: `codigo`, `detecta` (`esquema` o `puente`), `ruta` y `regla`.
-- **Matriz de autorización:** `internal/servidor` prueba {nivel 1, 2, 3} × {origen válido, inválido, ausente} × {llave válida, inválida, ausente} × {firma válida, alterada, expirada, repetida} contra un oráculo escrito a partir de la especificación. Si cambias una regla de autorización, actualiza el oráculo (`esperado`) y [api-v1.md](api-v1.md).
-- **Vector de firma:** `testdata/vector-firma/` es público para los integradores; `internal/seguridad` comprueba que siga siendo coherente con el ejemplo del contrato.
-- **SDK JavaScript (`sdk/js`):** `npm test` corre con `node:test`, sin instalar nada. Valida contra los mismos `ejemplos/` que el puente: si agregas una regla al contrato, el SDK debe detectarla o la prueba falla. `src/prisma.mjs` es la fuente; después de cambiarla, `npm run construir` regenera `dist/` (que se versiona para el CDN) y `npm test` falla si `dist/` quedó desactualizado.
-- **Firmadores (`sdk/firmadores`):** cada uno se prueba contra `casos-jcs.json` y el vector de firma. `internal/seguridad` comprueba ese mismo `casos-jcs.json` con la canonicalización del puente. Si agregas un caso, genera su `canonico` con el firmador de Node y deja que la prueba de Go lo confirme.
-- **Golden:** `internal/dev/testdata/golden/` guarda la vista y la traza de cada ejemplo válido a 58 y 80 mm. Si cambias el renderizador a propósito, regenéralos con `-actualizar` y **revisa el diff** antes de commitear: es la forma de ver qué cambió en el papel.
-- **Por plataforma:** `internal/conector` tiene pruebas con build tags (`usb_windows_test.go`, `usb_unix_test.go`). `go test ./...` debe pasar en Windows, Linux y macOS.
-- **Race detector:** `-race` requiere CGO y el proyecto se compila sin él. Las pruebas concurrentes (cola, impresora virtual) protegen sus búferes con mutex.
+Cómo correrlas, qué cubren y cómo regenerar los archivos generados: [pruebas.md](pruebas.md).
 
 ## Estructura del código
 
-| Paquete | Responsabilidad |
-|---|---|
-| `cmd/prisma` | CLI (cobra). Cada grupo de comandos está en su archivo: `config.go`, `impresoras.go`, `imprimir.go`, `dev.go`, etc. |
-| `internal/config` | Lee y valida `config.toml`. Reporta todos los problemas juntos. |
-| `internal/rutas` | Rutas por defecto por sistema (build tags). |
-| `internal/almacen` | SQLite: migraciones embebidas (`migraciones/NNNN_nombre.sql`) y un repositorio por tabla. |
-| `internal/contrato` | Tipos del documento v1, `Decodificar` (JSON estricto, versión, esquema embebido y reglas) y errores con código. |
-| `internal/escpos` | `Renderizar(doc, perfil, recursos)`: operaciones → bytes. Codificación de caracteres, disposición de filas, QR, códigos de barras e imágenes. |
-| `internal/conector` | `Conector{Enviar, Probar}` para red, USB, Bluetooth y archivo, más la detección de impresoras. |
-| `internal/cola` | Una goroutine por impresora (FIFO), límite de 20 trabajos y estado. |
-| `internal/seguridad` | Autorización (origen, llave, firma, permisos), límites de peticiones, contraseñas y llaves (argon2id), firmas Ed25519 sobre JCS. |
-| `internal/servidor` | HTTPS (autofirmado, archivos, solo localhost), API pública `/v1`, CORS y cabeceras de seguridad. |
-| `internal/dev` | Decodificador, simulador, vistas (texto/HTML) e impresora virtual. |
-| `schema` | JSON Schema publicado, embebido en el binario. |
-| `sdk/js` | SDK JavaScript público (`@bayalad7/prisma`): fuente en `src/`, builds ESM y UMD en `dist/`. |
-| `sdk/firmadores` | Firmadores de nivel 3 de referencia (PHP, Node.js, Python) y sus casos de prueba JCS. |
-
-El flujo completo de un documento está en [arquitectura.md](arquitectura.md).
+Cada paquete, su responsabilidad y sus dependencias reales están en [arquitectura/componentes.md](../arquitectura/componentes.md). El flujo de un documento, en [arquitectura/flujo-de-impresion.md](../arquitectura/flujo-de-impresion.md).
 
 ## Convenciones
 
@@ -106,25 +75,9 @@ El flujo completo de un documento está en [arquitectura.md](arquitectura.md).
 - **Errores visibles:** llevan un código estable en MAYÚSCULAS, un mensaje en español y una sugerencia (`contrato.Error`, `conector.Error`).
 - **Logs:** se escriben con `log/slog` en JSON. **Nunca** registres el contenido de los tickets ni las llaves.
 - **Cambios en la base de datos:** agrega una migración nueva (`0002_…sql`). No edites una migración ya publicada.
-- **Cambios en el contrato:** actualiza a la vez la especificación (`docs/contrato-documento-v1.md`), el esquema (`schema/`), los ejemplos y el índice de inválidos.
-- **Dependencias:** solo las listadas en el prompt de cada parte o en CLAUDE.md; cualquier otra hay que justificarla.
+- **Cambios en el contrato:** actualiza a la vez la especificación (`docs/referencia/contrato-documento-v1.md`), el esquema (`schema/`), los ejemplos y el índice de inválidos.
+- **Dependencias:** las de `go.mod` (ver [arquitectura/componentes.md](../arquitectura/componentes.md)). Cualquier dependencia nueva hay que justificarla en el pull request.
 
-## Ramas y commits
+## Ramas, commits y pull requests
 
-| Rama | Uso |
-|---|---|
-| `main` | Producción: solo versiones estables. |
-| `develop` | Integración: aquí se trabaja. |
-
-Crea tu rama desde `develop` y abre el pull request hacia `develop`.
-
-Los mensajes de commit siguen la forma `tipo(ámbito): asunto`, en imperativo y sin punto final, con un cuerpo que explique el porqué. Tipos en uso: `caracteristica`, `correccion`, `documentacion`, `construccion`, `configuracion`, `refactorizacion`, `prueba`, `rendimiento`, `estilo`. Ámbitos en uso: `prisma`, `contrato`, `escpos`, `conector`, `cola`, `seguridad`, `dev`. Haz un commit por ámbito, y comprueba que cada uno compile y pase sus pruebas por sí solo.
-
-## Antes de abrir un pull request
-
-```sh
-go test ./...
-go vet ./...
-.\build.ps1 lint        # o make lint
-.\build.ps1 build-todo  # compila las 6 plataformas
-```
+Están en [CONTRIBUTING.md](../../CONTRIBUTING.md). Para publicar una versión, ver [publicar.md](publicar.md).

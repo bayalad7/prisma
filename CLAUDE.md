@@ -49,6 +49,10 @@ según el perfil de la impresora y lo imprime por USB, red (TCP 9100) o Bluetoot
   PRISMA_LLAVE_RELEASES del CI) y verifica el SHA-256. Nunca se instala nada solo.
 - Panel: sesiones en memoria, cookie HttpOnly/Secure/SameSite=Strict, CSRF por cabecera, solo IPs
   privadas por defecto, sin frameworks ni CDNs.
+- CI y publicación compilan con el último parche de Go 1.26 (`go-version: '1.26.x'`, `check-latest`);
+  go.mod declara solo el mínimo (1.26.0). nfpm v2.48.0 exige 1.26.4 para el .deb.
+- Licencia Apache-2.0 (LICENSE, NOTICE); el SDK también.
+- Cada decisión tiene su registro en docs/adr/; una decisión nueva lleva un ADR nuevo.
 
 ## Invariantes (verificadas; no las rompas)
 - Idempotencia: un trabajo que NO se imprimió (fallido o interrumpido por un reinicio) libera su id;
@@ -70,6 +74,8 @@ según el perfil de la impresora y lo imprime por USB, red (TCP 9100) o Bluetoot
   (ej. IMPRESORA_NO_ENCONTRADA) + mensaje en español + sugerencia.
 - Interfaz y mensajes al usuario en español (preparar i18n para inglés en el futuro).
 - Logs estructurados (log/slog, JSON). NUNCA registrar el contenido de los tickets ni las llaves.
+- Documentación: en español, fiel al código (si no coinciden, manda el código y se corrige la doc).
+  Versiones distintas: programa (0.1.0), API (/v1) y documento ("1").
 - `go test ./...` debe pasar en Windows, Linux y macOS. Cambios incrementales; pregunta antes de reestructurar.
 - Ramas: `main` (producción) y `develop` (trabajo). Commits en español: `tipo(ámbito): asunto`, con cuerpo,
   líneas ≤100 caracteres, un commit por ámbito, y cada commit debe compilar y pasar las pruebas.
@@ -81,7 +87,11 @@ según el perfil de la impresora y lo imprime por USB, red (TCP 9100) o Bluetoot
 - Archivos generados por pruebas: `go test ./internal/dev -actualizar` (golden) y
   `go test ./internal/servicio -run Deb -actualizar` (unidad de systemd del .deb).
 - Binarios y paquetes: `make build-todo | deb | pkg | checksums` / `.\build.ps1 build-todo | deb | instalador | checksums`.
-- Antes de publicar: docs/pruebas/matriz.md (manual) y docs/pruebas/reporte-verificacion.md (último reporte).
+- Documentación fiel al código: `go test ./docs` compara las rutas de la API con
+  docs/referencia/openapi.yaml, exige cada código de error en docs/referencia/codigos-de-error.md y
+  revisa los enlaces y anclas de todos los Markdown. Si cambias rutas, códigos o archivos, actualízalos.
+- Antes de publicar: docs/desarrollo/pruebas/matriz.md (manual) y docs/desarrollo/pruebas/ (reportes);
+  pasos en docs/desarrollo/publicar.md. Cada versión mueve «Sin publicar» de CHANGELOG.md.
 
 ## Estructura
 cmd/prisma/             CLI y punto de entrada (servicio, actualizar, admin, impresoras, clientes, tls, dev)
@@ -104,6 +114,9 @@ sdk/firmadores/         firmadores de nivel 3 (PHP, Node.js, Python) y casos JCS
 schema/                 JSON Schema del documento (embebido)
 ejemplos/               documentos válidos e inválidos (con indice.json); los usan puente y SDK
 testdata/               vector de firma público
-docs/                   guías (instalación, panel, API, contrato…), integradores/ y pruebas/
+docs/                   por lector: integradores/ instalacion/ administracion/ operacion/ seguridad/
+                        arquitectura/ adr/ diagramas/ referencia/ (API, OpenAPI, contrato, errores, CLI)
+                        desarrollo/ (con pruebas/). Las rutas viejas citadas por 0.1.0 son páginas
+                        cortas que redirigen: no las borres
 empaquetado/            Inno Setup, .deb (nfpm), .pkg, instalador de Raspberry Pi, llave pública de versiones
 .github/workflows/      CI (3 sistemas, -race, SDK, servicio real) y publicación de versiones

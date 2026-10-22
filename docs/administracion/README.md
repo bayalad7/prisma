@@ -10,10 +10,10 @@ No necesita Internet ni ninguna cuenta: todo vive en la base de datos del equipo
 
 El panel solo está disponible mientras el puente está en marcha:
 
-- **En un negocio:** el puente corre como servicio y arranca solo ([instalacion.md](instalacion.md)).
-- **En tu computadora, para probar:** ejecuta `prisma ejecutar --config config.dev.toml`, deja esa terminal abierta y entra a `https://localhost:8443/admin`. Los pasos están en [primeros-pasos.md](primeros-pasos.md#7-configurar-todo-desde-el-panel).
+- **En un negocio:** el puente corre como servicio y arranca solo ([instalacion/](../instalacion/README.md)).
+- **En tu computadora, para probar:** ejecuta `prisma ejecutar --config config.dev.toml`, deja esa terminal abierta y entra a `https://localhost:8443/admin`. Los pasos están en [primeros-pasos.md](../desarrollo/primeros-pasos.md#7-configurar-todo-desde-el-panel).
 
-La primera vez el navegador avisará que el certificado es autofirmado. Continúa, o instálalo como explica [tls.md](tls.md).
+La primera vez el navegador avisará que el certificado es autofirmado. Continúa, o instálalo como explica [instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md).
 
 ## Primer acceso
 
@@ -32,62 +32,16 @@ Si olvidas la contraseña, `prisma admin restablecer-contrasena` genera una nuev
 
 | Sección | Para qué sirve |
 |---|---|
-| **Inicio** | Estado de las impresoras, trabajos de hoy, solicitudes pendientes, los últimos trabajos y el aviso de una versión nueva. |
-| **Impresoras** | Agregar una impresora en 3 pasos: elegir la conexión (detectadas, escaneo de red en el puerto 9100 o a mano), elegir el papel (58 u 80 mm, con opciones avanzadas) y probar. Por impresora: **Probar conexión** (sin imprimir), **Ticket de diagnóstico**, **Probar páginas de códigos**, editar, desactivar y eliminar. |
-| **Aplicaciones** | Las aplicaciones autorizadas a imprimir (en la API se llaman *clientes*). Nivel de seguridad, orígenes, impresoras permitidas y operaciones sensibles. |
-| **Solicitudes** | Orígenes desconocidos que intentaron imprimir. Se aprueban (con una aplicación nueva o existente), se rechazan o se olvidan. |
+| **Inicio** | Estado de las impresoras, trabajos de hoy, solicitudes pendientes, los últimos trabajos, el aviso de una versión nueva y el aviso de vencimiento del certificado. |
+| **[Impresoras](impresoras.md)** | Agregar una impresora en 3 pasos: elegir la conexión (detectadas, escaneo de red en el puerto 9100 o a mano), elegir el papel (58 u 80 mm, con opciones avanzadas) y probar. Por impresora: **Probar conexión** (sin imprimir), **Ticket de diagnóstico**, **Probar páginas de códigos**, editar, desactivar y eliminar. |
+| **[Aplicaciones](aplicaciones-y-solicitudes.md)** | Las aplicaciones autorizadas a imprimir (en la API se llaman *clientes*). Nivel de seguridad, orígenes, impresoras permitidas y operaciones sensibles. |
+| **[Solicitudes](aplicaciones-y-solicitudes.md#solicitudes-de-origen)** | Orígenes desconocidos que intentaron imprimir. Se aprueban (con una aplicación nueva o existente), se rechazan o se olvidan. |
 | **Trabajos** | Historial filtrable por aplicación, impresora, estado y fechas. Nunca muestra el contenido de los tickets: el puente no lo guarda. |
 | **Imágenes** | PNG guardados en el puente para usarlos con `"recurso"` en la operación `imagen`. Muestra cómo quedarán en 1 bit antes de guardarlos. |
-| **Ajustes** | Nombre del puente, límites de peticiones, retención del historial, acceso solo desde la red local, certificado HTTPS, contraseña, respaldo y restauración. |
+| **[Ajustes](ajustes.md)** | Nombre del puente, límites de peticiones, retención del historial, acceso solo desde la red local, certificado HTTPS, contraseña, respaldo y restauración. |
 | **Ayuda** | Cómo confiar en el certificado en cada sistema y enlaces a esta documentación. |
 
-### Impresoras: diagnóstico y páginas de códigos
-
-- **Ticket de diagnóstico.** Imprime el alias, la conexión, el papel, la página de códigos, una regla que debe ocupar exactamente una línea, los acentos, las tres alineaciones y un QR (si la impresora puede imprimirlo). El panel muestra además cómo debería verse. Si la regla se parte en dos líneas, las columnas están mal configuradas.
-- **Probar páginas de códigos.** Imprime la misma línea con acentos con `ESC t 0`, `2`, `16` y `19`. Elige en el panel la que se leyó bien y el perfil se actualiza solo.
-
-Los dos quedan en el historial como trabajos de la aplicación «Panel».
-
-- **Confirmar impresión** (solo red y Bluetooth): después de cada ticket, el puente pregunta a la impresora si lo recibió, y si no responde el trabajo falla en vez de darse por impreso. Actívala y usa *Ticket de diagnóstico* para comprobar que tu impresora responde. Ver [conectores.md](conectores.md#confirmar-impresión).
-
-### Aplicaciones: niveles y llaves
-
-| Nivel | Cómo se identifica | Qué muestra el panel |
-|---|---|---|
-| 1 — Origen | Solo el encabezado `Origin` del navegador. Necesita al menos un origen. | — |
-| 2 — Llave (por defecto) | Origen (si viene de un navegador) y la llave `pk_…`. | La llave **una sola vez**, con botón para copiarla y el código de integración. |
-| 3 — Firma | Documentos firmados con Ed25519 por el backend de la aplicación. | Valida la llave pública (PEM o base64) y muestra su huella. Opcionalmente exige también una llave `pk_`. |
-
-- **Regenerar la llave:** la anterior deja de funcionar en ese momento.
-- **Revocar la llave:** en el nivel 2 la aplicación no puede imprimir hasta que se genere otra; en el nivel 3 sigue imprimiendo con documentos firmados.
-- `abrir_cajon` y `raw` están deshabilitadas hasta que las marques para esa aplicación.
-
-### Solicitudes de origen
-
-Cuando una página web desconocida intenta imprimir, el puente la rechaza (`ORIGEN_NO_AUTORIZADO`) y la anota aquí con el número de intentos. Al **aprobarla** eliges:
-
-- **Aplicación nueva** (nivel 1 o 2): puede imprimir en todas las impresoras y sin operaciones sensibles; ajústala después en Aplicaciones. Con nivel 2 se muestra la llave una vez.
-- **Aplicación existente:** el origen se agrega a esa aplicación con sus permisos.
-
-**Rechazar** la oculta: sus intentos se siguen contando, pero ya no aparece como pendiente. **Olvidar** la borra; si el origen vuelve a intentarlo, aparecerá otra vez.
-
-La lista se limpia sola, para que ningún equipo de la red pueda llenarla con orígenes inventados:
-
-- cada hora se borran las pendientes sin intentos en 30 días y las rechazadas sin intentos en 90;
-- caben 200; al llegar al tope, un origen nuevo reemplaza a la pendiente con la actividad más antigua;
-- con más de 150, la sección muestra un aviso. Muchos orígenes desconocidos suelen indicar que alguien en la red está probando el puente.
-
-### Ajustes
-
-| Ajuste | Efecto |
-|---|---|
-| Límites de peticiones | Por IP y por aplicación, por minuto (0 = sin límite). Se aplican al momento y mandan sobre `[limites]` de `config.toml`, que queda como valor inicial. |
-| Retención | Días que se conserva el historial de trabajos (1 a 3650). |
-| Solo red local | Activado por defecto: el panel solo responde a IPs privadas (192.168.x.x, 10.x.x.x, 172.16–31.x.x, IPv6 locales) y al propio equipo. El equipo del puente siempre puede entrar. |
-| Certificado | Muestra nombres, IPs, vencimiento y huella. Con `modo_tls = "autofirmado"` se puede **regenerar** (por ejemplo, si cambió la IP del equipo) y **descargar** para instalarlo en los equipos que imprimen. El puente lo usa sin reiniciar. Desde 60 días antes de vencer, *Inicio* muestra un aviso y la fila *Vence* lo marca; ver [tls.md](tls.md#vencimiento). |
-| Actualizaciones | Activado por defecto: una vez al día, el puente pregunta a GitHub si hay una versión nueva y la avisa en *Inicio*. No envía datos del negocio y nunca instala nada solo; se instala con el instalador o con `prisma actualizar`. Desactívalo si el equipo no debe hacer conexiones salientes. |
-| Respaldo | Descarga una copia completa y consistente de la base de datos, sin detener el puente. |
-| Restaurar | Sube un respaldo. El puente lo valida, reemplaza la base con una pausa breve, recarga impresoras y ajustes, y cierra todas las sesiones. La base anterior queda junto a la nueva como `prisma.db.antes-de-restaurar`. |
+Si algo no funciona, ver [problemas-comunes.md](problemas-comunes.md).
 
 ## Seguridad del panel
 
@@ -99,4 +53,4 @@ La lista se limpia sola, para que ningún equipo de la red pueda llenarla con or
 
 ## API interna
 
-El panel usa rutas JSON bajo `/admin/api/` protegidas por la sesión. **No son una API pública**: pueden cambiar entre versiones sin aviso. Las aplicaciones deben usar la [API v1](api-v1.md).
+El panel usa rutas JSON bajo `/admin/api/` protegidas por la sesión. **No son una API pública**: pueden cambiar entre versiones sin aviso. Las aplicaciones deben usar la [API v1](../referencia/api-v1.md).

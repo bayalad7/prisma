@@ -1,6 +1,6 @@
 # Publicar una versión
 
-Para quien mantiene PRISMA. Una etiqueta `v*` dispara [`.github/workflows/release.yml`](../.github/workflows/release.yml), que compila, empaqueta, prueba cada instalador en su sistema, firma los checksums y crea la versión en GitHub Releases.
+Para quien mantiene PRISMA. Una etiqueta `v*` dispara [`.github/workflows/release.yml`](../../.github/workflows/release.yml), que compila, empaqueta, prueba cada instalador en su sistema, firma los checksums y crea la versión en GitHub Releases.
 
 ## Una sola vez: la llave de las versiones
 
@@ -26,7 +26,7 @@ Para quien mantiene PRISMA. Una etiqueta `v*` dispara [`.github/workflows/releas
 
    El último comando imprime la llave pública: 44 caracteres que terminan en `=`. Cópiala a `empaquetado/llave-releases.pub` y borra `publica.der`. Nunca generes la llave en `dist/`, porque `limpiar` borra esa carpeta; dentro del repositorio, Git ignora `key/private/` y `key/public/`.
 
-2. Pon la misma llave pública en el instalador de Linux, en `LLAVE_RELEASES="…"` de [`empaquetado/linux/instalar.sh`](../empaquetado/linux/instalar.sh). Una prueba de `internal/actualizacion` comprueba que coincidan.
+2. Pon la misma llave pública en el instalador de Linux, en `LLAVE_RELEASES="…"` de [`empaquetado/linux/instalar.sh`](../../empaquetado/linux/instalar.sh). Una prueba de `internal/actualizacion` comprueba que coincidan.
 3. En GitHub, *Settings → Secrets and variables → Actions*, crea el secreto `PRISMA_LLAVE_RELEASES` con el contenido completo de `llave-releases.pem`.
 4. Guarda `llave-releases.pem` fuera del repositorio, en un gestor de contraseñas y con una copia de respaldo. **Si se pierde,** las versiones nuevas no se podrán instalar con `prisma actualizar` desde las ya instaladas: habrá que reinstalar con el instalador. **Si se filtra,** cualquiera podría publicar una actualización que los puentes aceptarían.
 5. Haz commit de `empaquetado/llave-releases.pub` y `instalar.sh`.
@@ -47,7 +47,7 @@ Sin firma de código, todo funciona igual, pero Windows muestra SmartScreen y ma
 
 ## Cada versión
 
-1. En `develop`, con el CI en verde, actualiza la documentación y, si cambió el SDK, la versión de `sdk/js/package.json` y `VERSION_SDK` en `sdk/js/src/prisma.mjs` (`npm run construir`).
+1. En `develop`, con el CI en verde, pasa la sección «Sin publicar» de [`CHANGELOG.md`](../../CHANGELOG.md) a la versión nueva, actualiza la documentación y, si cambió el SDK, la versión de `sdk/js/package.json` y `VERSION_SDK` en `sdk/js/src/prisma.mjs` (`npm run construir`).
 2. Lleva `develop` a `main` con un pull request.
 3. Etiqueta `main` y empújala:
 
@@ -58,13 +58,8 @@ Sin firma de código, todo funciona igual, pero Windows muestra SmartScreen y ma
    ```
 
    Una etiqueta con guion (`v1.2.0-rc.1`) se publica como versión preliminar. `prisma actualizar` y el aviso del panel no la ofrecen, porque consultan solo la última versión estable.
-4. **Solo la primera vez que el SDK llegue a npm:** cambia la dirección del SDK de
-   `https://cdn.jsdelivr.net/gh/bayalad7/prisma@develop/sdk/js/dist/prisma.umd.js` a
-   `https://cdn.jsdelivr.net/npm/@bayalad7/prisma@0.1/dist/prisma.umd.js` en
-   `docs/integradores/inicio-rapido.md`, `docs/integradores/ejemplos/pagina-simple.html` y
-   `docs/integradores/ejemplos/backend-php-firmado/index.php`, y quita las notas «⏳» de
-   `inicio-rapido.md`, `referencia-sdk.md` y `sdk/js/README.md`. Comprueba antes que la dirección de
-   npm responda 200.
+4. **Actualiza la versión fijada del SDK** en la documentación: cambia `@v<versión anterior>` por la etiqueta nueva en `docs/integradores/inicio-rapido.md`, `docs/integradores/sdk.md`, `docs/integradores/README.md`, `docs/integradores/ejemplos/pagina-simple.html`, `docs/integradores/ejemplos/backend-php-firmado/index.php` y `sdk/js/README.md`. Comprueba que la dirección nueva responda 200 (jsDelivr la sirve en cuanto la etiqueta existe).
+5. **La primera vez que el SDK llegue a npm** (con el secreto `NPM_TOKEN`): agrega `npm install @bayalad7/prisma` a esas guías, quita las notas «⏳» de npm y anúncialo en `CHANGELOG.md`.
 
 El workflow publica:
 

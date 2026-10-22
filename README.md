@@ -18,7 +18,7 @@ PRISMA es un servicio que se instala en una PC, Raspberry Pi o Mac dentro de la 
 }
 ```
 
-> **Estado: en desarrollo.** Ya funcionan el contrato del documento con su validación, el renderizador ESC/POS con su previsualización, los conectores (red, USB, Bluetooth y archivo), la cola por impresora, la configuración, la base de datos y la CLI; las aplicaciones ya imprimen por la [API v1](docs/api-v1.md) con HTTPS y autorización por niveles, el dueño configura todo desde el [panel de administración](docs/panel.md), los integradores tienen un [SDK JavaScript](sdk/js/) con [guías](docs/integradores/README.md) y firmadores de nivel 3 para PHP, Node.js y Python, y se instala como servicio en Windows, Linux/Raspberry Pi y macOS ([instalación](docs/instalacion.md)). Todavía no hay una versión publicada: está en verificación previa ([reporte](docs/pruebas/reporte-verificacion.md) y [matriz de pruebas](docs/pruebas/matriz.md)). Consulta la [hoja de ruta](#hoja-de-ruta).
+> **Versión actual: [0.1.0](https://github.com/bayalad7/prisma/releases/tag/v0.1.0)** ([registro de cambios](CHANGELOG.md)). Funciona en Windows, Linux/Raspberry Pi y macOS: las aplicaciones imprimen por la [API v1](docs/referencia/api-v1.md) con HTTPS y autorización por niveles, el dueño configura todo desde el [panel de administración](docs/administracion/README.md), y los integradores tienen un [SDK JavaScript](docs/integradores/sdk.md) y firmadores de nivel 3 para PHP, Node.js y Python. Se instala como servicio con los [instaladores](docs/instalacion/README.md) de cada sistema.
 
 ## Principios
 
@@ -33,7 +33,7 @@ PRISMA es un servicio que se instala en una PC, Raspberry Pi o Mac dentro de la 
 - Las impresoras se identifican por un **alias** (`"caja"`, `"cocina"`). Las IPs y los puertos nunca salen del puente.
 - Cada operación es **independiente** y trae su propio estilo.
 
-La especificación completa está en [docs/contrato-documento-v1.md](docs/contrato-documento-v1.md), y el esquema formal en [schema/documento-v1.schema.json](schema/documento-v1.schema.json) (JSON Schema 2020-12). En [ejemplos/](ejemplos/) hay documentos válidos y un caso inválido por cada regla.
+La especificación completa está en [docs/referencia/contrato-documento-v1.md](docs/referencia/contrato-documento-v1.md), y el esquema formal en [schema/documento-v1.schema.json](schema/documento-v1.schema.json) (JSON Schema 2020-12). En [ejemplos/](ejemplos/) hay documentos válidos y un caso inválido por cada regla.
 
 ## Seguridad
 
@@ -52,7 +52,7 @@ Además:
 
 ## Requisitos para compilar
 
-- Go 1.26 o superior.
+- Go 1.26 o superior (1.26.4 o superior para empaquetar el `.deb`).
 - No se necesita CGO: la base de datos es SQLite en Go puro.
 
 ## Compilar y probar
@@ -79,24 +79,18 @@ make test-sdk
 make deb                 # también: pkg (solo en macOS), checksums
 ```
 
-El CI ([`.github/workflows`](.github/workflows/)) corre `go test -race`, las pruebas del SDK y la instalación real del servicio en Windows, Ubuntu y macOS. Las versiones se publican con una etiqueta `v*` ([docs/publicar.md](docs/publicar.md)).
+El CI ([`.github/workflows`](.github/workflows/)) corre `go test -race`, las pruebas del SDK y la instalación real del servicio en Windows, Ubuntu y macOS. Las versiones se publican con una etiqueta `v*` ([docs/publicar.md](docs/desarrollo/publicar.md)).
 
 ## Documentación
 
-| Guía | Contenido |
+| Si… | Empieza por |
 |---|---|
-| [Primeros pasos](docs/primeros-pasos.md) | Compilar e imprimir en una impresora virtual en 5 minutos. |
-| [Instalación](docs/instalacion.md) | Producción en Windows, Linux, Raspberry Pi y macOS: servicio, respaldo y actualización. |
-| [Conectores](docs/conectores.md) | Impresoras de red, USB y Bluetooth en cada sistema. |
-| [Panel de administración](docs/panel.md) | Impresoras, aplicaciones, solicitudes, trabajos y ajustes desde el navegador. |
-| [CLI](docs/cli.md) · [Configuración](docs/configuracion.md) | Referencia de comandos y de `config.toml`. |
-| [Arquitectura](docs/arquitectura.md) | Cómo viaja un documento hasta la impresora. |
-| [Desarrollo](docs/desarrollo.md) | Pruebas, golden, convenciones y ramas. |
-| [Solución de problemas](docs/solucion-de-problemas.md) | Errores frecuentes, acentos y columnas. |
-| [Contrato documento v1](docs/contrato-documento-v1.md) | El JSON que envían las aplicaciones. |
-| [API v1](docs/api-v1.md) · [HTTPS y certificados](docs/tls.md) | Endpoints, autorización, CORS, errores y cómo confiar en el certificado. |
-| [Integradores](docs/integradores/README.md) | SDK JavaScript, niveles de seguridad, firmas y problemas comunes. |
-| [Publicar](docs/publicar.md) · [Pruebas](docs/pruebas/README.md) | Llave de las versiones, CI e instaladores; matriz manual y reporte de verificación. |
+| Integras PRISMA en tu aplicación | [docs/integradores/](docs/integradores/README.md): inicio rápido, SDK, niveles de seguridad y firmas |
+| Instalas PRISMA en un negocio | [docs/instalacion/](docs/instalacion/README.md): Windows, Raspberry Pi, Linux y macOS |
+| Administras un puente | [docs/administracion/](docs/administracion/README.md) (panel) y [docs/operacion/](docs/operacion/README.md) (respaldo, actualización, bitácoras, recuperación) |
+| Desarrollas PRISMA | [docs/desarrollo/](docs/desarrollo/README.md), [CONTRIBUTING.md](CONTRIBUTING.md), [docs/arquitectura/](docs/arquitectura/README.md) y [docs/adr/](docs/adr/README.md) |
+| Buscas una referencia | [API v1](docs/referencia/api-v1.md) · [OpenAPI](docs/referencia/openapi.yaml) · [contrato](docs/referencia/contrato-documento-v1.md) · [códigos de error](docs/referencia/codigos-de-error.md) · [CLI](docs/referencia/cli.md) · [configuración](docs/referencia/configuracion.md) · [glosario](docs/referencia/glosario.md) |
+| Te preocupa la seguridad | [docs/seguridad/](docs/seguridad/README.md) y [SECURITY.md](SECURITY.md) |
 
 El índice completo está en [docs/README.md](docs/README.md).
 
@@ -135,7 +129,7 @@ prisma impresoras eliminar caja
 prisma imprimir --impresora caja documento.json   # solo con [dev] modo_desarrollo = true
 ```
 
-Cómo obtener el destino de cada impresora (IP fija, nombre USB, cola de CUPS, puerto Bluetooth) y qué permisos necesita el servicio en cada sistema: [docs/conectores.md](docs/conectores.md).
+Cómo obtener el destino de cada impresora (IP fija, nombre USB, cola de CUPS, puerto Bluetooth) y qué permisos necesita el servicio en cada sistema: [docs/instalacion/impresoras.md](docs/instalacion/impresoras.md).
 
 ### Herramientas de desarrollo
 
@@ -192,7 +186,7 @@ internal/almacen/     SQLite: esquema, migraciones y repositorios
 internal/contrato/    tipos del documento v1 y validación (esquema + reglas)
 internal/escpos/      renderizador a ESC/POS, páginas de códigos, QR, códigos de barras e imágenes
 internal/conector/    red, USB (winspool / dispositivo / CUPS), Bluetooth (puerto serie), archivo y detección
-internal/cola/        cola FIFO por impresora y estado (en línea / fuera de línea / ocupada)
+internal/cola/        cola FIFO por impresora y estado (desconocido / en línea / fuera de línea / ocupada)
 internal/dev/         decodificador ESC/POS, impresora virtual y previsualización
 internal/seguridad/   autorización, llaves, límites, contraseñas y firmas Ed25519 (JCS)
 internal/servidor/    HTTPS y API pública /v1
@@ -204,20 +198,15 @@ sdk/js/               SDK JavaScript público
 sdk/firmadores/       firmadores de nivel 3 (PHP, Node.js, Python)
 testdata/             vector de firma público
 schema/               JSON Schema publicados (embebidos en el binario)
-docs/                 especificaciones
+docs/                 documentación por tipo de lector (ver docs/README.md)
 ejemplos/             documentos de ejemplo válidos e inválidos
 empaquetado/          instaladores: Inno Setup (Windows), .deb (nfpm), .pkg (macOS) y script de Raspberry Pi
 .github/workflows/    CI y publicación de versiones
 ```
 
-## Ramas
+## Contribuir
 
-| Rama | Uso |
-|---|---|
-| `main` | Producción. Solo recibe versiones estables desde `develop`. |
-| `develop` | Integración. Aquí se trabaja y se fusionan los cambios nuevos. |
-
-Para contribuir, crea tu rama a partir de `develop` y abre el pull request hacia `develop`.
+Crea tu rama desde `develop` y abre el pull request hacia `develop`; `main` solo recibe lo que se publica. Las reglas de commits y pull requests están en [CONTRIBUTING.md](CONTRIBUTING.md), y las vulnerabilidades se reportan en privado como explica [SECURITY.md](SECURITY.md).
 
 ## Hoja de ruta
 
@@ -231,4 +220,11 @@ Para contribuir, crea tu rama a partir de `develop` y abre el pull request hacia
 - [x] Panel de administración
 - [x] SDK JavaScript, firmadores de referencia y guías para integradores
 - [x] Instalación como servicio, instaladores por plataforma, actualizaciones y CI
-- [ ] Primera versión publicada
+- [x] Primera versión publicada (0.1.0)
+- [ ] SDK publicado en npm
+- [ ] Firma de código de los instaladores de Windows y macOS
+- [ ] Negociación de versiones del documento (contrato §10)
+
+## Licencia
+
+[Apache-2.0](LICENSE). Ver también [NOTICE](NOTICE).

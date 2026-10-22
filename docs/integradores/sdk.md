@@ -4,34 +4,36 @@
 
 ## Instalación
 
+El SDK se publica con cada versión de PRISMA, en la etiqueta `v<versión>` del repositorio. Fija siempre la versión en la dirección, para que una versión nueva no cambie tu página sin aviso.
+
 **Desde un CDN, con `<script>`** (define la variable global `Prisma`):
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@bayalad7/prisma@0.1/dist/prisma.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/bayalad7/prisma@v0.1.0/sdk/js/dist/prisma.umd.js"></script>
 ```
 
 **Desde un CDN, como módulo ES:**
 
 ```html
 <script type="module">
-  import { Prisma } from "https://cdn.jsdelivr.net/npm/@bayalad7/prisma@0.1/dist/prisma.mjs";
+  import { Prisma } from "https://cdn.jsdelivr.net/gh/bayalad7/prisma@v0.1.0/sdk/js/dist/prisma.mjs";
 </script>
 ```
 
-**Con npm:**
+**En Node.js 18+ o con un empaquetador:** copia el archivo al proyecto y impórtalo desde ahí.
 
 ```sh
-npm install @bayalad7/prisma
+curl -fsSLo prisma.mjs https://cdn.jsdelivr.net/gh/bayalad7/prisma@v0.1.0/sdk/js/dist/prisma.mjs
 ```
 
 ```js
-import { Prisma } from "@bayalad7/prisma";        // módulo ES
-const { Prisma } = require("@bayalad7/prisma");   // CommonJS
+import { Prisma } from "./prisma.mjs";           // módulo ES
+const { Prisma } = require("./prisma.umd.js");   // CommonJS, con el archivo .umd.js
 ```
 
-- También funciona desde unpkg: `https://unpkg.com/@bayalad7/prisma@0.1/dist/prisma.umd.js`.
-- Fija al menos la versión menor (`@0.1`) para que una versión nueva no cambie tu página sin aviso.
-- ⏳ Mientras el paquete no esté en npm, las direcciones `/npm/` y `unpkg` responden 404. Usa jsDelivr sobre la rama `develop` del repositorio: `https://cdn.jsdelivr.net/gh/bayalad7/prisma@develop/sdk/js/dist/prisma.umd.js` (o `…/prisma.mjs` como módulo ES). Esa dirección sigue a la rama, así que cámbiala por la de npm en cuanto exista.
+- **npm:** ⏳ el paquete `@bayalad7/prisma` todavía no está publicado en npm: `npm install @bayalad7/prisma`, `cdn.jsdelivr.net/npm/…` y unpkg responden 404. Cuando exista, se anunciará en el [registro de cambios](../../CHANGELOG.md).
+- **Tipos TypeScript:** `prisma.d.mts` y `prisma.umd.d.ts`, en la misma carpeta `sdk/js/dist/`.
+- **Versión del SDK:** `Prisma.VERSION_SDK`. La del puente al que te conectas la da `await prisma.salud()`.
 
 ## `new Prisma(opciones)`
 
@@ -167,7 +169,7 @@ doc
   .abrirCajon();
 ```
 
-Las reglas de cada operación (cómo se reparten las columnas, qué hace la impresora si no tiene QR nativo…) están en el [contrato](../contrato-documento-v1.md#4-operaciones).
+Las reglas de cada operación (cómo se reparten las columnas, qué hace la impresora si no tiene QR nativo…) están en el [contrato](../referencia/contrato-documento-v1.md#4-operaciones).
 
 ## Validación local
 
@@ -224,7 +226,7 @@ try {
 }
 ```
 
-Además de los [códigos del puente](referencia-api.md#códigos-de-error), el SDK genera estos cuando no hay respuesta útil (`status: 0`):
+Además de los [códigos del puente](../referencia/codigos-de-error.md), el SDK genera estos cuando no hay respuesta útil (`status: 0`):
 
 | Código | Cuándo | Qué hacer |
 |---|---|---|
@@ -251,7 +253,7 @@ En Node.js el error sí trae la causa, y el SDK responde `CERTIFICADO_NO_CONFIAB
 ## Node.js
 
 ```js
-import { Prisma } from "@bayalad7/prisma";
+import { Prisma } from "./prisma.mjs";   // copiado de sdk/js/dist (ver Instalación)
 
 const prisma = new Prisma({ url: "https://192.168.1.10:8443", llave: process.env.PRISMA_LLAVE });
 await prisma.imprimir("caja", (d) => d.texto("Desde el servidor").cortar());
@@ -270,4 +272,4 @@ await prisma.imprimir("caja", (d) => d.texto("Desde el servidor").cortar());
 | `Prisma.aBase64(bytes)` | Codifica bytes en base64 estándar. |
 | `Prisma.VERSION_SDK` | Versión del SDK. |
 
-Con módulos ES también se importan por nombre: `import { Prisma, Documento, PrismaError, validarDocumento } from "@bayalad7/prisma"`.
+Con módulos ES también se importan por nombre: `import { Prisma, Documento, PrismaError, validarDocumento } from "./prisma.mjs"`.

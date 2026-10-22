@@ -1,0 +1,250 @@
+openapi: 3.1.0
+info:
+  title: PRISMA — API pública v1
+  version: "0.1.0"
+  summary: Imprimir tickets en un puente PRISMA de la red local.
+  description: |
+    API que usan las aplicaciones para imprimir en un puente PRISMA. Cada aplicación se registra
+    en el puente como un cliente, con un nivel de seguridad: 1 (origen), 2 (llave, por defecto)
+    o 3 (documento firmado con Ed25519). El cuerpo de `imprimir` y `previsualizar` es un documento
+    v1 (ver `schema/documento-v1.schema.json` y `docs/referencia/contrato-documento-v1.md`).
+
+    `info.version` es la versión del programa; «v1» es la versión de la API y no cambia con él.
+    La guía completa está en `docs/referencia/api-v1.md`, y todos los códigos de error en
+    `docs/referencia/codigos-de-error.md`.
+
+    Este archivo lo verifica una prueba (`go test ./docs`): sus rutas y métodos deben coincidir
+    con los del puente.
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+servers:
+  - url: https://{equipo}:{puerto}
+    description: El puente en el equipo del negocio.
+    variables:
+      equipo:
+        default: 192.168.1.10
+        description: IP o nombre del equipo donde corre el puente.
+      puerto:
+        default: "8443"
+        description: Puerto HTTPS configurado en `config.toml`.
+
+tags:
+  - name: puente
+    description: Estado del puente.
+  - name: impresion
+    description: Impresoras, impresión y previsualización.
+
+paths:
+  /v1/salud:
+    get:
+      tags: [puente]
+      operationId: salud
+      summary: Comprobar que el puente responde.
+      description: Sin autorización ni datos sensibles. Con un `Origin` aprobado, la respuesta lleva sus cabeceras CORS.
+      security: []
+      responses:
+        "200":
+          description: El puente está en marcha.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Salud" }
+              example: { ok: true, version: "0.1.0", nombre_puente: "Café Prisma" }
+        "429": { $ref: "#/components/responses/ErrorConEspera" }
+
+  /v1/impresoras:
+    get:
+      tags: [impresion]
+      operationId: impresoras
+      summary: Listar las impresoras que la aplicación puede usar.
+      description: Solo las impresoras activas y permitidas para el cliente. Nunca expone direcciones, solo el alias.
+      security:
+        - origen: []
+        - llave: []
+      responses:
+        "200":
+          description: Impresoras visibles para el cliente.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Impresora" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/ErrorConEspera" }
+
+  /v1/imprimir:
+    post:
+      tags: [impresion]
+      operationId: imprimir
+      summary: Imprimir un documento.
+      description: |
+        La respuesta llega cuando la impresora terminó. Si en 60 s no la atendió (tenía trabajos por
+        delante), responde 202 y el trabajo se imprime igual. El mismo `id` con el mismo contenido
+        en 10 minutos responde el trabajo original con `duplicado: true`, sin imprimir.
+      security:
+        - origen: []
+        - llave: []
+        - origen: []
+          llave: []
+        - {}
+      requestBody:
+        required: true
+        description: Un documento v1. En el nivel 3 lleva `cliente_id`, `emitido`, `expira` y `firma`.
+        content:
+          application/json:
+            schema: { $ref: "../../schema/documento-v1.schema.json" }
+      responses:
+        "200":
+          description: Impreso, o duplicado de un trabajo ya impreso.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Resultado" }
+        "202":
+          description: Encolado; se imprimirá. El resultado queda en el historial del puente.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Resultado" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "413": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/ErrorConEspera" }
+        "500": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/ErrorConEspera" }
+        "504": { $ref: "#/components/responses/Error" }
+
+  /v1/previsualizar:
+    post:
+      tags: [impresion]
+      operationId: previsualizar
+      summary: Ver cómo saldría el ticket, sin imprimir.
+      description: Misma autorización que `imprimir`, sin idempotencia. Responde un fragmento HTML autocontenido con todo el texto escapado.
+      security:
+        - origen: []
+        - llave: []
+        - origen: []
+          llave: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "../../schema/documento-v1.schema.json" }
+      responses:
+        "200":
+          description: Simulación del ticket en el perfil de la impresora.
+          content:
+            text/html:
+              schema: { type: string }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "413": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/ErrorConEspera" }
+
+components:
+  securitySchemes:
+    origen:
+      type: apiKey
+      in: header
+      name: Origin
+      description: Niveles 1 y 2 desde un navegador. Lo envía el navegador; debe pertenecer a un cliente activo.
+    llave:
+      type: http
+      scheme: bearer
+      bearerFormat: pk_…
+      description: Nivel 2 (y nivel 3 si el cliente la exige). Si se envía, debe ser válida aunque el nivel no la exija.
+
+  headers:
+    Retry-After:
+      description: Segundos que conviene esperar antes de reintentar.
+      schema: { type: integer, minimum: 1 }
+
+  responses:
+    Error:
+      description: Error con código estable.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    ErrorConEspera:
+      description: Error con código estable y `Retry-After` (`DEMASIADAS_PETICIONES`, `COLA_LLENA`, `PUENTE_OCUPADO`).
+      headers:
+        Retry-After: { $ref: "#/components/headers/Retry-After" }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+    Salud:
+      type: object
+      required: [ok, version, nombre_puente]
+      properties:
+        ok: { const: true }
+        version: { type: string, description: Versión del programa. }
+        nombre_puente: { type: string, description: "Ajuste `puente.nombre`; por defecto «PRISMA»." }
+
+    Impresora:
+      type: object
+      required: [alias, nombre, ancho_mm, estado]
+      properties:
+        alias: { type: string, pattern: "^[a-z0-9][a-z0-9_-]{0,31}$" }
+        nombre: { type: string }
+        ancho_mm: { type: integer, enum: [58, 80] }
+        estado: { type: string, enum: [desconocido, en_linea, fuera_de_linea, ocupada] }
+
+    Advertencia:
+      type: object
+      required: [codigo]
+      properties:
+        codigo:
+          type: string
+          enum: [CARACTER_SUSTITUIDO, SIN_CUCHILLA, SIN_CAJON, QR_REDUCIDO, IMPRESORA_FUERA_DE_LINEA]
+        mensaje: { type: string }
+        ruta: { type: string, description: JSON Pointer de la operación que la causó. }
+
+    Resultado:
+      type: object
+      required: [ok, trabajo_id, impresora, advertencias]
+      properties:
+        ok: { const: true }
+        trabajo_id: { type: string, pattern: "^trb_" }
+        impresora: { type: string }
+        duracion_ms: { type: integer, minimum: 0 }
+        estado: { type: string, enum: [encolado, imprimiendo, completado, fallido], description: En 202 y en duplicados. }
+        duplicado: { type: boolean, description: "`true` si el mismo `id` ya se había recibido: no se volvió a imprimir." }
+        advertencias:
+          type: array
+          items: { $ref: "#/components/schemas/Advertencia" }
+
+    Detalle:
+      type: object
+      required: [ruta, regla, mensaje]
+      properties:
+        ruta: { type: string, description: JSON Pointer del campo. }
+        regla: { type: string }
+        mensaje: { type: string }
+
+    Error:
+      type: object
+      required: [ok, codigo, mensaje, sugerencia]
+      properties:
+        ok: { const: false }
+        codigo:
+          type: string
+          pattern: "^[A-Z][A-Z0-9_]+$"
+          description: Código estable. La lista completa está en docs/referencia/codigos-de-error.md.
+        mensaje: { type: string }
+        sugerencia: { type: string }
+        detalles:
+          type: array
+          items: { $ref: "#/components/schemas/Detalle" }
+        trabajo_id: { type: string }
+        versiones_soportadas:
+          type: array
+          items: { type: string }

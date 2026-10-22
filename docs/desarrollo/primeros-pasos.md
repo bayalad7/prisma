@@ -105,9 +105,9 @@ En la terminal 1 aparecen la traza de los comandos ESC/POS y la previsualizació
    ./dist/prisma imprimir --config config.dev.toml --impresora termica ejemplos/validos/venta-simple.json
    ```
 
-3. Si algo falla, el error trae un código y una sugerencia. Los detalles de cada tipo de conexión están en [conectores.md](conectores.md).
+3. Si algo falla, el error trae un código y una sugerencia. Los detalles de cada tipo de conexión están en [instalacion/impresoras.md](../instalacion/impresoras.md).
 
-Si los acentos salen mal o las columnas no cuadran, ajusta `--pagina`, `--comando-pagina` o `--columnas`. Ver [solucion-de-problemas.md](solucion-de-problemas.md).
+Si los acentos salen mal o las columnas no cuadran, ajusta `--pagina`, `--comando-pagina` o `--columnas`. Ver [administracion/problemas-comunes.md](../administracion/problemas-comunes.md).
 
 ## 6. Imprimir por la API, como una aplicación
 
@@ -134,14 +134,14 @@ curl -k https://127.0.0.1:8443/v1/imprimir -H "Authorization: Bearer pk_…" --d
 
 Si repites el mismo comando, el puente responde `"duplicado": true` y no imprime de nuevo, porque el documento tiene el mismo `id`.
 
-Para el nivel 3 (documentos firmados) y para llamar desde un navegador, sigue los ejemplos de [api-v1.md](api-v1.md#ejemplos). Para que el navegador confíe en el certificado, ver [tls.md](tls.md).
+Para el nivel 3 (documentos firmados) y para llamar desde un navegador, sigue los ejemplos de [api-v1.md](../referencia/api-v1.md#ejemplos). Para que el navegador confíe en el certificado, ver [instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md).
 
 ## 7. Configurar todo desde el panel
 
 Lo mismo que hiciste con la CLI se puede hacer desde el navegador. Con el puente de la sección 6 en marcha (`prisma ejecutar` debe seguir abierto; Ctrl+C lo detiene):
 
 1. Abre `https://localhost:8443/admin` en el navegador de **ese mismo equipo**.
-2. El navegador avisa que el certificado no es de confianza, porque es autofirmado. Elige *Configuración avanzada → Continuar a localhost*. Para que no vuelva a avisar, instálalo como explica [tls.md](tls.md).
+2. El navegador avisa que el certificado no es de confianza, porque es autofirmado. Elige *Configuración avanzada → Continuar a localhost*. Para que no vuelva a avisar, instálalo como explica [instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md).
 3. La primera vez el panel pide crear la contraseña de administrador (al menos 10 caracteres). Desde el propio equipo no hace falta ningún código.
 4. Prueba el recorrido completo:
    - En *Impresoras → Agregar impresora → Escribir a mano*, usa el tipo **Red** con destino `127.0.0.1:9100` (la impresora virtual de la sección 4) o el tipo **Archivo** con una carpeta.
@@ -155,10 +155,10 @@ Con `escuchar = "127.0.0.1"`, como en `config.dev.toml`, el panel solo se abre d
 3. Abre `https://<ip-de-este-equipo>:8443/admin`.
 4. Si el panel aún no tiene contraseña, pedirá un código. Genéralo en este equipo con `./dist/prisma admin codigo-inicial --config config.dev.toml`.
 
-Si olvidas la contraseña: `./dist/prisma admin restablecer-contrasena --config config.dev.toml`. Todo lo demás del panel está en [panel.md](panel.md).
+Si olvidas la contraseña: `./dist/prisma admin restablecer-contrasena --config config.dev.toml`. Todo lo demás del panel está en [administracion/](../administracion/README.md).
 
 ## Siguientes pasos
 
-- Escribe tus propios documentos con el [contrato](contrato-documento-v1.md). La carpeta [ejemplos/validos](../ejemplos/validos/) tiene un ejemplo de cada caso.
-- Para contribuir, lee [desarrollo.md](desarrollo.md).
-- Para instalar en un negocio, lee [instalacion.md](instalacion.md).
+- Escribe tus propios documentos con el [contrato](../referencia/contrato-documento-v1.md). La carpeta [ejemplos/validos](../../ejemplos/validos/) tiene un ejemplo de cada caso.
+- Para contribuir, lee [desarrollo/](README.md).
+- Para instalar en un negocio, lee [instalacion/](../instalacion/README.md).

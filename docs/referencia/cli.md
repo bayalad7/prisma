@@ -42,7 +42,7 @@ Ejecuta el puente en primer plano hasta que recibe Ctrl+C o SIGTERM. Escribe las
 - **Cada hora:** purga los trabajos más antiguos que la retención (30 días por defecto) y los ids de idempotencia vencidos.
 - **Impresoras:** registra en la cola todas las impresoras activas y las prueba cada 30 s. Las que se agregan o modifican con la CLI mientras corre se toman en el siguiente trabajo.
 - **Versiones nuevas:** una hora después de arrancar, y luego una vez al día, pregunta a GitHub Releases si hay una versión nueva y la avisa en el panel. Se desactiva en *Ajustes → Actualizaciones*. Las compilaciones de desarrollo no consultan.
-- **API y panel:** levanta la API pública ([api-v1.md](api-v1.md)) y el panel en `/admin` ([panel.md](panel.md)) en `servidor.escuchar:servidor.puerto` según `modo_tls` ([tls.md](tls.md)). Con `autofirmado`, genera el certificado la primera vez y registra su huella en la bitácora.
+- **API y panel:** levanta la API pública ([api-v1.md](api-v1.md)) y el panel en `/admin` ([administracion/](../administracion/README.md)) en `servidor.escuchar:servidor.puerto` según `modo_tls` ([instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md)). Con `autofirmado`, genera el certificado la primera vez y registra su huella en la bitácora.
 
 ## `prisma servicio`
 
@@ -62,7 +62,7 @@ Todos, salvo `estado`, requieren permisos de administrador: PowerShell como admi
 | Gestor | Servicio «PRISMA - Puente de Impresión Térmica» (`PRISMA`) | Unidad de systemd `prisma.service` | LaunchDaemon `com.github.bayalad7.prisma` |
 | Corre como | LocalSystem | usuario de sistema `prisma` (grupos `lp` y `dialout`), que el comando crea si no existe | usuario oculto `_prisma`, que el comando crea con `dscl` |
 | Ante un fallo | se reinicia a los 5 s | `Restart=on-failure`, a los 5 s | se reinicia si termina con error |
-| Además | regla del firewall para el puerto, solo subred local; la carpeta de datos queda solo para SYSTEM y Administradores | `ProtectSystem`, `ProtectHome` y `NoNewPrivileges`; el binario debe estar fuera de `/home` | — |
+| Además | regla del firewall para el puerto, solo subred local; las carpetas de datos y de bitácoras quedan solo para SYSTEM y Administradores | `ProtectSystem`, `ProtectHome` y `NoNewPrivileges`; el binario debe estar fuera de `/home` | — |
 
 - **Bitácora:** `prisma.log` en la carpeta de bitácoras, que rota al llegar a 10 MB y conserva 5 archivos anteriores. En Linux también va a journald (`journalctl -u prisma`).
 - **Linux con el paquete .deb:** la unidad la instala el paquete en `/lib/systemd/system`. `servicio instalar` lo detecta y no la duplica; los demás comandos funcionan igual.
@@ -154,7 +154,7 @@ Elimina la impresora. Los permisos de los clientes sobre ella se borran con ella
 
 ## `prisma clientes`
 
-Aplicaciones autorizadas a imprimir. El [panel](panel.md) hace lo mismo en *Aplicaciones*.
+Aplicaciones autorizadas a imprimir. El [panel](../administracion/README.md) hace lo mismo en *Aplicaciones*.
 
 ### `clientes agregar`
 
@@ -195,7 +195,7 @@ Elimina la aplicación con sus orígenes y permisos. Su historial de trabajos se
 | `tls info` | Muestra el certificado en uso: archivo, nombres, IPs, vencimiento y huella SHA-256. Avisa si alguna IP actual del equipo no está incluida. |
 | `tls regenerar` | Solo en modo `autofirmado`. Genera un certificado nuevo con el nombre y las IPs actuales. El puente en marcha lo toma sin reiniciar. |
 
-Cómo confiar en el certificado en cada sistema: [tls.md](tls.md).
+Cómo confiar en el certificado en cada sistema: [instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md).
 
 ## `prisma imprimir DOCUMENTO.json [--impresora ALIAS]`
 
@@ -268,4 +268,4 @@ prisma dev firmar pedido.json --llave privada.pem --cliente cli_xxx --nuevo-id -
 curl -k https://localhost:8443/v1/imprimir -H "Content-Type: application/json" --data-binary @firmado.json
 ```
 
-Para comprobar un firmador propio, usa el vector fijo de [testdata/vector-firma](../testdata/vector-firma/LEEME.md).
+Para comprobar un firmador propio, usa el vector fijo de [testdata/vector-firma](../../testdata/vector-firma/LEEME.md).

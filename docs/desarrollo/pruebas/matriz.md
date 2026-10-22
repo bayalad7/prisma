@@ -24,7 +24,7 @@ Cubrir las 360 combinaciones de {3 sistemas} × {4 conexiones} × {2 anchos} × 
 
 **Equipos:**
 
-- un equipo por sistema con PRISMA instalado según [instalacion.md](../instalacion.md): PC con Windows, Raspberry Pi con Raspberry Pi OS de 64 bits, y una Mac;
+- un equipo por sistema con PRISMA instalado según [instalacion/](../../instalacion/README.md): PC con Windows, Raspberry Pi con Raspberry Pi OS de 64 bits, y una Mac;
 - teléfonos Android e iPhone en la misma red Wi-Fi.
 
 **Impresoras:**
@@ -32,7 +32,7 @@ Cubrir las 360 combinaciones de {3 sistemas} × {4 conexiones} × {2 anchos} × 
 | Conexión | Qué hace falta |
 |---|---|
 | Red | Térmica Ethernet o Wi-Fi con IP fija, en el puerto 9100. |
-| USB | Térmica USB: instalada en Windows; en Linux como `/dev/usb/lp0` o cola de CUPS raw; en macOS como cola de CUPS ([conectores.md](../conectores.md)). |
+| USB | Térmica USB: instalada en Windows; en Linux como `/dev/usb/lp0` o cola de CUPS raw; en macOS como cola de CUPS ([instalacion/impresoras.md](../../instalacion/impresoras.md)). |
 | Bluetooth | Térmica Bluetooth emparejada: COM saliente en Windows, `/dev/rfcomm0` en Linux, `/dev/cu.*` en macOS. |
 | Virtual | `prisma dev impresora-virtual --puerto 9100 --ancho 58` (o `80`) en el equipo del puente, agregada en el panel como **Red** con destino `127.0.0.1:9100`. |
 
@@ -44,15 +44,15 @@ Si es posible, prueba una impresora de 58 mm y otra de 80 mm por conexión. Si n
 |---|---|---|
 | Prueba N1 | 1 | Origen de la página de prueba, por ejemplo `http://192.168.1.20:3000`. |
 | Prueba N2 | 2 | Mismo origen; anota la llave `pk_…`. |
-| Prueba N3 | 3 | Llave pública del ejemplo PHP; origen `http://<pc>:8000` ([ejemplo](../integradores/ejemplos/backend-php-firmado/README.md)). |
+| Prueba N3 | 3 | Llave pública del ejemplo PHP; origen `http://<pc>:8000` ([ejemplo](../../integradores/ejemplos/backend-php-firmado/README.md)). |
 
 **Páginas de prueba**, servidas desde una PC de la red (no desde el equipo del puente), con `npx serve -l 3000`:
 
-- **N1:** [pagina-simple.html](../integradores/ejemplos/pagina-simple.html) sin `llave`.
+- **N1:** [pagina-simple.html](../../integradores/ejemplos/pagina-simple.html) sin `llave`.
 - **N2:** la misma página con la llave de Prueba N2.
 - **N3:** el ejemplo PHP (`php -S 0.0.0.0:8000`).
 
-Cada dispositivo debe **confiar en el certificado** del puente ([tls.md](../tls.md#confiar-en-el-certificado)). Se comprueba abriendo `https://<puente>:8443/v1/salud` sin advertencia.
+Cada dispositivo debe **confiar en el certificado** del puente ([instalacion/https-y-certificados.md](../../instalacion/https-y-certificados.md#confiar-en-el-certificado)). Se comprueba abriendo `https://<puente>:8443/v1/salud` sin advertencia.
 
 ---
 
@@ -86,7 +86,7 @@ Para cada fila, en el panel:
 2. **Probar conexión**: «La impresora respondió: está en línea».
 3. **Ticket de diagnóstico**: sale completo. La **regla de columnas cabe en una sola línea** (32 columnas en 58 mm, 48 en 80 mm). Los acentos `áéíóú ÁÉÍÓÚ ñÑ üÜ ¿¡ € °` se leen bien, y se ven las tres alineaciones, el QR y el corte (o 4 líneas de avance si no hay cuchilla).
 4. **Probar páginas de códigos**: elegir la línea que se lee bien deja el perfil actualizado; repetir el diagnóstico para comprobar los acentos.
-5. Imprimir [`venta-logo-qr.json`](../../ejemplos/validos/venta-logo-qr.json) desde una aplicación: logo, QR y 2 copias.
+5. Imprimir [`venta-logo-qr.json`](../../../ejemplos/validos/venta-logo-qr.json) desde una aplicación: logo, QR y 2 copias.
 
 | ID | Sistema | Conexión | Ancho | Resultado | Notas |
 |---|---|---|---|---|---|
@@ -121,7 +121,7 @@ Para cada fila, en el panel:
 |---|---|---|
 | C-N1 | Red: impresora apagada → *Probar conexión* | `IMPRESORA_INALCANZABLE`: «La impresora en <ip>:9100 rechazó la conexión» o «Falló la comunicación con la impresora…». El estado pasa a *fuera de línea* en ≤30 s. |
 | C-N2 | Red: IP equivocada de otra subred | «Falló la comunicación…» o `TIEMPO_AGOTADO` en ≤3 s al conectar. |
-| C-N3 | USB: impresora desconectada → ticket de diagnóstico | Windows: la cola acepta el trabajo y el ticket sale al reconectar (documentado en solucion-de-problemas.md). Linux con `/dev/usb/lp0`: `IMPRESORA_NO_ENCONTRADA`, «No existe…». |
+| C-N3 | USB: impresora desconectada → ticket de diagnóstico | Windows: la cola acepta el trabajo y el ticket sale al reconectar (documentado en administracion/problemas-comunes.md). Linux con `/dev/usb/lp0`: `IMPRESORA_NO_ENCONTRADA`, «No existe…». |
 | C-N4 | Linux USB: usuario `prisma` fuera del grupo `lp` | `PERMISO_DENEGADO`: «No hay permiso para abrir /dev/usb/lp0». |
 | C-N5 | Bluetooth: un teléfono conectado a la impresora | `PUERTO_OCUPADO` o `IMPRESORA_INALCANZABLE`; al desconectar el teléfono, vuelve a imprimir. |
 | C-N6 | Bluetooth: puerto mal escrito (`COM99`, `/dev/rfcomm9`) | `IMPRESORA_NO_ENCONTRADA`: «No existe el puerto …». |

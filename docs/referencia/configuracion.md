@@ -5,7 +5,7 @@ PRISMA tiene dos niveles de configuración:
 | Dónde | Qué contiene | Cómo se cambia |
 |---|---|---|
 | `config.toml` | Solo lo necesario para **arrancar**: red, TLS, límites de peticiones, ruta de datos y modo desarrollo. | Editando el archivo y reiniciando. |
-| Base de datos (`prisma.db`) | Todo lo demás: impresoras, clientes, orígenes, permisos, recursos, retención, límites editados y contraseña del panel. | Desde el [panel](panel.md), sin reiniciar. También con la CLI (`prisma impresoras …`, `prisma clientes …`, `prisma admin …`). |
+| Base de datos (`prisma.db`) | Todo lo demás: impresoras, clientes, orígenes, permisos, recursos, retención, límites editados y contraseña del panel. | Desde el [panel](../administracion/README.md), sin reiniciar. También con la CLI (`prisma impresoras …`, `prisma clientes …`, `prisma admin …`). |
 
 ## `config.toml`
 
@@ -14,7 +14,7 @@ PRISMA tiene dos niveles de configuración:
 - Linux: `/etc/prisma/config.toml`
 - macOS: `/Library/Application Support/PRISMA/config.toml`
 
-Puedes usar otra con `--config ruta`. Si el archivo por defecto no existe, PRISMA usa los valores por defecto. En [empaquetado/config.toml](../empaquetado/config.toml) hay un ejemplo comentado.
+Puedes usar otra con `--config ruta`. Si el archivo por defecto no existe, PRISMA usa los valores por defecto. En [empaquetado/config.toml](../../empaquetado/config.toml) hay un ejemplo comentado.
 
 ```toml
 [servidor]
@@ -52,7 +52,7 @@ Dónde y cómo escucha la API pública ([api-v1.md](api-v1.md)).
 | `archivos` | Usa `certificado` y `llave`. `config validar` comprueba que existan y que formen un par válido. |
 | `solo_localhost_http` | HTTP sin cifrar. Solo se acepta si `escuchar` es `127.0.0.1`, `::1` o `localhost`; nunca se puede usar en la red. |
 
-Cómo confiar en el certificado autofirmado, usar uno propio o regenerarlo: [tls.md](tls.md).
+Cómo confiar en el certificado autofirmado, usar uno propio o regenerarlo: [instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md).
 
 ### `[datos]`
 
@@ -106,7 +106,7 @@ Error: /etc/prisma/config.toml: la configuración tiene 2 problema(s):
 | `panel.solo_red_privada` | `1` | `0` permite abrir el panel desde cualquier IP. |
 | `actualizaciones.comprobar` | `1` | `0` deja de preguntar a GitHub, una vez al día, si hay una versión nueva. |
 
-Se editan en el panel (*Ajustes*). Las tablas completas están en [arquitectura.md](arquitectura.md#datos).
+Se editan en el panel (*Ajustes*). Las tablas completas están en [arquitectura/datos.md](../arquitectura/datos.md).
 
 ## Perfil de una impresora
 
@@ -116,5 +116,5 @@ Cada impresora tiene un perfil que el renderizador usa para que el ticket salga 
 |---|---|---|
 | Columnas (fuente A / B) | Partir y alinear texto, filas y pares. | La hoja de autoprueba suele indicarlo («Font A: 48 columns»). Si el texto se parte antes de tiempo o se desborda, este valor está mal. |
 | Puntos por línea (`ancho_px`) | Tamaño de imágenes, QR y códigos de barras. | 576 en 80 mm y 384 en 58 mm en la mayoría de los modelos. |
-| Página de códigos y comando | Acentos, ñ, ¿, ¡ y €. | Las tablas de la autoprueba o el manual. Ver [solucion-de-problemas.md](solucion-de-problemas.md#acentos-o-ñ-salen-mal). |
+| Página de códigos y comando | Acentos, ñ, ¿, ¡ y €. | Las tablas de la autoprueba o el manual. Ver [administracion/problemas-comunes.md](../administracion/problemas-comunes.md#acentos-o-ñ-salen-mal). |
 | Capacidades | Decidir si el QR o el código de barras se envía por comando o como imagen, y qué hacer sin cuchilla o sin cajón. | Prueba con `ejemplos/validos/todas-las-operaciones.json`. |

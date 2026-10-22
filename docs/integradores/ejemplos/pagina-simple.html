@@ -11,7 +11,7 @@
   <button id="imprimir">Imprimir ticket de prueba</button>
   <p id="resultado"></p>
 
-  <script src="https://cdn.jsdelivr.net/gh/bayalad7/prisma@develop/sdk/js/dist/prisma.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/bayalad7/prisma@v0.1.0/sdk/js/dist/prisma.umd.js"></script>
   <script>
     const prisma = new Prisma({ url: "https://192.168.1.10:8443", llave: "pk_..." });
     document.getElementById("imprimir").onclick = () => prisma

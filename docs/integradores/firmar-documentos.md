@@ -96,7 +96,7 @@ with open("/ruta/segura/privada.pem", "rb") as f:
 
 - **Firma justo antes de enviar.** El documento vence a los `expira` segundos. El puente acepta 30 s de diferencia de reloj, así que mantén la hora del servidor sincronizada (NTP).
 - **Un id por ticket.** Si reintentas, reenvía el **mismo** documento firmado: si ya había llegado, el puente responde `duplicado: true` y no imprime dos veces.
-- **Si venció antes de enviarlo, fírmalo de nuevo con el mismo `id`.** Si el puente nunca lo recibió, o si su impresión falló, lo imprime. Si ya lo había aceptado, responde `409 ID_REUTILIZADO`: ese ticket ya salió o está en cola, así que no lo reenvíes con otro `id` (ver [contrato §8](../contrato-documento-v1.md#8-idempotencia)).
+- **Si venció antes de enviarlo, fírmalo de nuevo con el mismo `id`.** Si el puente nunca lo recibió, o si su impresión falló, lo imprime. Si ya lo había aceptado, responde `409 ID_REUTILIZADO`: ese ticket ya salió o está en cola, así que no lo reenvíes con otro `id` (ver [contrato §8](../referencia/contrato-documento-v1.md#8-idempotencia)).
 - **No modifiques el documento después de firmarlo.** Ni siquiera el orden o el formato importan, pero cualquier valor sí: el puente compara la forma canónica.
 - **Solo enteros.** El contrato v1 no usa números con decimales, y los firmadores los rechazan (`"$249.00"` es texto).
 
@@ -125,7 +125,7 @@ curl --cacert prisma.crt https://192.168.1.10:8443/v1/imprimir \
 
 ```js
 // Node.js, con NODE_EXTRA_CA_CERTS=prisma.crt
-import { Prisma } from "@bayalad7/prisma";
+import { Prisma } from "./prisma.mjs";   // sdk/js/dist, ver sdk.md#instalación
 await new Prisma({ url: "https://192.168.1.10:8443" }).imprimirDocumento(firmado);
 ```
 

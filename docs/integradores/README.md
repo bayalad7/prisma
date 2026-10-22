@@ -14,17 +14,17 @@ El dueño del negocio te entrega esos datos desde el panel de su puente.
 |---|---|
 | Imprimir tu primer ticket en 5 minutos | [inicio-rapido.md](inicio-rapido.md) |
 | Elegir entre origen, llave y firma | [niveles-de-seguridad.md](niveles-de-seguridad.md) |
-| Conocer todos los métodos del SDK | [referencia-sdk.md](referencia-sdk.md) |
-| Llamar a la API HTTP sin el SDK | [referencia-api.md](referencia-api.md) |
+| Conocer todos los métodos del SDK | [sdk.md](sdk.md) |
+| Llamar a la API HTTP sin el SDK | [referencia/api-v1.md](../referencia/api-v1.md) · [openapi.yaml](../referencia/openapi.yaml) |
 | Firmar tickets desde tu backend (PHP, Node.js, Python) | [firmar-documentos.md](firmar-documentos.md) |
 | Resolver un error de conexión o de certificado | [problemas-comunes.md](problemas-comunes.md) |
-| Saber qué operaciones lleva un ticket | [contrato-documento-v1.md](../contrato-documento-v1.md) |
+| Saber qué operaciones lleva un ticket | [contrato-documento-v1.md](../referencia/contrato-documento-v1.md) |
 
 ## Piezas
 
 | Pieza | Dónde |
 |---|---|
-| SDK JavaScript (navegador y Node.js 18+, sin dependencias, con tipos TypeScript) | [`sdk/js`](../../sdk/js/) · npm `@bayalad7/prisma` |
+| SDK JavaScript (navegador y Node.js 18+, sin dependencias, con tipos TypeScript) | [`sdk/js`](../../sdk/js/) · CDN: `https://cdn.jsdelivr.net/gh/bayalad7/prisma@v0.1.0/sdk/js/dist/prisma.umd.js` (npm: ⏳ próximamente) |
 | Firmadores de referencia para el nivel 3 | [`sdk/firmadores`](../../sdk/firmadores/): PHP 8.2, Node.js y Python |
 | Vector de prueba de firma | [`testdata/vector-firma`](../../testdata/vector-firma/LEEME.md) |
 | Ejemplos | [`ejemplos/pagina-simple.html`](ejemplos/pagina-simple.html) (nivel 2) · [`ejemplos/backend-php-firmado/`](ejemplos/backend-php-firmado/) (nivel 3) |
