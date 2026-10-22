@@ -56,6 +56,17 @@ jobs:
         working-directory: sdk/js
         run: npm install --no-audit --no-fund && npm run tipos
 
+  diagramas:
+    name: Diagramas Mermaid
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Compila cada diagrama con mermaid-cli
+        run: bash scripts/validar-diagramas.sh
+
   firmadores:
     name: Firmadores (PHP, Node.js, Python)
     runs-on: ubuntu-latest
