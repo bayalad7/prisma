@@ -212,7 +212,11 @@ func TestRutasDeLasPantallas(t *testing.T) {
 			t.Errorf("/admin/%s debe servir el panel con su CSP", v)
 		}
 	}
-	for _, ruta := range []string{"/admin/no-existe", "/admin/impresoras/caja", "/admin/clientes", "/admin/index.htm"} {
+	if r := n.exigir("GET", "/admin/pruebas/rollo/prueba-2", nil, 200); r.Body.String() != indice {
+		t.Error("/admin/pruebas/rollo/{alias} debe servir el panel")
+	}
+	for _, ruta := range []string{"/admin/no-existe", "/admin/impresoras/caja", "/admin/clientes", "/admin/index.htm",
+		"/admin/pruebas/rollo/", "/admin/pruebas/rollo/Caja", "/admin/pruebas/rollo/a/b"} {
 		n.exigir("GET", ruta, nil, 404)
 	}
 

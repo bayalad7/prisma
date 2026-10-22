@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -166,9 +167,12 @@ var paginasDesarrollo = map[string]struct{ archivo, tipo string }{
 // la pantalla según la ruta (deben coincidir con SECCIONES de panel.js).
 var vistasPanel = []string{"impresoras", "solicitudes", "trabajos", "pruebas", "aplicaciones", "imagenes", "ajustes", "ayuda"}
 
+// rutaRollo es la pantalla del rollo en vivo de una impresora virtual: /admin/pruebas/rollo/{alias}.
+var rutaRollo = regexp.MustCompile(`^pruebas/rollo/[a-z0-9][a-z0-9_-]{0,31}$`)
+
 func servirEstatico(w http.ResponseWriter, r *http.Request, estaticos fs.FS, desarrollo bool) {
 	nombre := strings.TrimPrefix(r.URL.Path, "/admin/")
-	if nombre == "" || slices.Contains(vistasPanel, nombre) {
+	if nombre == "" || slices.Contains(vistasPanel, nombre) || rutaRollo.MatchString(nombre) {
 		nombre = "index.html"
 	}
 	tipo, ok := tiposEstaticos[nombre]

@@ -337,6 +337,19 @@ func TestSesionCSRFYVencimiento(t *testing.T) {
 	b.avanzar(inactividadMaxima + time.Second)
 	s.exigirError("GET", "/admin/api/resumen", nil, 401, "SESION_REQUERIDA")
 
+	// Las peticiones automáticas del panel (el rollo en vivo) comprueban la sesión sin renovarla:
+	// una pantalla abierta no impide el cierre por inactividad.
+	s = b.configurado()
+	sondeo := func(r *http.Request) { r.Header.Set(cabeceraSondeo, "1") }
+	b.avanzar(20 * time.Minute)
+	if r := s.pedir("GET", "/admin/api/resumen", nil, sondeo); r.Code != 200 {
+		t.Fatalf("el sondeo con la sesión vigente debe responder: %d %s", r.Code, r.Body.String())
+	}
+	b.avanzar(20 * time.Minute)
+	if r := s.pedir("GET", "/admin/api/resumen", nil, sondeo); r.codigo() != "SESION_REQUERIDA" {
+		t.Fatalf("el sondeo no debe renovar la sesión: %d %s", r.Code, r.Body.String())
+	}
+
 	// Restablecer la contraseña desde la CLI cierra las sesiones abiertas.
 	s = b.configurado()
 	hash, _ := seguridad.HashContrasena("otra contraseña larga")

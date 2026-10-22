@@ -60,14 +60,16 @@
   const api = {
     csrf: '',
     ultimaActividad: Date.now(), // cada petición al puente renueva la sesión
-    async pedir(metodo, ruta, cuerpo) {
+    // { sondeo: true }: petición automática (el rollo en vivo); no renueva la sesión.
+    async pedir(metodo, ruta, cuerpo, { sondeo = false } = {}) {
       if (window.PRISMA_DEMO) return window.PRISMA_DEMO.pedir(metodo, ruta, cuerpo);
       const op = { method: metodo, credentials: 'same-origin', headers: { Accept: 'application/json' } };
+      if (sondeo) op.headers['X-Prisma-Sondeo'] = '1';
       if (metodo !== 'GET') op.headers['X-CSRF-Token'] = api.csrf;
       if (cuerpo instanceof FormData) op.body = cuerpo;
       else if (cuerpo !== undefined) { op.headers['Content-Type'] = 'application/json'; op.body = JSON.stringify(cuerpo); }
       let r;
-      try { r = await fetch('/admin/api' + ruta, op); api.ultimaActividad = Date.now(); } catch {
+      try { r = await fetch('/admin/api' + ruta, op); if (!sondeo) api.ultimaActividad = Date.now(); } catch {
         throw new ErrorApi({ mensaje: 'No hay conexión con el puente.', sugerencia: 'Revisa que PRISMA siga en marcha.' });
       }
       const tipo = r.headers.get('Content-Type') || '';
@@ -78,7 +80,7 @@
       if (!r.ok || (datos && datos.ok === false)) throw new ErrorApi(datos, r.status);
       return datos;
     },
-    get: (ruta) => api.pedir('GET', ruta),
+    get: (ruta, opciones) => api.pedir('GET', ruta, undefined, opciones),
     post: (ruta, cuerpo) => api.pedir('POST', ruta, cuerpo === undefined ? {} : cuerpo),
     put: (ruta, cuerpo) => api.pedir('PUT', ruta, cuerpo),
     borrar: (ruta) => api.pedir('DELETE', ruta),
@@ -107,7 +109,11 @@
   // En 0.1.0 las secciones eran #clientes, #recursos, #impresoras…: esos enlaces siguen funcionando.
   const HASH_VIEJOS = { clientes: 'aplicaciones', recursos: 'imagenes' };
   const rutaDe = (id) => `/admin/${SECCIONES.find((s) => s.id === id).ruta}`;
-  const seccionDe = (ruta) => SECCIONES.find((s) => s.ruta === ruta.replace(/^\/admin\/?/, '').replace(/\/$/, ''))?.id;
+  const seccionDe = (ruta) => {
+    const r = ruta.replace(/^\/admin\/?/, '').replace(/\/$/, '');
+    if (/^pruebas\/rollo\/[^/]+$/.test(r)) return 'pruebas';
+    return SECCIONES.find((s) => s.ruta === r)?.id;
+  };
 
   async function arrancar() {
     try {
@@ -246,8 +252,8 @@
     navegar();
   }
   function seccionActual() { return seccionDe(location.pathname) || 'inicio'; }
-  function ir(id, consulta = '') {
-    const destino = rutaDe(id) + consulta;
+  function ir(id, consulta = '') { irRuta(rutaDe(id) + consulta); }
+  function irRuta(destino) {
     if (location.pathname + location.search !== destino) history.pushState(null, '', destino);
     navegar();
   }
@@ -301,10 +307,9 @@
     if (!a || !enElPanel() || ev.defaultPrevented || ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
     if (a.target || a.hasAttribute('download')) return;
     const destino = new URL(a.href);
-    const id = seccionDe(destino.pathname);
-    if (!id) return;
+    if (!seccionDe(destino.pathname)) return;
     ev.preventDefault();
-    ir(id, destino.search);
+    irRuta(destino.pathname + destino.search);
   });
 
   // Atajos: g y la letra de la sección; ? muestra la ayuda. Se pueden desactivar (WCAG 2.1.4).
@@ -551,7 +556,7 @@
       } catch (e) { fallo(e); }
     });
     const bAcentos = imp.activa && !imp.virtual && accion(TAc.boton, '', null, async (b) => { if (await probarAcentos(imp, b)) recargar(); });
-    const bTickets = imp.virtual && accion(TV.verTickets(imp.tickets_recibidos), '', 'ticket', () => verRollo(imp).catch(avisoError));
+    const bTickets = imp.virtual && accion(TV.verTickets(imp.tickets_recibidos), '', 'ticket', () => verRollo(imp));
     const bActivar = accion(imp.activa ? A.desactivar : A.activar, imp.activa ? '' : 'primario', null, async (b) => {
       if (imp.activa && !(await confirmar(TP.desactivarTitulo(imp.alias), TP.desactivarTexto,
         { boton: A.desactivar, peligro: true, consecuencias: TP.desactivarConsecuencias }))) return;
@@ -613,37 +618,6 @@
   }
 
   // Tickets que recibió una impresora virtual (solo en la memoria del puente).
-  async function verRollo(imp) {
-    const ruta = `/impresoras/${enc(imp.alias)}/rollo`;
-    const lista = await api.get(ruta);
-    const ticket = (t) => {
-      const base = `${ruta}/${enc(t.trabajo_id)}`;
-      const traza = h('pre', { class: 'codigo', tabindex: '0', 'aria-label': TV.verTraza }, '…');
-      const detalles = h('details', { class: 'avanzado' }, h('summary', {}, TV.verTraza), h('div', {}, traza));
-      detalles.addEventListener('toggle', async () => {
-        if (!detalles.open || traza.dataset.listo) return;
-        try { traza.textContent = (await api.get(`${base}/traza`)).traza; traza.dataset.listo = '1'; } catch (e) { traza.textContent = e.message; }
-      });
-      return h('article', { class: 'tarjeta' },
-        h('div', { class: 'fila-entre' },
-          h('div', { class: 'pila' }, h('strong', {}, [t.cliente_nombre, t.referencia].filter(Boolean).join(' · ') || t.trabajo_id),
-            h('span', { class: 'tenue pequeno numeros' }, `${fechaHora(t.recibido)} · ${t.trabajo_id} · ${TV.bytes(t.bytes)}`)),
-          t.advertencias.length > 0 && h('span', { class: 'fila' }, t.advertencias.map((a) => h('span', { class: 'chip aviso' }, a)))),
-        UI.ticketPapel({ imagen: api.url(`${base}/imagen`), anchoMm: imp.ancho_mm }),
-        h('div', { class: 'acciones' }, enlaceDescarga(`${base}/imagen?descargar=1`, TV.descargarPNG), enlaceDescarga(`${base}/bin`, TV.descargarBin)),
-        detalles);
-    };
-    const cuerpo = h('div', { class: 'pila-amplia' }, UI.nota({ tipo: 'info', texto: TV.rolloAviso }),
-      lista.length === 0 ? UI.vacio({ icono: 'ticket', titulo: TV.rolloVacio, texto: TV.rolloVacioTexto }) : lista.map(ticket));
-    const accion = await dialogo({ titulo: TV.rolloTitulo(imp.alias), ancho: 720, cuerpo,
-      acciones: [lista.length > 0 && { texto: TV.vaciar, clase: 'peligro', valor: 'vaciar' }, { texto: 'Cerrar', valor: null }].filter(Boolean) });
-    if (accion !== 'vaciar') return;
-    if (!(await confirmar(TV.vaciarTitulo, TV.vaciarTexto, { boton: TV.vaciar, peligro: true, consecuencias: TV.vaciarConsecuencias }))) return;
-    await api.borrar(ruta);
-    aviso(TV.vaciado, 'ok');
-    recargar();
-  }
-
   // Prueba de acentos: imprime la línea de prueba con las 4 páginas de códigos, una por renglón, y
   // la persona elige el renglón que se lee bien. Devuelve la impresora actualizada, o null.
   const TAc = window.PRISMA_TEXTOS.acentos;
@@ -1660,6 +1634,8 @@
     h('pre', { class: 'codigo', tabindex: '0', 'aria-label': TPr.respuesta }, h('code', {}, JSON.stringify(datos, null, 2))));
 
   async function vistaPruebas(vista) {
+    const rollo = /^\/admin\/pruebas\/rollo\/([^/]+)$/.exec(location.pathname);
+    if (rollo) return vistaRollo(vista, decodeURIComponent(rollo[1]));
     const impresoras = (await api.get('/impresoras')).filter((i) => i.activa);
     agregar(vista, encabezado(TPr.titulo, TPr.subtitulo));
     if (impresoras.length === 0) {
@@ -1990,7 +1966,8 @@
           UI.nota({ tipo: r.advertencias.length ? 'aviso' : 'ok',
             titulo: enviada.virtual ? TPr.impresoVirtual(enviada.alias) : TPr.impreso(enviada.alias, r.duracion_ms),
             texto: r.advertencias.length ? h('ul', { class: 'lista-avisos' }, r.advertencias.map((a) => h('li', {}, (explicacion(a.codigo) || { que: a.mensaje }).que))) : null,
-            acciones: [verTicket, verTrabajos].filter(Boolean) }),
+            acciones: [verTicket, enviada.virtual && Object.assign(UI.boton({ texto: TV.rollo.verRollo, chico: true, variante: 'texto' }),
+            { onclick: () => verRollo(enviada) }), verTrabajos].filter(Boolean) }),
           bloqueRespuesta(respuesta));
       } catch (e) {
         const ex = explicacion(e.codigo);
@@ -2042,6 +2019,132 @@
     const radio = listaPlantillas.querySelector(`input[value="${inicial.id}"]`);
     radio.checked = true;
     radio.dispatchEvent(new Event('change'));
+  }
+
+  // Rollo en vivo de una impresora virtual (/admin/pruebas/rollo/{alias}): los tickets llegan solos.
+  // Se sondea cada 2 s solo mientras la pantalla está abierta y visible, con la cabecera que no
+  // renueva la sesión: dejarla abierta no impide el cierre por inactividad.
+  const TR = TV.rollo;
+  const verRollo = (imp) => irRuta(`/admin/pruebas/rollo/${enc(imp.alias)}`);
+  async function vistaRollo(vista, alias) {
+    const virtuales = (await api.get('/impresoras')).filter((i) => i.virtual);
+    const imp = virtuales.find((i) => i.alias === alias);
+    const elegir = virtuales.length > 0 && UI.selector({ opciones: virtuales.map((i) => [i.alias, i.alias]), valor: alias });
+    if (elegir) elegir.addEventListener('change', () => verRollo({ alias: elegir.value }));
+    const cElegir = elegir && UI.campo({ id: 'ro-impresora', etiqueta: TR.impresora, control: elegir });
+    const irPruebas = UI.boton({ texto: TR.irPruebas, icono: 'probar' });
+    irPruebas.addEventListener('click', () => ir('pruebas', imp ? `?impresora=${enc(imp.alias)}` : ''));
+    if (!imp) {
+      agregar(vista, encabezado(TPr.titulo, null),
+        virtuales.length ? h('div', { class: 'pila-amplia' }, UI.nota({ tipo: 'aviso', titulo: TR.noExiste(alias), texto: TR.noExisteTexto }), cElegir)
+          : UI.vacio({ icono: 'virtual', titulo: TR.sinVirtuales, texto: TR.sinVirtualesTexto, accion: botonCrearVirtual() }));
+      return;
+    }
+    document.title = TN.tituloPagina(TR.titulo(alias), estado.nombrePuente);
+    const ruta = `/impresoras/${enc(alias)}/rollo`;
+    const sondeo = { sondeo: true };
+
+    const estadoVivo = h('span', { class: 'en-vivo' }, h('span', { class: 'punto', 'aria-hidden': 'true' }), h('span', {}, TR.enVivo));
+    const anuncio = h('div', { class: 'solo-lector', 'aria-live': 'polite' });
+    let pausado = false;
+    const bPausa = UI.boton({ texto: TR.pausar, chico: true, 'aria-pressed': 'false' });
+    bPausa.addEventListener('click', () => {
+      pausado = !pausado;
+      bPausa.setAttribute('aria-pressed', String(pausado));
+      bPausa.lastChild.textContent = pausado ? TR.reanudar : TR.pausar;
+      pintarEstado();
+      if (!pausado) revisar();
+    });
+    const pintarEstado = () => {
+      const oculto = document.visibilityState !== 'visible';
+      estadoVivo.classList.toggle('pausado', pausado || oculto);
+      estadoVivo.lastChild.textContent = pausado ? TR.pausado : oculto ? TR.oculto : TR.enVivo;
+    };
+    const bVaciar = UI.boton({ texto: TV.vaciar, variante: 'peligro', icono: 'papelera', chico: true });
+    bVaciar.addEventListener('click', async () => {
+      if (!(await confirmar(TV.vaciarTitulo, TV.vaciarTexto, { boton: TV.vaciar, peligro: true, consecuencias: TV.vaciarConsecuencias }))) return;
+      try { await api.borrar(ruta); aviso(TV.vaciado, 'ok'); revisar(); } catch (e) { avisoError(e); }
+    });
+
+    const rollo = h('div', { class: 'rollo' });
+    const vacio = UI.vacio({ icono: 'ticket', titulo: TV.rolloVacio, texto: TV.rolloVacioTexto, accion: irPruebas.cloneNode(true) });
+    vacio.querySelector('button')?.addEventListener('click', () => ir('pruebas', `?impresora=${enc(alias)}`));
+    const tarjetas = new Map();
+    const urls = [];
+
+    const tarjeta = (t) => {
+      const base = `${ruta}/${enc(t.trabajo_id)}`;
+      const papel = h('div', { class: 'previa-prueba' }, UI.esqueleto({ lineas: 3 }));
+      let imagen = '';
+      // La imagen se pide con la misma cabecera del sondeo: que llegue un ticket no es actividad.
+      api.pedir('GET', `${base}/imagen`, undefined, sondeo).then((blob) => {
+        imagen = URL.createObjectURL(blob);
+        urls.push(imagen);
+        vaciar(papel, UI.ticketPapel({ imagen, anchoMm: imp.ancho_mm }));
+      }).catch((e) => vaciar(papel, h('p', { class: 'tenue pequeno' }, e.message)));
+      const ampliar = UI.boton({ texto: TR.ampliar, icono: 'acercar', chico: true });
+      ampliar.addEventListener('click', () => imagen && dialogo({ titulo: [t.cliente_nombre, t.referencia].filter(Boolean).join(' · ') || t.trabajo_id,
+        ancho: 760, cuerpo: UI.ticketPapel({ imagen, anchoMm: imp.ancho_mm, anchoPx: imp.ancho_mm === 58 ? 384 : 576 }) }));
+      const traza = h('pre', { class: 'codigo', tabindex: '0', 'aria-label': TV.verTraza }, '…');
+      const detalles = h('details', { class: 'avanzado' }, h('summary', {}, TV.verTraza), h('div', {}, traza));
+      detalles.addEventListener('toggle', async () => {
+        if (!detalles.open || traza.dataset.listo) return;
+        try { traza.textContent = (await api.get(`${base}/traza`)).traza; traza.dataset.listo = '1'; } catch (e) { traza.textContent = e.message; }
+      });
+      const avisos = t.advertencias.length > 0 && UI.nota({ tipo: 'aviso', titulo: TR.advertencias,
+        texto: h('ul', { class: 'lista-avisos' }, t.advertencias.map((c) => h('li', {}, (explicacion(c) || { que: c }).que))) });
+      return h('article', { class: 'tarjeta ticket-rollo', 'aria-label': [t.cliente_nombre, t.referencia, fechaHora(t.recibido)].filter(Boolean).join(' · ') },
+        h('div', { class: 'fila-entre' },
+          h('div', { class: 'pila' }, h('strong', {}, [t.cliente_nombre, t.referencia].filter(Boolean).join(' · ') || t.trabajo_id),
+            h('span', { class: 'tenue pequeno numeros' }, `${fechaHora(t.recibido)} · `, h('span', { class: 'mono' }, t.trabajo_id), ` · ${TV.bytes(t.bytes)}`)),
+          t.advertencias.length > 0 && UI.insignia('aviso', String(t.advertencias.length))),
+        avisos, papel,
+        h('div', { class: 'acciones' }, ampliar, enlaceDescarga(`${base}/imagen?descargar=1`, TV.descargarPNG), enlaceDescarga(`${base}/bin`, TV.descargarBin)),
+        detalles);
+    };
+
+    let primera = true;
+    let ocupado = false;
+    async function revisar() {
+      if (ocupado || !vista.isConnected) return;
+      ocupado = true;
+      try {
+        const lista = await api.get(ruta, sondeo);
+        const ids = new Set(lista.map((t) => t.trabajo_id));
+        for (const [id, el] of tarjetas) if (!ids.has(id)) { el.remove(); tarjetas.delete(id); }
+        // La lista llega del más reciente al más antiguo: los nuevos van arriba, en orden.
+        const nuevos = lista.filter((t) => !tarjetas.has(t.trabajo_id));
+        for (const t of [...nuevos].reverse()) {
+          const el = tarjeta(t);
+          tarjetas.set(t.trabajo_id, el);
+          rollo.prepend(el);
+          if (!primera) el.classList.add('recien');
+        }
+        if (!primera && nuevos.length) anuncio.textContent = TR.llego(nuevos[0].cliente_nombre);
+        vacio.hidden = tarjetas.size > 0;
+        bVaciar.disabled = tarjetas.size === 0;
+        primera = false;
+      } catch (e) {
+        if (e.estado !== 401) estadoVivo.lastChild.textContent = e.message;
+      } finally { ocupado = false; }
+    }
+    const reloj = setInterval(() => {
+      if (!vista.isConnected) { clearInterval(reloj); urls.forEach(URL.revokeObjectURL); document.removeEventListener('visibilitychange', alCambiarVisibilidad); return; }
+      if (!pausado && document.visibilityState === 'visible') revisar();
+    }, 2000);
+    function alCambiarVisibilidad() { pintarEstado(); if (document.visibilityState === 'visible' && !pausado) revisar(); }
+    document.addEventListener('visibilitychange', alCambiarVisibilidad);
+
+    agregar(vista,
+      encabezado(TR.titulo(alias), TR.subtitulo, irPruebas),
+      h('div', { class: 'barra-rollo' },
+        virtuales.length > 1 && cElegir,
+        h('div', { class: 'pila' }, h('span', { class: 'fila' }, h('span', {}, TR.alias(alias)), UI.botonCopiar(alias, TR.copiarAlias)),
+          h('span', { class: 'fila' }, estadoVivo, bPausa, bVaciar))),
+      UI.nota({ tipo: 'info', texto: `${TV.rolloAviso} ${TR.sesion}` }),
+      anuncio, vacio, rollo);
+    pintarEstado();
+    await revisar();
   }
 
   // ---------------------------------------------------------------------------------------------

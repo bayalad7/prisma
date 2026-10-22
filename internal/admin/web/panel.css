@@ -623,3 +623,16 @@ dialog::backdrop { background: var(--velo); }
 .agregar-operacion { display: flex; flex-wrap: wrap; gap: var(--e-2); align-items: flex-end; }
 .agregar-operacion .campo { flex: 1 1 200px; }
 .girar .icono { transform: rotate(180deg); }
+
+/* Rollo en vivo de una impresora virtual */
+.barra-rollo { display: flex; flex-wrap: wrap; gap: var(--e-3) var(--e-5); align-items: flex-end; justify-content: space-between; }
+.barra-rollo .campo { min-width: min(240px, 100%); }
+.en-vivo { display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; font-weight: 600; color: var(--ok); }
+.en-vivo .punto { width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: latido 2s ease-in-out infinite; }
+.en-vivo.pausado { color: var(--tenue); }
+.en-vivo.pausado .punto { animation: none; }
+@keyframes latido { 50% { opacity: .3; } }
+.rollo { display: grid; gap: var(--e-4); grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr)); align-items: start; }
+.ticket-rollo.recien { animation: llega .6s ease-out; }
+@keyframes llega { from { transform: translateY(-8px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .en-vivo .punto, .ticket-rollo.recien { animation: none; } }

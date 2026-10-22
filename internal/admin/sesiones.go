@@ -63,7 +63,8 @@ func (s *sesiones) crear(hash string) (token string, ses *sesion) {
 }
 
 // obtener devuelve la sesión vigente y renueva su última actividad.
-func (s *sesiones) obtener(token string) *sesion {
+// obtener devuelve la sesión vigente y, si renovar, cuenta la petición como actividad.
+func (s *sesiones) obtener(token string, renovar bool) *sesion {
 	if token == "" {
 		return nil
 	}
@@ -79,7 +80,9 @@ func (s *sesiones) obtener(token string) *sesion {
 		delete(s.m, clave)
 		return nil
 	}
-	ses.ultima = ahora
+	if renovar {
+		ses.ultima = ahora
+	}
 	return ses
 }
 
@@ -163,11 +166,16 @@ func tokenDe(r *http.Request) string {
 	return c.Value
 }
 
+// cabeceraSondeo marca las peticiones automáticas del panel (el rollo en vivo de una impresora
+// virtual): comprueban la sesión sin renovarla, para que una pantalla abierta no impida el cierre
+// por inactividad.
+const cabeceraSondeo = "X-Prisma-Sondeo"
+
 // sesionValida comprueba la cookie y que la contraseña no haya cambiado desde que se entró
 // (por ejemplo, con «prisma admin restablecer-contrasena»).
 func (a *Admin) sesionValida(r *http.Request) (*sesion, string) {
 	token := tokenDe(r)
-	ses := a.sesiones.obtener(token)
+	ses := a.sesiones.obtener(token, r.Header.Get(cabeceraSondeo) != "1")
 	if ses == nil {
 		return nil, ""
 	}
