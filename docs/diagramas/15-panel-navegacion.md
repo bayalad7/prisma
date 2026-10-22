@@ -12,12 +12,13 @@ flowchart LR
         trab["/admin/trabajos: historial filtrable, detalle<br/>con qué pasó y qué hacer; sin contenido de tickets"]:::datos
     end
     subgraph integracion["Integración"]
+        pr["/admin/pruebas: plantillas, constructor, JSON,<br/>vista previa, enviar; rollo en vivo; permisos"]:::prisma
         apps["/admin/aplicaciones: crear, nivel, orígenes, impresoras,<br/>operaciones sensibles, regenerar o revocar llave"]:::seguridad
         rec["/admin/imagenes: vista previa en 1 bit,<br/>guardar, eliminar"]:::datos
     end
     subgraph sistema["Sistema"]
         aj["/admin/ajustes: nombre, límites, retención, red local,<br/>actualizaciones, certificado, respaldo, restaurar"]:::prisma
-        ay["/admin/ayuda: confiar en el certificado,<br/>enlaces a la documentación"]:::externo
+        ay["/admin/ayuda: el manual de docs/ sin Internet,<br/>índice y páginas /admin/ayuda/{ruta}"]:::externo
     end
     inicio --> imp
     inicio --> sol
@@ -30,19 +31,21 @@ flowchart LR
     classDef seguridad fill:#fde8e8,stroke:#c62828,color:#4a0d0d
 ```
 
-- La navegación agrupa las 8 secciones en *Operación*, *Integración* y *Sistema*; *Inicio* es la de entrada después de *acceso*. En celular, el menú se despliega y una barra inferior lleva a Inicio, Impresoras, Solicitudes (con el número de pendientes), Trabajos y Ayuda.
+- La navegación agrupa las 9 secciones en *Operación*, *Integración* y *Sistema*; *Inicio* es la de entrada después de *acceso*. En celular, el menú se despliega y una barra inferior lleva a Inicio, Impresoras, Solicitudes (con el número de pendientes), Trabajos y Ayuda.
 - Cada sección tiene su ruta: el puente sirve el panel en todas (`vistasPanel`) y `panel.js` dibuja la pantalla sin recargar; Atrás y Adelante funcionan. Los enlaces de 0.1.0 con `#` (`#clientes`, `#recursos`, `#impresoras`…) llevan a la ruta nueva.
 - *Primeros pasos* sale de los datos del puente (impresoras, aplicaciones y las marcas `panel.primera_prueba` y `panel.acentos_probados`), así que se ve igual en cualquier equipo; ocultarla solo afecta al navegador.
 - Atajos: `g` y la letra de la sección (por ejemplo `g p`, Impresoras); `?` los muestra y permite desactivarlos.
 - *Acceso* es el primer acceso (con código desde otro equipo), el inicio de sesión y el cambio de contraseña obligatorio tras restablecerla ([16-panel-sesion.md](16-panel-sesion.md)).
 - Toda acción usa la API interna `/admin/api/…`, con sesión y CSRF; no es una API pública.
-- *Ayuda* enlaza la documentación de la versión instalada (`blob/v<versión>/docs/`).
+- *Ayuda* muestra el manual de `docs/` embebido en el binario, sin Internet: cada página tiene su ruta y los enlaces entre páginas no recargan; lo que no está en el manual (código, ADR) enlaza a GitHub en la versión instalada ([ADR 0017](../adr/0017-manual-del-panel-con-renderizador-propio.md)).
+- *Probar impresión* incluye el rollo en vivo de cada impresora virtual (`/admin/pruebas/rollo/{alias}`) y el comprobador de permisos (`/admin/pruebas/permisos`).
 
 **Fuentes en el código:**
 
-- internal/admin/web/panel.js (`SECCIONES`, `HASH_VIEJOS`, `VISTAS`, `mostrarApp`, `vistaInicio`, `vistaAyuda`, `formularioImpresora`)
+- internal/admin/web/panel.js (`SECCIONES`, `HASH_VIEJOS`, `VISTAS`, `mostrarApp`, `vistaInicio`, `vistaPruebas`, `vistaAyuda`, `formularioImpresora`)
+- internal/admin/web/manual.js (`renderizar`) e internal/admin/manual.go
 - internal/admin/web/sistema.js (`marco`)
-- internal/admin/admin.go (`Handler`: rutas de `/admin/api`; `vistasPanel`)
+- internal/admin/admin.go (`Handler`: rutas de `/admin/api` y `/admin/manual/`; `vistasPanel`, `subvistas`)
 - internal/admin/impresoras.go
 - internal/admin/clientes.go
 - internal/admin/ajustes.go

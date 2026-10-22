@@ -37,7 +37,7 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 
 ### Cambiado
 
-- La *Ayuda* del panel enlaza la documentación de la versión instalada, no la de la rama `develop`.
+- La *Ayuda* del panel muestra el manual de `docs/` dentro del puente, sin Internet y de la versión instalada: índice por grupos, una dirección por página y enlaces entre páginas sin recargar. Lo dibuja un renderizador propio que no usa `innerHTML` (ADR 0017); una prueba falla si un documento usa Markdown que no admite.
 
 ### Corregido
 

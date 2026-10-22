@@ -1,0 +1,535 @@
+{
+ "axe": {
+  "ayuda-escritorio": [],
+  "documento-escritorio": [],
+  "referencia-escritorio": [],
+  "documento-celular": [],
+  "tablas-celular": []
+ },
+ "desborde": {
+  "ayuda-escritorio": 0,
+  "documento-escritorio": 0,
+  "referencia-escritorio": 0,
+  "documento-celular": 0,
+  "tablas-celular": 0
+ },
+ "consola": [],
+ "comprobaciones": [
+  "ok    la Ayuda muestra los grupos del manual ",
+  "ok    los 63 documentos se dibujan sin errores ni restos de Markdown 0 con problemas",
+  "ok    los 93 enlaces entre páginas del manual llevan a su página y su ancla ",
+  "ok    un enlace interno abre la otra página sin recargar y va a su sección https://127.0.0.1:18443/admin/ayuda/administracion/impresoras.md#diagn%C3%B3stico-y-p%C3%A1ginas-de-c%C3%B3digos",
+  "ok    «atrás» vuelve a la página anterior del manual ",
+  "ok    las capturas del manual se cargan ",
+  "ok    tablas, listas y código dentro de listas ",
+  "ok    los enlaces externos abren otra pestaña y lo dicen ",
+  "ok    los diagramas muestran su código plegado y sin el front-matter ",
+  "ok    una página que no existe lo explica "
+ ],
+ "documentos": [
+  {
+   "ruta": "administracion/README.md",
+   "h1": "Panel de administración",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 2,
+   "errores": 0
+  },
+  {
+   "ruta": "administracion/impresoras.md",
+   "h1": "Impresoras en el panel",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "administracion/aplicaciones-y-solicitudes.md",
+   "h1": "Aplicaciones y solicitudes",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "administracion/probar-sin-impresora.md",
+   "h1": "Probar sin impresora",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 2,
+   "errores": 0
+  },
+  {
+   "ruta": "administracion/ajustes.md",
+   "h1": "Ajustes del panel",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "administracion/problemas-comunes.md",
+   "h1": "Problemas comunes: impresión y panel",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 3,
+   "errores": 0
+  },
+  {
+   "ruta": "instalacion/problemas-comunes.md",
+   "h1": "Problemas comunes de instalación",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "integradores/problemas-comunes.md",
+   "h1": "Problemas comunes",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 2,
+   "errores": 0
+  },
+  {
+   "ruta": "instalacion/README.md",
+   "h1": "Instalar PRISMA",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 2,
+   "errores": 0
+  },
+  {
+   "ruta": "instalacion/windows.md",
+   "h1": "Instalar PRISMA en Windows",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 2,
+   "errores": 0
+  },
+  {
+   "ruta": "instalacion/macos.md",
+   "h1": "Instalar PRISMA en macOS",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 2,
+   "errores": 0
+  },
+  {
+   "ruta": "instalacion/linux-raspberry-pi.md",
+   "h1": "Instalar PRISMA en Raspberry Pi y Linux",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 2,
+   "errores": 0
+  },
+  {
+   "ruta": "instalacion/impresoras.md",
+   "h1": "Conectar impresoras a PRISMA",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "instalacion/https-y-certificados.md",
+   "h1": "HTTPS y certificados",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "instalacion/instalacion-manual.md",
+   "h1": "Instalación manual (avanzado)",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 2,
+   "errores": 0
+  },
+  {
+   "ruta": "operacion/README.md",
+   "h1": "Operación",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "operacion/respaldo-y-restauracion.md",
+   "h1": "Respaldo y restauración",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "operacion/actualizacion.md",
+   "h1": "Actualización",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 5,
+   "errores": 0
+  },
+  {
+   "ruta": "operacion/bitacoras.md",
+   "h1": "Bitácoras",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "operacion/monitoreo.md",
+   "h1": "Monitoreo",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "operacion/recuperacion.md",
+   "h1": "Recuperación",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "integradores/README.md",
+   "h1": "Integrar PRISMA en tu aplicación",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 8,
+   "errores": 0
+  },
+  {
+   "ruta": "integradores/inicio-rapido.md",
+   "h1": "Inicio rápido: tu primer ticket en 5 minutos",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 3,
+   "errores": 0
+  },
+  {
+   "ruta": "integradores/niveles-de-seguridad.md",
+   "h1": "Niveles de seguridad",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "integradores/sdk.md",
+   "h1": "Referencia del SDK JavaScript",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 2,
+   "errores": 0
+  },
+  {
+   "ruta": "integradores/firmar-documentos.md",
+   "h1": "Firmar documentos (nivel 3)",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 10,
+   "errores": 0
+  },
+  {
+   "ruta": "seguridad/README.md",
+   "h1": "Seguridad",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 2,
+   "errores": 0
+  },
+  {
+   "ruta": "seguridad/politicas.md",
+   "h1": "Políticas de seguridad",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 3,
+   "errores": 0
+  },
+  {
+   "ruta": "seguridad/modelo-de-amenazas.md",
+   "h1": "Modelo de amenazas",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "referencia/glosario.md",
+   "h1": "Glosario",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "referencia/codigos-de-error.md",
+   "h1": "Códigos de error y advertencias",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "referencia/cli.md",
+   "h1": "Referencia de la línea de comandos",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 2,
+   "errores": 0
+  },
+  {
+   "ruta": "referencia/configuracion.md",
+   "h1": "Configuración",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 3,
+   "errores": 0
+  },
+  {
+   "ruta": "referencia/api-v1.md",
+   "h1": "API pública v1",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 4,
+   "errores": 0
+  },
+  {
+   "ruta": "referencia/contrato-documento-v1.md",
+   "h1": "Contrato «documento v1»",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 13,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/README.md",
+   "h1": "Diagramas",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/01-contexto.md",
+   "h1": "Contexto del sistema",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/02-componentes.md",
+   "h1": "Componentes y dependencias",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 2,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/03-flujo-impresion.md",
+   "h1": "Flujo de impresión",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/04-secuencia-nivel-1.md",
+   "h1": "Imprimir en el nivel 1 (origen)",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/05-secuencia-nivel-2.md",
+   "h1": "Imprimir en el nivel 2 (llave)",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/06-secuencia-nivel-3.md",
+   "h1": "Imprimir en el nivel 3 (firma)",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/07-orden-autorizacion-detalle.md",
+   "h1": "Identificación del cliente, en detalle",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/07-orden-autorizacion.md",
+   "h1": "Orden de autorización y validación",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/08-ciclo-vida-trabajo.md",
+   "h1": "Ciclo de vida de un trabajo",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 2,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/09-cola-por-impresora.md",
+   "h1": "Cola por impresora",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/10-solicitudes-origen.md",
+   "h1": "Solicitudes de origen",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/11-modelo-datos.md",
+   "h1": "Modelo de datos",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/12-modos-tls.md",
+   "h1": "Modos de TLS y ciclo del certificado",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/14-arranque-servicio.md",
+   "h1": "Arranque del servicio",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/15-panel-navegacion.md",
+   "h1": "Pantallas del panel",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/16-panel-sesion.md",
+   "h1": "Sesión del panel",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/17-deteccion-impresoras.md",
+   "h1": "Detección de impresoras",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/18-conectores.md",
+   "h1": "Conectores",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/19-despliegue.md",
+   "h1": "Despliegue por plataforma",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/20-ci-release.md",
+   "h1": "Integración continua y publicación",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/23-diagnostico-problemas.md",
+   "h1": "Diagnóstico: «no imprime»",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/24-idempotencia.md",
+   "h1": "Idempotencia",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/25-confirmar-impresion.md",
+   "h1": "Confirmar impresión",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 2,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/26-estados-impresora.md",
+   "h1": "Estados de una impresora",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/27-elegir-nivel.md",
+   "h1": "Qué nivel de seguridad elegir",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/28-actualizacion.md",
+   "h1": "Actualización",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  },
+  {
+   "ruta": "diagramas/29-impresora-virtual.md",
+   "h1": "Impresora virtual",
+   "restos": 0,
+   "anclasRotas": [],
+   "externos": 1,
+   "errores": 0
+  }
+ ]
+}

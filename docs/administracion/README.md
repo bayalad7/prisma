@@ -45,7 +45,7 @@ Están agrupadas en *Operación*, *Integración* y *Sistema*, y cada una tiene s
 | **[Probar sin impresora](probar-sin-impresora.md)** | Guía para dueños e integradores: la impresora virtual, *Probar impresión*, el rollo en vivo, la simulación de fallas y el comprobador de permisos. |
 | **Imágenes** | PNG guardados en el puente para usarlos con `"recurso"` en la operación `imagen`. Muestra cómo quedarán en 1 bit antes de guardarlos (en 58 u 80 mm) y explica junto al campo un nombre o un archivo que no sirven. |
 | **[Ajustes](ajustes.md)** | En cuatro pestañas: General (nombre, límite de tickets, historial, versiones nuevas), Seguridad y acceso (contraseña, acceso solo desde la red del negocio), HTTPS (certificado) y Respaldo (descargar y restaurar). |
-| **Ayuda** | Cómo confiar en el certificado en cada sistema y enlaces a esta documentación. |
+| **Ayuda** | Este manual, incluido en el puente: funciona sin Internet y corresponde a la versión instalada. Índice por grupos, una dirección por página (`/admin/ayuda/{ruta}`) y enlaces entre páginas sin recargar; lo que no está en el manual (código, decisiones) se abre en GitHub. Cómo confiar en el certificado: [instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md#confiar-en-el-certificado). |
 
 Si algo no funciona, ver [problemas-comunes.md](problemas-comunes.md).
 
