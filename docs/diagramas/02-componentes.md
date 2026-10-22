@@ -1,3 +1,10 @@
+---
+titulo: "Componentes y dependencias"
+descripcion: "Qué paquete del código depende de cuál"
+audiencia: [desarrollador]
+pantallas: []
+secciones_manual: [referencia/glosario]
+---
 # Componentes y dependencias
 
 ¿Qué paquete depende de cuál? Para quien desarrolla o revisa el código. Solo se dibujan dependencias entre paquetes del proyecto, según `go list ./...`.

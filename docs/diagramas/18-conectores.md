@@ -1,3 +1,10 @@
+---
+titulo: "Conectores"
+descripcion: "Cómo llega el ticket a cada tipo de impresora"
+audiencia: [instalador, desarrollador]
+pantallas: [impresoras]
+secciones_manual: [instalacion/impresoras]
+---
 # Conectores
 
 ¿Qué conector usa cada tipo de impresora y por qué mecanismo llega a ella en cada sistema? Para instaladores y desarrolladores.

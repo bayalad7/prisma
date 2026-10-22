@@ -1,3 +1,10 @@
+---
+titulo: "Imprimir en el nivel 1 (origen)"
+descripcion: "Cómo imprime una página web aprobada solo por su dirección"
+audiencia: [integrador]
+pantallas: [aplicaciones]
+secciones_manual: [integradores/niveles-de-seguridad]
+---
 # Imprimir en el nivel 1 (origen)
 
 ¿Qué intercambian el navegador y el puente cuando una página sin llave imprime? Para integradores que publican una página web sin backend.

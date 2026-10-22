@@ -57,7 +57,27 @@ Si alguno se implementa, su diagrama se agrega con ese número.
 
 ## Metadatos
 
-Un diagrama puede empezar con un bloque YAML (front-matter) que el panel usará para la galería y la ayuda de cada pantalla: `titulo`, `descripcion`, `audiencia` (`usuario`, `instalador`, `integrador`, `desarrollador`), `pantallas` y `secciones_manual`, con las listas en una línea (`[a, b]`). GitHub lo muestra como una tabla. `go test ./docs` revisa esos campos cuando el bloque existe.
+Cada diagrama empieza con un bloque YAML (front-matter) que el panel usa para su galería y para la ayuda de cada pantalla; GitHub lo muestra como una tabla. Las listas van en una línea (`[a, b]`):
+
+| Campo | Qué es |
+|---|---|
+| `titulo` | El título, igual al encabezado. |
+| `descripcion` | Una frase sin tecnicismos: qué muestra el diagrama. |
+| `audiencia` | Para quién es: `usuario`, `instalador`, `integrador`, `desarrollador`. |
+| `pantallas` | Las pantallas del panel donde aparece como ayuda (claves de `ayuda.pantallas` en `internal/admin/web/textos.js`). Puede ir vacía. |
+| `secciones_manual` | Los documentos del manual que lo citan, sin `.md` (por ejemplo `administracion/impresoras`). |
+
+`go test ./docs` exige el bloque en cada diagrama y revisa cada campo.
+
+## El panel los dibuja de antemano
+
+El panel muestra los diagramas como imágenes SVG, sin Internet y sin Mermaid en el navegador ([ADR 0018](../adr/0018-diagramas-del-panel-en-svg-pregenerado.md)). Si cambias un bloque `mermaid` o su front-matter, vuelve a generarlos (necesita Node.js 18+):
+
+```sh
+scripts/docs/generar-diagramas.sh        # o .\scripts\docs\generar-diagramas.ps1 en Windows
+```
+
+Escribe un SVG claro y uno oscuro por diagrama, saneados y con gzip, y su manifiesto en `internal/admin/ayuda/diagramas/`. Si se te olvida, `go test ./internal/admin` falla con «Diagramas desactualizados: ejecuta scripts/docs/generar-diagramas».
 
 ## Validación
 

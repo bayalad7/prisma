@@ -1,3 +1,10 @@
+---
+titulo: "Solicitudes de origen"
+descripcion: "Qué pasa con una página desconocida que intenta imprimir"
+audiencia: [usuario, desarrollador]
+pantallas: [solicitudes]
+secciones_manual: [administracion/aplicaciones-y-solicitudes]
+---
 # Solicitudes de origen
 
 ¿Qué pasa con un origen desconocido que intenta imprimir? Para el dueño que revisa *Solicitudes* y para quien audita que la lista no se pueda llenar.

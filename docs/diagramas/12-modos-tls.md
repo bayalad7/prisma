@@ -1,3 +1,10 @@
+---
+titulo: "Modos de TLS y ciclo del certificado"
+descripcion: "Cómo funciona el certificado HTTPS del puente"
+audiencia: [instalador]
+pantallas: [ajustes]
+secciones_manual: [instalacion/https-y-certificados]
+---
 # Modos de TLS y ciclo del certificado
 
 ¿Qué hace el puente con HTTPS según `modo_tls`, y qué pasa con su certificado al arrancar y mientras corre? Para instaladores y administradores.

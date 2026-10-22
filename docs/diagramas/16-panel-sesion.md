@@ -1,3 +1,10 @@
+---
+titulo: "Sesión del panel"
+descripcion: "Cómo se entra al panel y cómo se protege la sesión"
+audiencia: [usuario, desarrollador]
+pantallas: [ajustes]
+secciones_manual: [administracion/ajustes]
+---
 # Sesión del panel
 
 ¿Cómo se entra al panel y cómo se protege la sesión? Para administradores y auditores.

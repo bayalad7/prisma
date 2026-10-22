@@ -2,8 +2,8 @@
 titulo: "Impresora virtual"
 descripcion: "La impresora virtual recibe los mismos bytes que una de papel y los muestra en el panel"
 audiencia: [usuario, instalador, integrador]
-pantallas: [impresoras, pruebas]
-secciones_manual: [probar-sin-impresora]
+pantallas: [impresoras, pruebas, rollo]
+secciones_manual: [administracion/probar-sin-impresora]
 ---
 # Impresora virtual
 

@@ -1,3 +1,10 @@
+---
+titulo: "Identificación del cliente, en detalle"
+descripcion: "Cómo sabe el puente qué aplicación envía un ticket"
+audiencia: [integrador, desarrollador]
+pantallas: [permisos]
+secciones_manual: [integradores/niveles-de-seguridad]
+---
 # Identificación del cliente, en detalle
 
 ¿Cómo combina el puente `Origin` y la llave para saber qué aplicación envía la petición? Detalle del segundo paso de [07-orden-autorizacion.md](07-orden-autorizacion.md), para integradores y auditores.

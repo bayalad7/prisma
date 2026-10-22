@@ -37,6 +37,7 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 
 ### Cambiado
 
+- Diagramas para el panel: cada diagrama de `docs/diagramas/` lleva metadatos (título, descripción, público, pantallas y secciones del manual) y se dibuja de antemano en SVG claro y oscuro, saneado, sin depender de Internet ni de Node al compilar (ADR 0018). Una prueba avisa si un diagrama cambió y no se volvió a generar.
 - **Mi impresora no imprime** (*Ayuda*): preguntas paso a paso hasta la solución del manual, armadas desde el diagrama 23, que suma la rama «¿imprime en una impresora virtual?» para separar los problemas de la aplicación de los de la impresora. Una prueba exige que cada final del árbol tenga su solución.
 - **Ayuda en cada pantalla:** el botón *Ayuda* abre su sección del manual en un panel lateral, sin salir de la pantalla ni perder lo escrito. Los avisos de error ofrecen *Cómo resolverlo*, el detalle de un trabajo fallido y *Probar impresión* enlazan la sección que lo resuelve, y los campos técnicos tienen *Saber más*. Una prueba exige ayuda para cada pantalla y cada código de error. Guías nuevas de Inicio, Trabajos, Probar impresión e Imágenes.
 - Manual para el dueño: **Primeros pasos** (de recién instalado al primer ticket y la primera aplicación, con capturas generadas por un script), **Conceptos básicos**, **Tareas frecuentes**, **Solución de problemas** (cada síntoma lleva a su solución) y **Preguntas frecuentes**. La Ayuda busca en todo el manual sin Internet, sin distinguir acentos, y resalta las palabras en cada resultado.

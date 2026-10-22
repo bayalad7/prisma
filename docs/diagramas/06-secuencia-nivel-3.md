@@ -1,3 +1,10 @@
+---
+titulo: "Imprimir en el nivel 3 (firma)"
+descripcion: "Cómo imprime una aplicación que firma cada ticket en su servidor"
+audiencia: [integrador]
+pantallas: [aplicaciones]
+secciones_manual: [integradores/firmar-documentos]
+---
 # Imprimir en el nivel 3 (firma)
 
 ¿Quién firma qué, y qué comprueba el puente? Para integradores con backend que necesitan que el ticket no se pueda alterar ni repetir.

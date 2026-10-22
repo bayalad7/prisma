@@ -1,3 +1,10 @@
+---
+titulo: "Idempotencia"
+descripcion: "Por qué un ticket reenviado no se imprime dos veces"
+audiencia: [integrador, desarrollador]
+pantallas: [trabajos]
+secciones_manual: [integradores/sdk]
+---
 # Idempotencia
 
 ¿Qué responde el puente si llega el mismo `id`? Para integradores que implementan reintentos.

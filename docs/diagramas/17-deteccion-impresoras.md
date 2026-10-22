@@ -1,3 +1,10 @@
+---
+titulo: "Detección de impresoras"
+descripcion: "Cómo encuentra el puente las impresoras conectadas"
+audiencia: [instalador]
+pantallas: [impresoras]
+secciones_manual: [instalacion/impresoras]
+---
 # Detección de impresoras
 
 ¿Cómo encuentra el puente las impresoras en cada sistema operativo? Para instaladores que agregan impresoras con el panel o con `prisma impresoras detectar`.

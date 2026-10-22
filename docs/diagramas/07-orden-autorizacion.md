@@ -1,3 +1,10 @@
+---
+titulo: "Orden de autorización y validación"
+descripcion: "Qué revisa el puente, y en qué orden, antes de imprimir"
+audiencia: [instalador, integrador]
+pantallas: [permisos, aplicaciones, solicitudes]
+secciones_manual: [administracion/probar-impresion, integradores/niveles-de-seguridad]
+---
 # Orden de autorización y validación
 
 ¿En qué orden comprueba el puente una petición, y con qué código rechaza en cada paso? Para integradores que depuran un error y para auditores.

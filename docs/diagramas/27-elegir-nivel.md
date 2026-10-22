@@ -1,3 +1,10 @@
+---
+titulo: "Qué nivel de seguridad elegir"
+descripcion: "Qué nivel de seguridad le conviene a una aplicación"
+audiencia: [usuario, integrador]
+pantallas: [aplicaciones]
+secciones_manual: [integradores/niveles-de-seguridad]
+---
 # Qué nivel de seguridad elegir
 
 ¿Qué nivel le conviene a mi aplicación? Para integradores antes de pedirle al dueño que la registre.

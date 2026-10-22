@@ -1,3 +1,10 @@
+---
+titulo: "Modelo de datos"
+descripcion: "Qué guarda el puente en su base de datos"
+audiencia: [desarrollador]
+pantallas: []
+secciones_manual: [operacion/respaldo-y-restauracion]
+---
 # Modelo de datos
 
 ¿Qué tablas tiene `prisma.db`, con qué llaves y cómo se relacionan? Para desarrolladores y para quien revisa qué datos guarda el puente.

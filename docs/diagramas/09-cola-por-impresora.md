@@ -1,3 +1,10 @@
+---
+titulo: "Cola por impresora"
+descripcion: "Qué pasa cuando varias aplicaciones imprimen a la vez"
+audiencia: [integrador, desarrollador]
+pantallas: [trabajos]
+secciones_manual: [administracion/trabajos]
+---
 # Cola por impresora
 
 ¿Qué pasa cuando dos aplicaciones imprimen a la vez, en la misma impresora y en impresoras distintas? Para integradores y desarrolladores que razonan sobre tiempos y concurrencia.

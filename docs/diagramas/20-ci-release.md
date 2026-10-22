@@ -1,3 +1,10 @@
+---
+titulo: "Integración continua y publicación"
+descripcion: "Qué se comprueba en cada cambio y al publicar una versión"
+audiencia: [desarrollador]
+pantallas: []
+secciones_manual: [operacion/actualizacion]
+---
 # Integración continua y publicación
 
 ¿Qué se comprueba en cada cambio y qué pasa al publicar una versión? Para quien mantiene el proyecto.

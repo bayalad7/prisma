@@ -1,3 +1,10 @@
+---
+titulo: "Despliegue por plataforma"
+descripcion: "Qué se instala en cada sistema operativo"
+audiencia: [instalador, desarrollador]
+pantallas: []
+secciones_manual: [instalacion/README]
+---
 # Despliegue por plataforma
 
 ¿Qué se publica para cada sistema y cómo queda instalado el servicio? Para instaladores y para quien mantiene los paquetes.

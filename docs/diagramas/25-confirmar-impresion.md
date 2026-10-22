@@ -1,3 +1,10 @@
+---
+titulo: "Confirmar impresión"
+descripcion: "Cómo confirma el puente que el ticket llegó a la impresora"
+audiencia: [instalador, integrador]
+pantallas: [impresoras]
+secciones_manual: [administracion/impresoras]
+---
 # Confirmar impresión
 
 ¿Cómo confirma el puente que el ticket llegó a una impresora de red o Bluetooth? Para instaladores que deciden si activarla e integradores que reciben su advertencia.

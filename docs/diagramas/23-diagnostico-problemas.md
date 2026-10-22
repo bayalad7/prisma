@@ -1,3 +1,10 @@
+---
+titulo: "Diagnóstico: «no imprime»"
+descripcion: "Por qué no salió el ticket y qué revisar"
+audiencia: [usuario, instalador]
+pantallas: [impresoras, trabajos]
+secciones_manual: [administracion/solucion-de-problemas, administracion/problemas-comunes]
+---
 # Diagnóstico: «no imprime»
 
 ¿Por qué no salió el ticket y qué hacer? Árbol de decisión para soporte y para el dueño del negocio. El panel lo convierte en preguntas paso a paso en *Ayuda → Mi impresora no imprime*.

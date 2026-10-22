@@ -1,3 +1,10 @@
+---
+titulo: "Ciclo de vida de un trabajo"
+descripcion: "Por qué estados pasa un ticket y cuándo se puede reintentar"
+audiencia: [usuario, integrador]
+pantallas: [trabajos]
+secciones_manual: [administracion/trabajos]
+---
 # Ciclo de vida de un trabajo
 
 ¿Por qué estados pasa un trabajo y cuándo se libera su `id`? Para quien soporta o integra y lee el historial de *Trabajos*.

@@ -1,3 +1,10 @@
+---
+titulo: "Imprimir en el nivel 2 (llave)"
+descripcion: "Cómo imprime una aplicación con su llave"
+audiencia: [integrador]
+pantallas: [aplicaciones]
+secciones_manual: [integradores/niveles-de-seguridad]
+---
 # Imprimir en el nivel 2 (llave)
 
 ¿Cómo se comprueba la llave `pk_` de una aplicación? Para integradores con página o backend que usan el nivel por defecto.

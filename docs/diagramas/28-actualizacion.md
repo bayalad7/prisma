@@ -1,3 +1,10 @@
+---
+titulo: "Actualización"
+descripcion: "Cómo se actualiza el puente sin instalar nada que no venga del proyecto"
+audiencia: [usuario, instalador]
+pantallas: [inicio, ajustes]
+secciones_manual: [operacion/actualizacion]
+---
 # Actualización
 
 ¿Cómo se actualiza el puente sin instalar nada que no venga del proyecto? Para administradores y auditores.

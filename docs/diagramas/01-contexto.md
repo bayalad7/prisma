@@ -1,3 +1,10 @@
+---
+titulo: "Contexto del sistema"
+descripcion: "Quién habla con el puente y por dónde: aplicaciones, impresoras y el panel"
+audiencia: [usuario, instalador, integrador, desarrollador]
+pantallas: [inicio]
+secciones_manual: [administracion/conceptos, administracion/README]
+---
 # Contexto del sistema
 
 ¿Quién habla con el puente y por dónde? Para cualquiera que llega a PRISMA por primera vez: dueños, instaladores, integradores y auditores.

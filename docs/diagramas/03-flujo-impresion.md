@@ -1,3 +1,10 @@
+---
+titulo: "Flujo de impresión"
+descripcion: "Por qué pasos viaja un ticket desde la aplicación hasta la impresora"
+audiencia: [integrador, desarrollador]
+pantallas: [pruebas]
+secciones_manual: [integradores/README]
+---
 # Flujo de impresión
 
 ¿Por qué pasos viaja un documento desde que llega hasta la impresora? Vista general para integradores y desarrolladores; el orden exacto de los rechazos está en [07-orden-autorizacion.md](07-orden-autorizacion.md).

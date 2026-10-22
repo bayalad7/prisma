@@ -131,12 +131,19 @@ func TestFormatoDeLosDiagramas(t *testing.T) {
 		t.Fatalf("diagramas encontrados: %d (%v)", len(archivos), err)
 	}
 	indice := leer(t, "docs/diagramas/README.md")
+	pantallas, manual := pantallasDelPanel(t), map[string]bool{}
+	for _, d := range documentosDelManual(t) {
+		manual[strings.TrimSuffix(d, ".md")] = true
+	}
 	reFuente := regexp.MustCompile("(?m)^- `?([A-Za-z0-9_./-]+)")
 	for _, ruta := range archivos {
 		nombre := filepath.Base(ruta)
 		texto := leer(t, filepath.ToSlash(filepath.Join("docs", "diagramas", nombre)))
-		if meta, resto, ok := frontMatter(texto); ok {
-			for _, e := range revisarFrontMatter(meta) {
+		meta, resto, ok := frontMatter(texto)
+		if !ok {
+			t.Errorf("%s: falta el front-matter (titulo, descripcion, audiencia, pantallas, secciones_manual)", nombre)
+		} else {
+			for _, e := range revisarFrontMatter(meta, pantallas, manual) {
 				t.Errorf("%s: front-matter: %s", nombre, e)
 			}
 			texto = resto
@@ -195,9 +202,38 @@ func frontMatter(texto string) (meta, resto string, ok bool) {
 // audienciasDiagramas son los públicos que admite el campo audiencia.
 var audienciasDiagramas = []string{"usuario", "instalador", "integrador", "desarrollador"}
 
+// pantallasDelPanel son las claves de ayuda.pantallas en textos.js: las pantallas (y subpantallas)
+// donde un diagrama puede aparecer como ayuda.
+func pantallasDelPanel(t *testing.T) map[string]bool {
+	t.Helper()
+	fuente := leer(t, "internal/admin/web/textos.js")
+	_, resto, ok := strings.Cut(fuente, "\n    pantallas: {\n")
+	if !ok {
+		t.Fatal("textos.js no tiene ayuda.pantallas")
+	}
+	bloque, _, _ := strings.Cut(resto, "\n    },")
+	claves := map[string]bool{}
+	for _, m := range regexp.MustCompile(`(?m)^\s+(\w+):`).FindAllStringSubmatch(bloque, -1) {
+		claves[m[1]] = true
+	}
+	return claves
+}
+
+// listaFrontMatter lee una lista «[a, b]» del front-matter.
+func listaFrontMatter(v string) []string {
+	var l []string
+	for _, x := range strings.Split(strings.Trim(v, "[]"), ",") {
+		if x = strings.TrimSpace(x); x != "" {
+			l = append(l, x)
+		}
+	}
+	return l
+}
+
 // revisarFrontMatter exige los campos de los diagramas: titulo, descripcion, audiencia (con valores
-// conocidos), pantallas y secciones_manual. Las listas se escriben en una línea: [a, b].
-func revisarFrontMatter(meta string) []string {
+// conocidos), pantallas (claves de ayuda.pantallas) y secciones_manual (documentos del manual, sin
+// .md). Las listas se escriben en una línea: [a, b].
+func revisarFrontMatter(meta string, pantallas, manual map[string]bool) []string {
 	campos := map[string]string{}
 	for _, linea := range strings.Split(meta, "\n") {
 		if clave, valor, ok := strings.Cut(linea, ":"); ok && !strings.HasPrefix(linea, " ") && !strings.HasPrefix(linea, "#") {
@@ -215,9 +251,22 @@ func revisarFrontMatter(meta string) []string {
 			errores = append(errores, c+" debe ser una lista [a, b]")
 		}
 	}
-	for _, a := range strings.Split(strings.Trim(campos["audiencia"], "[]"), ",") {
-		if a = strings.TrimSpace(a); a != "" && !slices.Contains(audienciasDiagramas, a) {
+	for _, a := range listaFrontMatter(campos["audiencia"]) {
+		if !slices.Contains(audienciasDiagramas, a) {
 			errores = append(errores, "audiencia desconocida: "+a)
+		}
+	}
+	if len(listaFrontMatter(campos["audiencia"])) == 0 {
+		errores = append(errores, "audiencia vacía")
+	}
+	for _, p := range listaFrontMatter(campos["pantallas"]) {
+		if !pantallas[p] {
+			errores = append(errores, "pantalla desconocida (no está en ayuda.pantallas): "+p)
+		}
+	}
+	for _, d := range listaFrontMatter(campos["secciones_manual"]) {
+		if !manual[d] {
+			errores = append(errores, "secciones_manual: "+d+".md no está en docs/manual.json")
 		}
 	}
 	return errores

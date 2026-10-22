@@ -1,3 +1,10 @@
+---
+titulo: "Pantallas del panel"
+descripcion: "Qué pantallas tiene el panel y para qué sirve cada una"
+audiencia: [usuario]
+pantallas: [inicio]
+secciones_manual: [administracion/README]
+---
 # Pantallas del panel
 
 ¿Qué pantallas tiene el panel y qué se puede hacer en cada una? Para el dueño del negocio y para soporte.

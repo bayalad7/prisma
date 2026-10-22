@@ -1,3 +1,10 @@
+---
+titulo: "Estados de una impresora"
+descripcion: "Cuándo una impresora está en línea, no responde u ocupada"
+audiencia: [usuario, integrador]
+pantallas: [impresoras, inicio]
+secciones_manual: [administracion/impresoras]
+---
 # Estados de una impresora
 
 ¿Cuándo una impresora está en línea, fuera de línea, ocupada o en estado desconocido? Para el dueño que ve el estado en el panel e integradores que leen `/v1/impresoras`.

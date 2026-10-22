@@ -1,3 +1,10 @@
+---
+titulo: "Arranque del servicio"
+descripcion: "Qué hace el puente desde que el equipo lo inicia"
+audiencia: [instalador, desarrollador]
+pantallas: []
+secciones_manual: [operacion/README]
+---
 # Arranque del servicio
 
 ¿Qué hace el puente, en orden, desde que el sistema lo inicia hasta que acepta peticiones? Para desarrolladores y para quien diagnostica un servicio que no arranca.

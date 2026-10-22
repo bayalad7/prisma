@@ -96,7 +96,9 @@ según el perfil de la impresora y lo imprime por USB, red (TCP 9100) o Bluetoot
   embebe el panel) liste las guías y los diagramas, y que usen solo el Markdown que dibuja manual.js.
   Si cambias rutas, códigos o archivos, actualízalos.
 - Diagramas: `scripts/validar-diagramas.sh` / `.\scripts\validar-diagramas.ps1` compila cada bloque Mermaid
-  (lo corre el CI). Cada docs/diagramas/NN-*.md cita sus fuentes en el código: si cambias ese código,
+  (lo corre el CI). Si cambias un bloque mermaid o su front-matter, `scripts/docs/generar-diagramas.sh` /
+  `.ps1` (Node) regenera los SVG del panel; si no, TestDiagramasVigentes falla.
+  Cada docs/diagramas/NN-*.md cita sus fuentes en el código: si cambias ese código,
   revisa el diagrama y su «Última verificación». Colores comunes: classDef externo/prisma/datos/seguridad.
 - Antes de publicar: docs/desarrollo/pruebas/matriz.md (manual) y docs/desarrollo/pruebas/ (reportes);
   pasos en docs/desarrollo/publicar.md. Cada versión mueve «Sin publicar» de CHANGELOG.md.
