@@ -6,7 +6,7 @@
   "homepage": "https://github.com/bayalad7/prisma/tree/main/sdk/js",
   "repository": { "type": "git", "url": "git+https://github.com/bayalad7/prisma.git", "directory": "sdk/js" },
   "bugs": "https://github.com/bayalad7/prisma/issues",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "main": "./dist/prisma.umd.js",
   "module": "./dist/prisma.mjs",
   "types": "./dist/prisma.umd.d.ts",
