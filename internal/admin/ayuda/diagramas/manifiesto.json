@@ -1,0 +1,540 @@
+{
+  "generador": "scripts/docs/generar-diagramas.mjs",
+  "mermaid_cli": "@mermaid-js/mermaid-cli@11.4.2",
+  "diagramas": [
+    {
+      "id": "01-contexto",
+      "fuente": "diagramas/01-contexto.md",
+      "titulo": "Contexto del sistema",
+      "descripcion": "Quién habla con el puente y por dónde: aplicaciones, impresoras y el panel",
+      "audiencia": [
+        "usuario",
+        "instalador",
+        "integrador",
+        "desarrollador"
+      ],
+      "pantallas": [
+        "inicio"
+      ],
+      "secciones_manual": [
+        "administracion/conceptos",
+        "administracion/README"
+      ],
+      "alt": "Contexto del sistema: Quién habla con el puente y por dónde: aplicaciones, impresoras y el panel",
+      "hash": "b984cf077b4a0e5a3d7c1ec0999b9276e38b13445999e2c007f55cd233862761",
+      "claro": "01-contexto.claro.svg.gz",
+      "oscuro": "01-contexto.oscuro.svg.gz"
+    },
+    {
+      "id": "02-componentes",
+      "fuente": "diagramas/02-componentes.md",
+      "titulo": "Componentes y dependencias",
+      "descripcion": "Qué paquete del código depende de cuál",
+      "audiencia": [
+        "desarrollador"
+      ],
+      "pantallas": [],
+      "secciones_manual": [
+        "referencia/glosario"
+      ],
+      "alt": "Componentes y dependencias: Qué paquete del código depende de cuál",
+      "hash": "bdc5c2d9d5fdd1f9115b69275845d2f3b9cba5001037d61df4dd9613edda1a55",
+      "claro": "02-componentes.claro.svg.gz",
+      "oscuro": "02-componentes.oscuro.svg.gz"
+    },
+    {
+      "id": "03-flujo-impresion",
+      "fuente": "diagramas/03-flujo-impresion.md",
+      "titulo": "Flujo de impresión",
+      "descripcion": "Por qué pasos viaja un ticket desde la aplicación hasta la impresora",
+      "audiencia": [
+        "integrador",
+        "desarrollador"
+      ],
+      "pantallas": [
+        "pruebas"
+      ],
+      "secciones_manual": [
+        "integradores/README"
+      ],
+      "alt": "Flujo de impresión: Por qué pasos viaja un ticket desde la aplicación hasta la impresora",
+      "hash": "cbf211c0bb4b17d94526a5af238dd56e841c422b38e9aef715260ad726e9f0cb",
+      "claro": "03-flujo-impresion.claro.svg.gz",
+      "oscuro": "03-flujo-impresion.oscuro.svg.gz"
+    },
+    {
+      "id": "04-secuencia-nivel-1",
+      "fuente": "diagramas/04-secuencia-nivel-1.md",
+      "titulo": "Imprimir en el nivel 1 (origen)",
+      "descripcion": "Cómo imprime una página web aprobada solo por su dirección",
+      "audiencia": [
+        "integrador"
+      ],
+      "pantallas": [
+        "aplicaciones"
+      ],
+      "secciones_manual": [
+        "integradores/niveles-de-seguridad"
+      ],
+      "alt": "Imprimir en el nivel 1 (origen): Cómo imprime una página web aprobada solo por su dirección",
+      "hash": "66e13b89d103f329a5d7af8f97f6dfec5c4314fcbebf5ce12c787ceaad7a4ce5",
+      "claro": "04-secuencia-nivel-1.claro.svg.gz",
+      "oscuro": "04-secuencia-nivel-1.oscuro.svg.gz"
+    },
+    {
+      "id": "05-secuencia-nivel-2",
+      "fuente": "diagramas/05-secuencia-nivel-2.md",
+      "titulo": "Imprimir en el nivel 2 (llave)",
+      "descripcion": "Cómo imprime una aplicación con su llave",
+      "audiencia": [
+        "integrador"
+      ],
+      "pantallas": [
+        "aplicaciones"
+      ],
+      "secciones_manual": [
+        "integradores/niveles-de-seguridad"
+      ],
+      "alt": "Imprimir en el nivel 2 (llave): Cómo imprime una aplicación con su llave",
+      "hash": "5ac3430bf1dd3c0a3913e67e7644ad22d9ced15a462435e3eb8c16f376e12037",
+      "claro": "05-secuencia-nivel-2.claro.svg.gz",
+      "oscuro": "05-secuencia-nivel-2.oscuro.svg.gz"
+    },
+    {
+      "id": "06-secuencia-nivel-3",
+      "fuente": "diagramas/06-secuencia-nivel-3.md",
+      "titulo": "Imprimir en el nivel 3 (firma)",
+      "descripcion": "Cómo imprime una aplicación que firma cada ticket en su servidor",
+      "audiencia": [
+        "integrador"
+      ],
+      "pantallas": [
+        "aplicaciones"
+      ],
+      "secciones_manual": [
+        "integradores/firmar-documentos"
+      ],
+      "alt": "Imprimir en el nivel 3 (firma): Cómo imprime una aplicación que firma cada ticket en su servidor",
+      "hash": "b636ac4b3b85f19875adec60a6a84c6226107ea02822a02baf892602a75c2bef",
+      "claro": "06-secuencia-nivel-3.claro.svg.gz",
+      "oscuro": "06-secuencia-nivel-3.oscuro.svg.gz"
+    },
+    {
+      "id": "07-orden-autorizacion-detalle",
+      "fuente": "diagramas/07-orden-autorizacion-detalle.md",
+      "titulo": "Identificación del cliente, en detalle",
+      "descripcion": "Cómo sabe el puente qué aplicación envía un ticket",
+      "audiencia": [
+        "integrador",
+        "desarrollador"
+      ],
+      "pantallas": [
+        "permisos"
+      ],
+      "secciones_manual": [
+        "integradores/niveles-de-seguridad"
+      ],
+      "alt": "Identificación del cliente, en detalle: Cómo sabe el puente qué aplicación envía un ticket",
+      "hash": "17dd68149f87300f9d467231fcf948cde0b8e498c3313ef372a8b01484976270",
+      "claro": "07-orden-autorizacion-detalle.claro.svg.gz",
+      "oscuro": "07-orden-autorizacion-detalle.oscuro.svg.gz"
+    },
+    {
+      "id": "07-orden-autorizacion",
+      "fuente": "diagramas/07-orden-autorizacion.md",
+      "titulo": "Orden de autorización y validación",
+      "descripcion": "Qué revisa el puente, y en qué orden, antes de imprimir",
+      "audiencia": [
+        "instalador",
+        "integrador"
+      ],
+      "pantallas": [
+        "permisos",
+        "aplicaciones",
+        "solicitudes"
+      ],
+      "secciones_manual": [
+        "administracion/probar-impresion",
+        "integradores/niveles-de-seguridad"
+      ],
+      "alt": "Orden de autorización y validación: Qué revisa el puente, y en qué orden, antes de imprimir",
+      "hash": "084e36ae04c519f88e051e2572107f93521ce383d786057551b52903116071cd",
+      "claro": "07-orden-autorizacion.claro.svg.gz",
+      "oscuro": "07-orden-autorizacion.oscuro.svg.gz"
+    },
+    {
+      "id": "08-ciclo-vida-trabajo",
+      "fuente": "diagramas/08-ciclo-vida-trabajo.md",
+      "titulo": "Ciclo de vida de un trabajo",
+      "descripcion": "Por qué estados pasa un ticket y cuándo se puede reintentar",
+      "audiencia": [
+        "usuario",
+        "integrador"
+      ],
+      "pantallas": [
+        "trabajos"
+      ],
+      "secciones_manual": [
+        "administracion/trabajos"
+      ],
+      "alt": "Ciclo de vida de un trabajo: Por qué estados pasa un ticket y cuándo se puede reintentar",
+      "hash": "15b0040b96b17e9cf0b110986b4a9f1e9cfc8443d3a73d86acb71532037065fa",
+      "claro": "08-ciclo-vida-trabajo.claro.svg.gz",
+      "oscuro": "08-ciclo-vida-trabajo.oscuro.svg.gz"
+    },
+    {
+      "id": "09-cola-por-impresora",
+      "fuente": "diagramas/09-cola-por-impresora.md",
+      "titulo": "Cola por impresora",
+      "descripcion": "Qué pasa cuando varias aplicaciones imprimen a la vez",
+      "audiencia": [
+        "integrador",
+        "desarrollador"
+      ],
+      "pantallas": [
+        "trabajos"
+      ],
+      "secciones_manual": [
+        "administracion/trabajos"
+      ],
+      "alt": "Cola por impresora: Qué pasa cuando varias aplicaciones imprimen a la vez",
+      "hash": "f62a26108f12afdcb8ad81510ce9274af77dd5ed264cc823b0ace49e5a43fc25",
+      "claro": "09-cola-por-impresora.claro.svg.gz",
+      "oscuro": "09-cola-por-impresora.oscuro.svg.gz"
+    },
+    {
+      "id": "10-solicitudes-origen",
+      "fuente": "diagramas/10-solicitudes-origen.md",
+      "titulo": "Solicitudes de origen",
+      "descripcion": "Qué pasa con una página desconocida que intenta imprimir",
+      "audiencia": [
+        "usuario",
+        "desarrollador"
+      ],
+      "pantallas": [
+        "solicitudes"
+      ],
+      "secciones_manual": [
+        "administracion/aplicaciones-y-solicitudes"
+      ],
+      "alt": "Solicitudes de origen: Qué pasa con una página desconocida que intenta imprimir",
+      "hash": "fa5242992abe6afb499252af7461380ab09460495f7d0561ee9a03693b3ca246",
+      "claro": "10-solicitudes-origen.claro.svg.gz",
+      "oscuro": "10-solicitudes-origen.oscuro.svg.gz"
+    },
+    {
+      "id": "11-modelo-datos",
+      "fuente": "diagramas/11-modelo-datos.md",
+      "titulo": "Modelo de datos",
+      "descripcion": "Qué guarda el puente en su base de datos",
+      "audiencia": [
+        "desarrollador"
+      ],
+      "pantallas": [],
+      "secciones_manual": [
+        "operacion/respaldo-y-restauracion"
+      ],
+      "alt": "Modelo de datos: Qué guarda el puente en su base de datos",
+      "hash": "560a13ab7cc9f49f312a4110e0f772550378faa6b28b8abaae55e5802655745c",
+      "claro": "11-modelo-datos.claro.svg.gz",
+      "oscuro": "11-modelo-datos.oscuro.svg.gz"
+    },
+    {
+      "id": "12-modos-tls",
+      "fuente": "diagramas/12-modos-tls.md",
+      "titulo": "Modos de TLS y ciclo del certificado",
+      "descripcion": "Cómo funciona el certificado HTTPS del puente",
+      "audiencia": [
+        "instalador"
+      ],
+      "pantallas": [
+        "ajustes"
+      ],
+      "secciones_manual": [
+        "instalacion/https-y-certificados"
+      ],
+      "alt": "Modos de TLS y ciclo del certificado: Cómo funciona el certificado HTTPS del puente",
+      "hash": "94d4c3bea3884f7b1ea00165181e9e2a7d6552dae2300fced269f1b940f09f76",
+      "claro": "12-modos-tls.claro.svg.gz",
+      "oscuro": "12-modos-tls.oscuro.svg.gz"
+    },
+    {
+      "id": "14-arranque-servicio",
+      "fuente": "diagramas/14-arranque-servicio.md",
+      "titulo": "Arranque del servicio",
+      "descripcion": "Qué hace el puente desde que el equipo lo inicia",
+      "audiencia": [
+        "instalador",
+        "desarrollador"
+      ],
+      "pantallas": [],
+      "secciones_manual": [
+        "operacion/README"
+      ],
+      "alt": "Arranque del servicio: Qué hace el puente desde que el equipo lo inicia",
+      "hash": "8300f37c2fb892f4f3ffbfcc380b473d3351fcb7947aeeb68ee3e464d79dd4a7",
+      "claro": "14-arranque-servicio.claro.svg.gz",
+      "oscuro": "14-arranque-servicio.oscuro.svg.gz"
+    },
+    {
+      "id": "15-panel-navegacion",
+      "fuente": "diagramas/15-panel-navegacion.md",
+      "titulo": "Pantallas del panel",
+      "descripcion": "Qué pantallas tiene el panel y para qué sirve cada una",
+      "audiencia": [
+        "usuario"
+      ],
+      "pantallas": [
+        "inicio"
+      ],
+      "secciones_manual": [
+        "administracion/README"
+      ],
+      "alt": "Pantallas del panel: Qué pantallas tiene el panel y para qué sirve cada una",
+      "hash": "6dae717cfd6a2926ba6d9e7b8804556f8dd5a0099e1198aafd1d50078b7e9ed8",
+      "claro": "15-panel-navegacion.claro.svg.gz",
+      "oscuro": "15-panel-navegacion.oscuro.svg.gz"
+    },
+    {
+      "id": "16-panel-sesion",
+      "fuente": "diagramas/16-panel-sesion.md",
+      "titulo": "Sesión del panel",
+      "descripcion": "Cómo se entra al panel y cómo se protege la sesión",
+      "audiencia": [
+        "usuario",
+        "desarrollador"
+      ],
+      "pantallas": [
+        "ajustes"
+      ],
+      "secciones_manual": [
+        "administracion/ajustes"
+      ],
+      "alt": "Sesión del panel: Cómo se entra al panel y cómo se protege la sesión",
+      "hash": "29201fc6111594d52b28105ea787a0700a042c554c3840313daea92d14c9d514",
+      "claro": "16-panel-sesion.claro.svg.gz",
+      "oscuro": "16-panel-sesion.oscuro.svg.gz"
+    },
+    {
+      "id": "17-deteccion-impresoras",
+      "fuente": "diagramas/17-deteccion-impresoras.md",
+      "titulo": "Detección de impresoras",
+      "descripcion": "Cómo encuentra el puente las impresoras conectadas",
+      "audiencia": [
+        "instalador"
+      ],
+      "pantallas": [
+        "impresoras"
+      ],
+      "secciones_manual": [
+        "instalacion/impresoras"
+      ],
+      "alt": "Detección de impresoras: Cómo encuentra el puente las impresoras conectadas",
+      "hash": "17501b5e7703bc26d90d0e519b1468e4520de683ad1c7d5501baa38dc8359e81",
+      "claro": "17-deteccion-impresoras.claro.svg.gz",
+      "oscuro": "17-deteccion-impresoras.oscuro.svg.gz"
+    },
+    {
+      "id": "18-conectores",
+      "fuente": "diagramas/18-conectores.md",
+      "titulo": "Conectores",
+      "descripcion": "Cómo llega el ticket a cada tipo de impresora",
+      "audiencia": [
+        "instalador",
+        "desarrollador"
+      ],
+      "pantallas": [
+        "impresoras"
+      ],
+      "secciones_manual": [
+        "instalacion/impresoras"
+      ],
+      "alt": "Conectores: Cómo llega el ticket a cada tipo de impresora",
+      "hash": "bf54e046c119d938bf8f499b72a250ff1af5c0c2f51e1887c656ea81bd2f9622",
+      "claro": "18-conectores.claro.svg.gz",
+      "oscuro": "18-conectores.oscuro.svg.gz"
+    },
+    {
+      "id": "19-despliegue",
+      "fuente": "diagramas/19-despliegue.md",
+      "titulo": "Despliegue por plataforma",
+      "descripcion": "Qué se instala en cada sistema operativo",
+      "audiencia": [
+        "instalador",
+        "desarrollador"
+      ],
+      "pantallas": [],
+      "secciones_manual": [
+        "instalacion/README"
+      ],
+      "alt": "Despliegue por plataforma: Qué se instala en cada sistema operativo",
+      "hash": "0e6b363ae73fb86f434b58da144d9efe0908ab9feb3e1ffa6cfc5e308069b2b6",
+      "claro": "19-despliegue.claro.svg.gz",
+      "oscuro": "19-despliegue.oscuro.svg.gz"
+    },
+    {
+      "id": "20-ci-release",
+      "fuente": "diagramas/20-ci-release.md",
+      "titulo": "Integración continua y publicación",
+      "descripcion": "Qué se comprueba en cada cambio y al publicar una versión",
+      "audiencia": [
+        "desarrollador"
+      ],
+      "pantallas": [],
+      "secciones_manual": [
+        "operacion/actualizacion"
+      ],
+      "alt": "Integración continua y publicación: Qué se comprueba en cada cambio y al publicar una versión",
+      "hash": "dd25de7772c93fc2a449e4d5d2841b7735d21e82a65c02c21ef1cbf54df33aa1",
+      "claro": "20-ci-release.claro.svg.gz",
+      "oscuro": "20-ci-release.oscuro.svg.gz"
+    },
+    {
+      "id": "23-diagnostico-problemas",
+      "fuente": "diagramas/23-diagnostico-problemas.md",
+      "titulo": "Diagnóstico: «no imprime»",
+      "descripcion": "Por qué no salió el ticket y qué revisar",
+      "audiencia": [
+        "usuario",
+        "instalador"
+      ],
+      "pantallas": [
+        "impresoras",
+        "trabajos"
+      ],
+      "secciones_manual": [
+        "administracion/solucion-de-problemas",
+        "administracion/problemas-comunes"
+      ],
+      "alt": "Diagnóstico: «no imprime»: Por qué no salió el ticket y qué revisar",
+      "hash": "ae683cd8015ad1bd2f0e2b0b123c4c4d8d00d9af4f6ed8abf09221d4194e22e8",
+      "claro": "23-diagnostico-problemas.claro.svg.gz",
+      "oscuro": "23-diagnostico-problemas.oscuro.svg.gz"
+    },
+    {
+      "id": "24-idempotencia",
+      "fuente": "diagramas/24-idempotencia.md",
+      "titulo": "Idempotencia",
+      "descripcion": "Por qué un ticket reenviado no se imprime dos veces",
+      "audiencia": [
+        "integrador",
+        "desarrollador"
+      ],
+      "pantallas": [
+        "trabajos"
+      ],
+      "secciones_manual": [
+        "integradores/sdk"
+      ],
+      "alt": "Idempotencia: Por qué un ticket reenviado no se imprime dos veces",
+      "hash": "d1ed1d154a85d30b81f356596323af55d649411d29bc312f0ef415c78bda756f",
+      "claro": "24-idempotencia.claro.svg.gz",
+      "oscuro": "24-idempotencia.oscuro.svg.gz"
+    },
+    {
+      "id": "25-confirmar-impresion",
+      "fuente": "diagramas/25-confirmar-impresion.md",
+      "titulo": "Confirmar impresión",
+      "descripcion": "Cómo confirma el puente que el ticket llegó a la impresora",
+      "audiencia": [
+        "instalador",
+        "integrador"
+      ],
+      "pantallas": [
+        "impresoras"
+      ],
+      "secciones_manual": [
+        "administracion/impresoras"
+      ],
+      "alt": "Confirmar impresión: Cómo confirma el puente que el ticket llegó a la impresora",
+      "hash": "ad010359ce9c9570a6ba9407dbf8823f1263323b8653c7808dbfc29f7d944dcf",
+      "claro": "25-confirmar-impresion.claro.svg.gz",
+      "oscuro": "25-confirmar-impresion.oscuro.svg.gz"
+    },
+    {
+      "id": "26-estados-impresora",
+      "fuente": "diagramas/26-estados-impresora.md",
+      "titulo": "Estados de una impresora",
+      "descripcion": "Cuándo una impresora está en línea, no responde u ocupada",
+      "audiencia": [
+        "usuario",
+        "integrador"
+      ],
+      "pantallas": [
+        "impresoras",
+        "inicio"
+      ],
+      "secciones_manual": [
+        "administracion/impresoras"
+      ],
+      "alt": "Estados de una impresora: Cuándo una impresora está en línea, no responde u ocupada",
+      "hash": "ff837e6a38d3e1eb1c983081db85d34957f626f1c6d20d83ed4eb3bea5475162",
+      "claro": "26-estados-impresora.claro.svg.gz",
+      "oscuro": "26-estados-impresora.oscuro.svg.gz"
+    },
+    {
+      "id": "27-elegir-nivel",
+      "fuente": "diagramas/27-elegir-nivel.md",
+      "titulo": "Qué nivel de seguridad elegir",
+      "descripcion": "Qué nivel de seguridad le conviene a una aplicación",
+      "audiencia": [
+        "usuario",
+        "integrador"
+      ],
+      "pantallas": [
+        "aplicaciones"
+      ],
+      "secciones_manual": [
+        "integradores/niveles-de-seguridad"
+      ],
+      "alt": "Qué nivel de seguridad elegir: Qué nivel de seguridad le conviene a una aplicación",
+      "hash": "f8dbaddc614a5f7994aff1717539b2ba8e875e03db975aa493e8d4843635c2a9",
+      "claro": "27-elegir-nivel.claro.svg.gz",
+      "oscuro": "27-elegir-nivel.oscuro.svg.gz"
+    },
+    {
+      "id": "28-actualizacion",
+      "fuente": "diagramas/28-actualizacion.md",
+      "titulo": "Actualización",
+      "descripcion": "Cómo se actualiza el puente sin instalar nada que no venga del proyecto",
+      "audiencia": [
+        "usuario",
+        "instalador"
+      ],
+      "pantallas": [
+        "inicio",
+        "ajustes"
+      ],
+      "secciones_manual": [
+        "operacion/actualizacion"
+      ],
+      "alt": "Actualización: Cómo se actualiza el puente sin instalar nada que no venga del proyecto",
+      "hash": "c683cf6b5a97ed1f659c87305336278dbe5335795c39a801032b270b1cb8a3a6",
+      "claro": "28-actualizacion.claro.svg.gz",
+      "oscuro": "28-actualizacion.oscuro.svg.gz"
+    },
+    {
+      "id": "29-impresora-virtual",
+      "fuente": "diagramas/29-impresora-virtual.md",
+      "titulo": "Impresora virtual",
+      "descripcion": "La impresora virtual recibe los mismos bytes que una de papel y los muestra en el panel",
+      "audiencia": [
+        "usuario",
+        "instalador",
+        "integrador"
+      ],
+      "pantallas": [
+        "impresoras",
+        "pruebas",
+        "rollo"
+      ],
+      "secciones_manual": [
+        "administracion/probar-sin-impresora"
+      ],
+      "alt": "Impresora virtual: La impresora virtual recibe los mismos bytes que una de papel y los muestra en el panel",
+      "hash": "02a886cac23250e6025b18a62495786563e21047a217d0fcacc49c57c03787c0",
+      "claro": "29-impresora-virtual.claro.svg.gz",
+      "oscuro": "29-impresora-virtual.oscuro.svg.gz"
+    }
+  ]
+}

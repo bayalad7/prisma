@@ -28,6 +28,13 @@ import (
 //go:embed web/index.html web/panel.css web/panel.js web/textos.js web/sistema.js web/manual.js web/iconos.svg web/estilos.html web/estilos.js
 var archivosWeb embed.FS
 
+// archivosDiagramas son los diagramas de docs/diagramas/ dibujados para el panel (SVG claro y oscuro,
+// con gzip) y su manifiesto. Los genera scripts/docs/generar-diagramas; TestDiagramasVigentes exige
+// que estén al día con los bloques mermaid (ADR 0018).
+//
+//go:embed ayuda/diagramas
+var archivosDiagramas embed.FS
+
 // Opciones del panel.
 type Opciones struct {
 	Almacen  *almacen.Almacen
