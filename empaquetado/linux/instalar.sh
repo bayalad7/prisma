@@ -22,7 +22,7 @@ set -eu
 
 REPO="bayalad7/prisma"
 # Llave pública Ed25519 de las versiones (la misma que empaquetado/llave-releases.pub).
-LLAVE_RELEASES=""
+LLAVE_RELEASES="wxxZLjXkFCFybNWviBgiKi6YUiiqrNnJYn3egvNFn8g="
 URL_API="${PRISMA_URL_API:-https://api.github.com/repos/$REPO/releases}"
 URL_DESCARGAS="${PRISMA_URL_DESCARGAS:-https://github.com/$REPO/releases/download}"
 
