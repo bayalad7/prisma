@@ -66,6 +66,7 @@
   }
   const api = {
     csrf: '',
+    ultimaActividad: Date.now(), // cada petición al puente renueva la sesión
     async pedir(metodo, ruta, cuerpo) {
       if (window.PRISMA_DEMO) return window.PRISMA_DEMO.pedir(metodo, ruta, cuerpo);
       const op = { method: metodo, credentials: 'same-origin', headers: { Accept: 'application/json' } };
@@ -73,7 +74,7 @@
       if (cuerpo instanceof FormData) op.body = cuerpo;
       else if (cuerpo !== undefined) { op.headers['Content-Type'] = 'application/json'; op.body = JSON.stringify(cuerpo); }
       let r;
-      try { r = await fetch('/admin/api' + ruta, op); } catch {
+      try { r = await fetch('/admin/api' + ruta, op); api.ultimaActividad = Date.now(); } catch {
         throw new ErrorApi({ mensaje: 'No hay conexión con el puente.', sugerencia: 'Revisa que PRISMA siga en marcha.' });
       }
       const tipo = r.headers.get('Content-Type') || '';
@@ -364,7 +365,7 @@
         titulo: r.certificado.estado === 'vencido' ? TI.certificado.avisoVencido(r.certificado.vence)
           : TI.certificado.avisoVence(TI.certificado.dias(r.certificado.dias_restantes), r.certificado.vence),
         texto: r.certificado.autofirmado ? TI.certificado.avisoAutofirmado : TI.certificado.avisoArchivos,
-        acciones: enlaceBoton('ajustes', TI.certificado.irAjustes, 'primario'),
+        acciones: enlaceBoton('ajustes', TI.certificado.irAjustes, 'primario', '?pestana=https'),
       }),
       r.actualizacion && UI.nota({
         tipo: 'info', titulo: TI.actualizacion.titulo(r.actualizacion.version), texto: TI.actualizacion.texto(r.puente.version),
@@ -408,7 +409,7 @@
     return tarjetaCifra('candado', vencido ? 'error' : (cert.estado === 'por_vencer' ? 'aviso' : 'info'), TI.certificado.titulo,
       vencido ? TI.certificado.vencido : TI.certificado.dias(cert.dias_restantes),
       vencido ? TI.certificado.vencidoTexto(cert.vence) : TI.certificado.texto, null,
-      cert.estado !== 'vigente' ? enlaceBoton('ajustes', TI.certificado.renovar)
+      cert.estado !== 'vigente' ? enlaceBoton('ajustes', TI.certificado.renovar, '', '?pestana=https')
         : modo === 'autofirmado' && enlaceBoton('ayuda', TI.certificado.instalar, 'texto'));
   }
 
@@ -1593,103 +1594,210 @@
   }
 
   // ---------------------------------------------------------------------------------------------
-  // 7. Ajustes
+  // 7. Ajustes: cuatro pestañas (General, Seguridad y acceso, HTTPS, Respaldo); la pestaña va en
+  // la dirección (?pestana=https) para enlazarla desde otras pantallas.
   // ---------------------------------------------------------------------------------------------
+  const TAj = window.PRISMA_TEXTOS.ajustes;
   function enlaceDescarga(ruta, texto) {
-    const a = h('a', { class: 'boton', href: api.url(ruta) }, texto);
+    const a = h('a', { class: 'boton', href: api.url(ruta) }, UI.icono('descargar'), texto);
     if (window.PRISMA_DEMO) a.addEventListener('click', (ev) => { ev.preventDefault(); aviso('En el prototipo no se descargan archivos.'); });
     return a;
   }
+  const entero = (min, max, mensaje) => (v) => (/^\d+$/.test(v.trim()) && Number(v) >= min && Number(v) <= max ? '' : mensaje);
 
   async function vistaAjustes(vista) {
     const a = await api.get('/ajustes');
-    const num = (id, valor, min, max) => h('input', { type: 'number', id, value: valor, min, max });
-    const nombre = h('input', { type: 'text', id: 'aj-nombre', value: a.nombre_puente });
-    const limIP = num('aj-ip', a.limite_ip, 0, 100000);
-    const limCli = num('aj-cliente', a.limite_cliente, 0, 100000);
-    const retencion = num('aj-retencion', a.retencion_dias, 1, 3650);
-    const privada = h('input', { type: 'checkbox', id: 'aj-privada', checked: a.solo_red_privada });
-    const buscar = h('input', { type: 'checkbox', id: 'aj-actualizaciones', checked: a.buscar_actualizaciones });
-    const seccion = (id, titulo, texto, campos, guardar) => {
-      const b = h('button', { class: 'boton primario chico', type: 'submit' }, 'Guardar');
-      return h('form', { class: 'tarjeta', 'aria-labelledby': id, onsubmit: async (ev) => {
+    const pestana = new URLSearchParams(location.search).get('pestana');
+    // Una tarjeta con formulario: valida sus campos, envía y avisa.
+    const formulario = (titulo, icono, texto, contenido, validables, enviar, textoBoton = TAj.guardar) => {
+      const b = UI.boton({ texto: textoBoton, variante: 'primario', chico: true, tipo: 'submit' });
+      const form = h('form', { class: 'pila-amplia', novalidate: true, onsubmit: async (ev) => {
         ev.preventDefault();
-        try { await conEspera(b, guardar); aviso('Ajustes guardados.', 'ok'); } catch (e) { avisoError(e); }
-      } }, h('h2', { id }, titulo), texto && h('p', { class: 'tenue pequeno' }, texto), campos, h('div', {}, b));
+        if (!UI.revisarCampos(validables)) return;
+        try { await conEspera(b, enviar); } catch (e) { avisoError(e); }
+      } }, contenido, h('div', {}, b));
+      return UI.tarjeta({ titulo, icono }, texto && h('p', { class: 'tenue pequeno' }, texto), form);
     };
-    const campo = (id, etiqueta, control, ayuda) => h('label', { class: 'campo', for: id }, h('span', {}, etiqueta), control, ayuda && h('span', { class: 'ayuda' }, ayuda));
+    const guardado = () => aviso(TAj.guardado, 'ok');
 
-    const cert = a.tls.certificado;
-    const tls = h('section', { class: 'tarjeta', 'aria-labelledby': 'aj-tls' }, h('h2', { id: 'aj-tls' }, 'HTTPS'),
-      h('dl', { class: 'datos' },
-        h('dt', {}, 'Modo'), h('dd', {}, { autofirmado: 'Certificado autofirmado', archivos: 'Certificado propio (archivos)', solo_localhost_http: 'HTTP solo en este equipo' }[a.tls.modo]),
-        h('dt', {}, 'Dirección'), h('dd', { class: 'mono' }, a.direccion),
-        cert && [
-          h('dt', {}, 'Vence'), h('dd', {}, cert.vence,
-            cert.estado === 'vencido' ? h('span', { class: 'pastilla error' }, 'Vencido')
-              : cert.estado === 'por_vencer' ? h('span', { class: 'pastilla aviso' }, `Vence en ${cert.dias_restantes} días`) : null),
-          h('dt', {}, 'Nombres'), h('dd', {}, cert.nombres.map((n) => h('span', { class: 'chip' }, n))),
-          h('dt', {}, 'IPs'), h('dd', {}, cert.ips.map((n) => h('span', { class: 'chip' }, n))),
-          h('dt', {}, 'Huella SHA-256'), h('dd', { class: 'mono pequeno' }, cert.huella)]),
-      cert && cert.ips_sin_cubrir && cert.ips_sin_cubrir.length > 0 && h('p', { class: 'nota aviso' },
-        `El certificado no incluye las IPs actuales ${cert.ips_sin_cubrir.join(', ')}. Los equipos que usen esas direcciones verán un error de certificado: regenéralo.`),
-      h('div', { class: 'acciones' },
-        cert && enlaceDescarga('/tls/certificado', 'Descargar certificado'),
-        a.tls.modo === 'autofirmado' && h('button', { class: 'boton peligro', type: 'button', onclick: async () => {
-          if (!(await confirmar('¿Regenerar el certificado?', 'Se crea uno nuevo con el nombre y las IPs actuales de este equipo. Cada dispositivo que confiaba en el anterior tendrá que confiar en el nuevo.', { boton: 'Regenerar', peligro: true }))) return;
-          try { await api.post('/tls/regenerar'); aviso('Certificado regenerado. El puente ya lo usa.', 'ok'); recargar(); } catch (e) { avisoError(e); }
-        } }, 'Regenerar certificado')),
-      h('p', { class: 'tenue pequeno' }, 'Cómo instalarlo en cada dispositivo: ', h('a', { href: rutaDe('ayuda') }, 'Ayuda'), '.'));
+    function general() {
+      const G = TAj.general;
+      const nombre = UI.entrada({ value: a.nombre_puente });
+      const cNombre = UI.campo({ id: 'aj-nombre', etiqueta: G.nombre, control: nombre, ayuda: G.nombreAyuda,
+        validar: (v) => (v.trim() && [...v.trim()].length <= 60 ? '' : G.nombreMal) });
+      const limIP = UI.entrada({ tipo: 'number', value: a.limite_ip, min: 0, max: 100000 });
+      const limCli = UI.entrada({ tipo: 'number', value: a.limite_cliente, min: 0, max: 100000 });
+      const cIP = UI.campo({ id: 'aj-ip', etiqueta: G.porEquipo, control: limIP, validar: entero(0, 100000, G.limiteMal) });
+      const cCli = UI.campo({ id: 'aj-cliente', etiqueta: G.porAplicacion, control: limCli, validar: entero(0, 100000, G.limiteMal) });
+      const dias = UI.entrada({ tipo: 'number', value: a.retencion_dias, min: 1, max: 3650 });
+      const cDias = UI.campo({ id: 'aj-retencion', etiqueta: G.dias, control: dias, validar: entero(1, 3650, G.diasMal) });
+      const buscar = UI.interruptor({ id: 'aj-actualizaciones', texto: G.buscar, marcado: a.buscar_actualizaciones });
+      return h('div', { class: 'rejilla' },
+        formulario(G.puente, 'inicio', null, [cNombre], [cNombre], async () => {
+          await api.put('/ajustes', { nombre_puente: nombre.value.trim() });
+          guardado(); refrescarPendientes();
+        }),
+        formulario(G.limites, 'ajustes', G.limitesTexto, [h('div', { class: 'campos' }, cIP, cCli)], [cIP, cCli], async () => {
+          await api.put('/ajustes', { limite_ip: Number(limIP.value), limite_cliente: Number(limCli.value) });
+          guardado();
+        }),
+        formulario(G.historial, 'trabajos', G.historialTexto, [cDias], [cDias], async () => {
+          await api.put('/ajustes', { retencion_dias: Number(dias.value) });
+          guardado();
+        }),
+        formulario(G.actualizaciones, 'recargar', G.actualizacionesTexto, [buscar], [], async () => {
+          await api.put('/ajustes', { buscar_actualizaciones: buscar.input.checked });
+          guardado();
+        }));
+    }
 
-    const actual = h('input', { type: 'password', id: 'aj-actual', autocomplete: 'current-password' });
-    const nueva = h('input', { type: 'password', id: 'aj-nueva', autocomplete: 'new-password' });
-    const repetir = h('input', { type: 'password', id: 'aj-repetir', autocomplete: 'new-password' });
+    function seguridad() {
+      const S = TAj.seguridad;
+      const clave = (id, etiqueta, auto, ayuda, validar) => {
+        const input = UI.entrada({ tipo: 'password', autocomplete: auto });
+        return { input, campo: UI.campo({ id, etiqueta, control: input, ayuda, validar }) };
+      };
+      const actual = clave('aj-actual', S.actual, 'current-password', null, (v) => (v ? '' : S.actualFalta));
+      const nueva = clave('aj-nueva', S.nueva, 'new-password', S.nuevaAyuda, (v) => (v.length >= 10 ? '' : S.nuevaCorta));
+      const repetir = clave('aj-repetir', S.repetir, 'new-password', null, (v) => (v === nueva.input.value ? '' : S.noCoinciden));
+      const cambio = formulario(S.contrasena, 'candado', null, [actual.campo, nueva.campo, repetir.campo], [actual.campo, nueva.campo, repetir.campo], async () => {
+        try {
+          const r = await api.post('/contrasena', { actual: actual.input.value, contrasena: nueva.input.value });
+          if (r && r.csrf) api.csrf = r.csrf;
+          actual.input.value = nueva.input.value = repetir.input.value = '';
+          aviso(S.cambiada, 'ok');
+        } catch (e) {
+          if (e.codigo === 'CONTRASENA_INCORRECTA') { actual.campo.ponerError(e.message); actual.input.focus(); return; }
+          throw e;
+        }
+      }, S.cambiar);
+      // El acceso se guarda al cambiar el interruptor; quitarlo pide confirmación.
+      const soloRed = UI.interruptor({ id: 'aj-privada', texto: S.soloRed, ayuda: S.soloRedAyuda, marcado: a.solo_red_privada });
+      soloRed.input.addEventListener('change', async () => {
+        const valor = soloRed.input.checked;
+        if (!valor && !(await confirmar(S.quitarTitulo, S.quitarTexto, { boton: S.quitarBoton, peligro: true, consecuencias: S.quitarConsecuencias }))) {
+          soloRed.input.checked = true;
+          return;
+        }
+        try { await api.put('/ajustes', { solo_red_privada: valor }); a.solo_red_privada = valor; guardado(); } catch (e) { soloRed.input.checked = !valor; avisoError(e); }
+      });
+      return h('div', { class: 'rejilla' }, cambio,
+        UI.tarjeta({ titulo: S.acceso, icono: 'escudo' }, soloRed, UI.nota({ tipo: 'info', titulo: S.olvido, texto: S.olvidoTexto })));
+    }
 
-    const archivoRespaldo = h('input', { type: 'file', id: 'aj-restaurar', accept: '.db,application/octet-stream' });
-    const confirmarRestaurar = h('input', { type: 'text', id: 'aj-confirmar', class: 'mono', placeholder: 'RESTAURAR', autocomplete: 'off' });
-    const bRestaurar = h('button', { class: 'boton peligro', type: 'button', onclick: async () => {
-      if (!archivoRespaldo.files[0]) { aviso('Elige el archivo de respaldo.', 'error'); return; }
-      if (confirmarRestaurar.value !== 'RESTAURAR') { aviso('Escribe RESTAURAR para confirmar.', 'error'); confirmarRestaurar.focus(); return; }
-      const fd = new FormData(); fd.append('archivo', archivoRespaldo.files[0]);
-      try { await conEspera(bRestaurar, () => api.pedir('POST', '/restaurar', fd)); aviso('Respaldo restaurado. Vuelve a entrar al panel.', 'ok'); estado.sesion = null; setTimeout(arrancar, 1500); } catch (e) { avisoError(e); }
-    } }, 'Restaurar');
+    function https() {
+      const T = TAj.https;
+      const cert = a.tls.certificado;
+      const regenerar = a.tls.modo === 'autofirmado' && UI.boton({ texto: T.regenerar, variante: 'peligro', icono: 'recargar' });
+      if (regenerar) {
+        regenerar.addEventListener('click', async () => {
+          if (!(await confirmar(T.regenerarTitulo, T.regenerarTexto, { boton: T.regenerar, peligro: true, consecuencias: T.regenerarConsecuencias }))) return;
+          try {
+            await conEspera(regenerar, () => api.post('/tls/regenerar'));
+            aviso(T.regenerado, 'ok', { persistente: true });
+            ir('ajustes', '?pestana=https');
+          } catch (e) { avisoError(e); }
+        });
+      }
+      return UI.tarjeta({ titulo: T.titulo, icono: 'candado' },
+        h('dl', { class: 'datos' },
+          h('dt', {}, T.modo), h('dd', {}, T.modos[a.tls.modo] || a.tls.modo),
+          h('dt', {}, T.direccion), h('dd', { class: 'mono' }, a.direccion),
+          cert && [
+            h('dt', {}, T.vence), h('dd', { class: 'fila' }, cert.vence,
+              cert.estado === 'vencido' ? UI.insignia('error', T.vencido) : cert.estado === 'por_vencer' ? UI.insignia('aviso', T.venceEn(cert.dias_restantes)) : null),
+            h('dt', {}, T.nombres), h('dd', { class: 'fila' }, cert.nombres.map((n) => h('span', { class: 'chip' }, n))),
+            h('dt', {}, T.ips), h('dd', { class: 'fila' }, cert.ips.map((n) => h('span', { class: 'chip' }, n))),
+            h('dt', {}, T.huella), h('dd', { class: 'mono pequeno' }, cert.huella)]),
+        cert && cert.ips_sin_cubrir && cert.ips_sin_cubrir.length > 0 && UI.nota({ tipo: 'aviso', texto: T.ipsFaltan(cert.ips_sin_cubrir.join(', ')) }),
+        a.tls.modo === 'archivos' && UI.nota({ tipo: 'info', texto: T.archivos }),
+        h('div', { class: 'acciones' }, cert && enlaceDescarga('/tls/certificado', T.descargar), regenerar),
+        cert && h('p', { class: 'tenue pequeno' }, T.instalar, h('a', { href: rutaDe('ayuda') }, T.instalarEnlace), '.'));
+    }
 
-    agregar(vista,
-      encabezado('Ajustes', null),
-      h('div', { class: 'rejilla' },
-        seccion('aj-p', 'Puente', 'El nombre aparece en el panel y en GET /v1/salud.',
-          campo('aj-nombre', 'Nombre del puente', nombre), () => api.put('/ajustes', { nombre_puente: nombre.value.trim() })),
-        seccion('aj-l', 'Límites de peticiones', 'Peticiones por minuto a la API. Admiten ráfagas de ese tamaño. 0 desactiva el límite.',
-          h('div', { class: 'campos' }, campo('aj-ip', 'Por dirección IP', limIP), campo('aj-cliente', 'Por aplicación', limCli)),
-          () => api.put('/ajustes', { limite_ip: +limIP.value, limite_cliente: +limCli.value })),
-        seccion('aj-h', 'Historial', 'Los trabajos más antiguos se borran solos. Nunca se guarda el contenido de los tickets.',
-          campo('aj-retencion', 'Días que se conservan', retencion), () => api.put('/ajustes', { retencion_dias: +retencion.value })),
-        seccion('aj-a', 'Acceso al panel', null,
-          h('label', { class: 'casilla', for: 'aj-privada' }, privada, h('span', {}, 'Solo desde la red local (direcciones privadas). Recomendado.')),
-          () => api.put('/ajustes', { solo_red_privada: privada.checked })),
-        seccion('aj-u', 'Actualizaciones', 'Una vez al día, el puente pregunta a GitHub si hay una versión nueva y lo avisa en Inicio. No envía ningún dato del negocio. Nunca se instala nada solo.',
-          h('label', { class: 'casilla', for: 'aj-actualizaciones' }, buscar, h('span', {}, 'Buscar versiones nuevas')),
-          () => api.put('/ajustes', { buscar_actualizaciones: buscar.checked }))),
-      tls,
-      h('div', { class: 'rejilla' },
-        seccion('aj-c', 'Contraseña del panel', 'Al menos 10 caracteres.',
-          h('div', { class: 'pila' }, campo('aj-actual', 'Contraseña actual', actual), campo('aj-nueva', 'Contraseña nueva', nueva), campo('aj-repetir', 'Repite la nueva', repetir)),
-          async () => {
-            if (nueva.value.length < 10) throw new ErrorApi({ mensaje: 'La contraseña nueva debe tener al menos 10 caracteres.' });
-            if (nueva.value !== repetir.value) throw new ErrorApi({ mensaje: 'Las dos contraseñas nuevas no coinciden.' });
-            await api.post('/contrasena', { actual: actual.value, contrasena: nueva.value });
-            actual.value = nueva.value = repetir.value = '';
-          }),
-        h('section', { class: 'tarjeta', 'aria-labelledby': 'aj-r' }, h('h2', { id: 'aj-r' }, 'Respaldo'),
-          h('p', { class: 'tenue pequeno' }, 'Una copia completa de la base de datos: impresoras, aplicaciones, imágenes, historial y ajustes. Contiene huellas de llaves: guárdala en un lugar seguro.'),
-          h('div', {}, enlaceDescarga('/respaldo', 'Descargar respaldo')),
-          h('hr', { class: 'separador' }),
-          h('h3', {}, 'Restaurar'),
-          h('p', { class: 'nota aviso' }, 'Reemplaza todo lo que hay ahora en el puente por el contenido del respaldo.'),
-          h('label', { class: 'campo', for: 'aj-restaurar' }, h('span', {}, 'Archivo de respaldo'), archivoRespaldo),
-          h('label', { class: 'campo', for: 'aj-confirmar' }, h('span', {}, 'Escribe RESTAURAR para confirmar'), confirmarRestaurar),
-          h('div', {}, bRestaurar))));
+    function respaldo() {
+      const R = TAj.respaldo;
+      const archivo = h('input', { type: 'file', accept: '.db,application/octet-stream' });
+      const cArchivo = UI.campo({ id: 'aj-restaurar', etiqueta: R.archivo, control: archivo, validar: () => (archivo.files[0] ? '' : R.archivoFalta) });
+      const confirmacion = UI.entrada({ mono: true, autocomplete: 'off' });
+      const cConfirmar = UI.campo({ id: 'aj-confirmar', etiqueta: R.confirmar, control: confirmacion, validar: (v) => (v === 'RESTAURAR' ? '' : R.confirmarMal) });
+      const restaurar = UI.boton({ texto: R.boton, variante: 'peligro-lleno', tipo: 'submit' });
+      const form = h('form', { class: 'pila-amplia', novalidate: true, onsubmit: async (ev) => {
+        ev.preventDefault();
+        if (!UI.revisarCampos([cArchivo, cConfirmar])) return;
+        const fd = new FormData();
+        fd.append('archivo', archivo.files[0]);
+        try {
+          await conEspera(restaurar, () => api.pedir('POST', '/restaurar', fd));
+          aviso(R.hecho, 'ok');
+          estado.sesion = null;
+          setTimeout(arrancar, 1500);
+        } catch (e) { avisoError(e); }
+      } }, cArchivo, cConfirmar, h('div', {}, restaurar));
+      return h('div', { class: 'rejilla' },
+        UI.tarjeta({ titulo: R.titulo, icono: 'descargar' }, h('p', { class: 'tenue pequeno' }, R.texto), h('div', {}, enlaceDescarga('/respaldo', R.descargar))),
+        UI.tarjeta({ titulo: R.restaurar, icono: 'aviso' }, UI.nota({ tipo: 'aviso', titulo: R.cuidado, texto: R.antes }), form));
+    }
+
+    const P = TAj.pestanas;
+    agregar(vista, encabezado(TAj.titulo, TAj.subtitulo),
+      UI.pestanas([
+        { id: 'general', titulo: P.general, contenido: general },
+        { id: 'seguridad', titulo: P.seguridad, contenido: seguridad },
+        { id: 'https', titulo: P.https, contenido: https },
+        { id: 'respaldo', titulo: P.respaldo, contenido: respaldo },
+      ], { etiqueta: TAj.titulo, inicial: pestana || 'general',
+        alCambiar: (id) => history.replaceState(null, '', `${rutaDe('ajustes')}?pestana=${id}`) }));
   }
+
+  // ---------------------------------------------------------------------------------------------
+  // Aviso de sesión: la sesión se cierra tras 30 minutos sin actividad. 2 minutos antes se avisa;
+  // solo «Seguir conectado» (que pulsa la persona) la renueva: el panel no la mantiene viva solo.
+  // ---------------------------------------------------------------------------------------------
+  const TSe = window.PRISMA_TEXTOS.sesion;
+  const INACTIVIDAD = 30 * 60 * 1000;
+  const AVISAR_ANTES = 2 * 60 * 1000;
+  let avisoSesion = null;
+  function cerrarAvisoSesion() {
+    if (avisoSesion) { avisoSesion.dialogo.close(); avisoSesion.dialogo.remove(); avisoSesion = null; }
+  }
+  function mostrarAvisoSesion(resta) {
+    const texto = h('p', {}, TSe.texto(Math.ceil(resta / 1000)));
+    const seguir = UI.boton({ texto: TSe.seguir, variante: 'primario' });
+    const salir = UI.boton({ texto: TSe.salir });
+    const d = h('dialog', { role: 'alertdialog', 'aria-labelledby': 'sesion-titulo', 'aria-describedby': 'sesion-texto' },
+      h('div', { class: 'dialogo' }, h('h2', { id: 'sesion-titulo' }, TSe.titulo), h('div', { id: 'sesion-texto' }, texto),
+        h('div', { class: 'dialogo-pie' }, salir, seguir)));
+    const renovar = async () => {
+      cerrarAvisoSesion();
+      try { if (!(await api.get('/sesion')).autenticado) { estado.sesion = null; arrancar(); } } catch { /* se avisará otra vez */ }
+    };
+    seguir.addEventListener('click', renovar);
+    d.addEventListener('cancel', (ev) => { ev.preventDefault(); renovar(); });
+    salir.addEventListener('click', async () => {
+      cerrarAvisoSesion();
+      try { await api.post('/salir'); } catch { /* la sesión ya no existe */ }
+      estado.sesion = null; arrancar();
+    });
+    document.body.append(d);
+    d.showModal();
+    seguir.focus();
+    avisoSesion = { dialogo: d, texto };
+  }
+  setInterval(() => {
+    if (!enElPanel()) { cerrarAvisoSesion(); return; }
+    const resta = INACTIVIDAD - (Date.now() - api.ultimaActividad);
+    if (resta <= 0) {
+      // El puente ya la cerró por inactividad; se pide de todos modos, por si el reloj del navegador va adelantado.
+      cerrarAvisoSesion();
+      estado.sesion = null;
+      aviso(TSe.cerrada, 'aviso', { persistente: true });
+      api.post('/salir').catch(() => {}).finally(arrancar);
+    } else if (resta <= AVISAR_ANTES) {
+      if (!avisoSesion) mostrarAvisoSesion(resta);
+      else avisoSesion.texto.textContent = TSe.texto(Math.ceil(resta / 1000));
+    }
+  }, 1000);
 
   // ---------------------------------------------------------------------------------------------
   // 8. Ayuda
