@@ -203,3 +203,35 @@ func TestModoArchivosConParValido(t *testing.T) {
 		t.Fatalf("esperaba error de par inválido, obtuve %v", err)
 	}
 }
+
+func TestLimites(t *testing.T) {
+	c, _, err := Cargar(escribir(t, "[limites]\npeticiones_ip_por_minuto = 0\npeticiones_cliente_por_minuto = 30\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Limites.PorIP != 0 || c.Limites.PorCliente != 30 {
+		t.Fatalf("límites: %+v", c.Limites)
+	}
+	if d := PorDefecto().Limites; d.PorIP != 120 || d.PorCliente != 60 {
+		t.Fatalf("por defecto: %+v", d)
+	}
+	_, _, err = Cargar(escribir(t, "[limites]\npeticiones_ip_por_minuto = -1\n"))
+	if err == nil || !strings.Contains(err.Error(), "limites.peticiones_ip_por_minuto") {
+		t.Fatalf("esperaba error de límite negativo: %v", err)
+	}
+}
+
+// La configuración que copian los instaladores (Inno Setup y el .deb) es válida y nunca activa
+// el modo de desarrollo, que habilita «prisma imprimir» sin autorización.
+func TestConfiguracionDeLosInstaladores(t *testing.T) {
+	cfg, origen, err := Cargar("../../empaquetado/config.toml")
+	if err != nil {
+		t.Fatalf("%s: %v", origen.Ruta, err)
+	}
+	if cfg.Dev.ModoDesarrollo {
+		t.Fatal("empaquetado/config.toml activa modo_desarrollo")
+	}
+	if cfg.Servidor.ModoTLS != TLSAutofirmado || cfg.Servidor.Puerto != 8443 {
+		t.Fatalf("los instaladores asumen HTTPS autofirmado en el puerto 8443: %+v", cfg.Servidor)
+	}
+}

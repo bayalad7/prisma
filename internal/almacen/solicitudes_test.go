@@ -1,11 +1,10 @@
 package almacen
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 	"time"
-
-	"github.com/bayalad7/prisma/internal/seguridad"
 )
 
 func TestSolicitudesRegistrar(t *testing.T) {
@@ -22,7 +21,7 @@ func TestSolicitudesRegistrar(t *testing.T) {
 		t.Fatalf("segundo intento: %+v", s)
 	}
 	_, err = a.Solicitudes.Registrar(ctx, "no es un origen")
-	exigirError(t, err, seguridad.ErrOrigenInvalido)
+	exigirError(t, err, ErrOrigenInvalido)
 }
 
 func TestSolicitudesRechazarYEliminar(t *testing.T) {
@@ -77,17 +76,54 @@ func TestSolicitudesAprobar(t *testing.T) {
 }
 
 func TestSolicitudesLimite(t *testing.T) {
-	a, _ := nuevoAlmacen(t)
+	a, r := nuevoAlmacen(t)
 	for i := 0; i < MaxSolicitudes; i++ {
 		_, err := a.Solicitudes.Registrar(ctx, fmt.Sprintf("https://sitio%d.com", i))
 		exigirSinError(t, err)
+		r.avanzar(time.Second)
 	}
-	_, err := a.Solicitudes.Registrar(ctx, "https://una-mas.com")
-	exigirError(t, err, ErrLimiteSolicitudes)
-	// Un origen ya registrado sigue contando sus intentos.
+	// Un origen ya registrado sigue contando sus intentos (y deja de ser el más antiguo).
 	s, err := a.Solicitudes.Registrar(ctx, "https://sitio0.com")
 	exigirSinError(t, err)
 	if s.Intentos != 2 {
 		t.Fatalf("intentos = %d", s.Intentos)
+	}
+	// Lleno: el origen nuevo reemplaza a la pendiente con la actividad más antigua (sitio1).
+	_, err = a.Solicitudes.Registrar(ctx, "https://una-mas.com")
+	exigirSinError(t, err)
+	if _, err := a.Solicitudes.Obtener(ctx, "https://sitio1.com"); !errors.Is(err, ErrNoEncontrado) {
+		t.Fatalf("sitio1 debía salir: %v", err)
+	}
+	if n, _ := a.Solicitudes.Contar(ctx); n != MaxSolicitudes {
+		t.Fatalf("total = %d", n)
+	}
+	// Si todas son rechazadas, no se reemplaza ninguna.
+	todas, _ := a.Solicitudes.Listar(ctx, "")
+	for _, s := range todas {
+		exigirSinError(t, a.Solicitudes.Rechazar(ctx, s.Origen))
+	}
+	_, err = a.Solicitudes.Registrar(ctx, "https://otra.com")
+	exigirError(t, err, ErrLimiteSolicitudes)
+}
+
+func TestSolicitudesPurgar(t *testing.T) {
+	a, r := nuevoAlmacen(t)
+	for _, o := range []string{"https://vieja.com", "https://rechazada-vieja.com", "https://rechazada-reciente.com"} {
+		_, err := a.Solicitudes.Registrar(ctx, o)
+		exigirSinError(t, err)
+	}
+	exigirSinError(t, a.Solicitudes.Rechazar(ctx, "https://rechazada-vieja.com"))
+	exigirSinError(t, a.Solicitudes.Rechazar(ctx, "https://rechazada-reciente.com"))
+	r.avanzar(60 * 24 * time.Hour)
+	_, err := a.Solicitudes.Registrar(ctx, "https://rechazada-reciente.com") // sigue intentando
+	exigirSinError(t, err)
+	_, err = a.Solicitudes.Registrar(ctx, "https://nueva.com")
+	exigirSinError(t, err)
+	r.avanzar(40 * 24 * time.Hour) // vieja: 100 días; rechazada-vieja: 100; rechazada-reciente: 40; nueva: 40
+	n, err := a.Solicitudes.Purgar(ctx)
+	exigirSinError(t, err)
+	quedan, _ := a.Solicitudes.Listar(ctx, "")
+	if n != 3 || len(quedan) != 1 || quedan[0].Origen != "https://rechazada-reciente.com" {
+		t.Fatalf("purgadas %d, quedan %+v", n, quedan)
 	}
 }

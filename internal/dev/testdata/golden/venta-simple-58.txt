@@ -1,0 +1,259 @@
+== Vista ==
+┌────────────────────────────────┐
+│    A B A R R O T E S   L A     │
+│                                │
+│       E S P E R A N Z A        │
+│                                │
+│ Av. Constitución 1450, Colima, │
+│              Col.              │
+│14/10/2026 13:42   Caja 1   Tick│
+│↳et 4127                        │
+│--------------------------------│
+│Cant Producto            Importe│
+│2    Leche entera 1 L     $56.00│
+│1    Pan de caja          $62.50│
+│     integral grande            │
+│3    Jabón de tocador     $45.00│
+│--------------------------------│
+│Subtotal                 $140.95│
+│IVA 16%                   $22.55│
+│TOTAL                    $163.50│
+│Efectivo                 $200.00│
+│Cambio                    $36.50│
+│                                │
+│    ¡Gracias por su compra!     │
+│                                │
+│                                │
+└✂ - - - corte total ────────────┘
+↳ La fuente B es más angosta que la A: en el papel esa línea es una sola.
+
+== Advertencias ==
+
+== Traza ==
+000000  1B 40                      inicializar impresora
+000002  1B 74 13                   página de códigos 19 (CP858)
+000005  1B 61 01                   alineación centro
+000008  1B 45 01                   negrita sí
+00000B  1B 2D 00                   subrayado 0
+00000E  1D 42 00                   invertido no
+000011  1D 21 11                   tamaño 2×2
+000014  1B 4D 00                   fuente A
+000017  41 42 41 52 52 4F 54 45 …  texto "ABARROTES LA"
+000023  0A                         salto de línea
+000024  45 53 50 45 52 41 4E 5A …  texto "ESPERANZA"
+00002D  0A                         salto de línea
+00002E  1B 61 00                   alineación izquierda
+000031  1B 45 00                   negrita no
+000034  1B 2D 00                   subrayado 0
+000037  1D 42 00                   invertido no
+00003A  1D 21 00                   tamaño 1×1
+00003D  1B 4D 00                   fuente A
+000040  1B 61 01                   alineación centro
+000043  1B 45 00                   negrita no
+000046  1B 2D 00                   subrayado 0
+000049  1D 42 00                   invertido no
+00004C  1D 21 00                   tamaño 1×1
+00004F  1B 4D 00                   fuente A
+000052  41 76 2E 20 43 6F 6E 73 …  texto "Av. Constitución 1450, Colima,"
+000070  0A                         salto de línea
+000071  43 6F 6C 2E                texto "Col."
+000075  0A                         salto de línea
+000076  1B 61 00                   alineación izquierda
+000079  1B 45 00                   negrita no
+00007C  1B 2D 00                   subrayado 0
+00007F  1D 42 00                   invertido no
+000082  1D 21 00                   tamaño 1×1
+000085  1B 4D 00                   fuente A
+000088  1B 61 01                   alineación centro
+00008B  1B 45 00                   negrita no
+00008E  1B 2D 00                   subrayado 0
+000091  1D 42 00                   invertido no
+000094  1D 21 00                   tamaño 1×1
+000097  1B 4D 01                   fuente B
+00009A  31 34 2F 31 30 2F 32 30 …  texto "14/10/2026 13:42   Caja 1   Ticket 4127"
+0000C1  0A                         salto de línea
+0000C2  1B 61 00                   alineación izquierda
+0000C5  1B 45 00                   negrita no
+0000C8  1B 2D 00                   subrayado 0
+0000CB  1D 42 00                   invertido no
+0000CE  1D 21 00                   tamaño 1×1
+0000D1  1B 4D 00                   fuente A
+0000D4  1B 61 00                   alineación izquierda
+0000D7  1B 45 00                   negrita no
+0000DA  1B 2D 00                   subrayado 0
+0000DD  1D 42 00                   invertido no
+0000E0  1D 21 00                   tamaño 1×1
+0000E3  1B 4D 00                   fuente A
+0000E6  2D 2D 2D 2D 2D 2D 2D 2D …  texto "--------------------------------"
+000106  0A                         salto de línea
+000107  1B 61 00                   alineación izquierda
+00010A  1B 45 01                   negrita sí
+00010D  1B 2D 00                   subrayado 0
+000110  1D 42 00                   invertido no
+000113  1D 21 00                   tamaño 1×1
+000116  1B 4D 00                   fuente A
+000119  43 61 6E 74 20 50 72 6F …  texto "Cant Producto            Importe"
+000139  0A                         salto de línea
+00013A  1B 61 00                   alineación izquierda
+00013D  1B 45 00                   negrita no
+000140  1B 2D 00                   subrayado 0
+000143  1D 42 00                   invertido no
+000146  1D 21 00                   tamaño 1×1
+000149  1B 4D 00                   fuente A
+00014C  1B 61 00                   alineación izquierda
+00014F  1B 45 00                   negrita no
+000152  1B 2D 00                   subrayado 0
+000155  1D 42 00                   invertido no
+000158  1D 21 00                   tamaño 1×1
+00015B  1B 4D 00                   fuente A
+00015E  32 20 20 20 20 4C 65 63 …  texto "2    Leche entera 1 L     $56.00"
+00017E  0A                         salto de línea
+00017F  1B 61 00                   alineación izquierda
+000182  1B 45 00                   negrita no
+000185  1B 2D 00                   subrayado 0
+000188  1D 42 00                   invertido no
+00018B  1D 21 00                   tamaño 1×1
+00018E  1B 4D 00                   fuente A
+000191  1B 61 00                   alineación izquierda
+000194  1B 45 00                   negrita no
+000197  1B 2D 00                   subrayado 0
+00019A  1D 42 00                   invertido no
+00019D  1D 21 00                   tamaño 1×1
+0001A0  1B 4D 00                   fuente A
+0001A3  31 20 20 20 20 50 61 6E …  texto "1    Pan de caja          $62.50"
+0001C3  0A                         salto de línea
+0001C4  20 20 20 20 20 69 6E 74 …  texto "     integral grande            "
+0001E4  0A                         salto de línea
+0001E5  1B 61 00                   alineación izquierda
+0001E8  1B 45 00                   negrita no
+0001EB  1B 2D 00                   subrayado 0
+0001EE  1D 42 00                   invertido no
+0001F1  1D 21 00                   tamaño 1×1
+0001F4  1B 4D 00                   fuente A
+0001F7  1B 61 00                   alineación izquierda
+0001FA  1B 45 00                   negrita no
+0001FD  1B 2D 00                   subrayado 0
+000200  1D 42 00                   invertido no
+000203  1D 21 00                   tamaño 1×1
+000206  1B 4D 00                   fuente A
+000209  33 20 20 20 20 4A 61 62 …  texto "3    Jabón de tocador     $45.00"
+000229  0A                         salto de línea
+00022A  1B 61 00                   alineación izquierda
+00022D  1B 45 00                   negrita no
+000230  1B 2D 00                   subrayado 0
+000233  1D 42 00                   invertido no
+000236  1D 21 00                   tamaño 1×1
+000239  1B 4D 00                   fuente A
+00023C  1B 61 00                   alineación izquierda
+00023F  1B 45 00                   negrita no
+000242  1B 2D 00                   subrayado 0
+000245  1D 42 00                   invertido no
+000248  1D 21 00                   tamaño 1×1
+00024B  1B 4D 00                   fuente A
+00024E  2D 2D 2D 2D 2D 2D 2D 2D …  texto "--------------------------------"
+00026E  0A                         salto de línea
+00026F  1B 61 00                   alineación izquierda
+000272  1B 45 00                   negrita no
+000275  1B 2D 00                   subrayado 0
+000278  1D 42 00                   invertido no
+00027B  1D 21 00                   tamaño 1×1
+00027E  1B 4D 00                   fuente A
+000281  53 75 62 74 6F 74 61 6C …  texto "Subtotal                 $140.95"
+0002A1  0A                         salto de línea
+0002A2  1B 61 00                   alineación izquierda
+0002A5  1B 45 00                   negrita no
+0002A8  1B 2D 00                   subrayado 0
+0002AB  1D 42 00                   invertido no
+0002AE  1D 21 00                   tamaño 1×1
+0002B1  1B 4D 00                   fuente A
+0002B4  1B 61 00                   alineación izquierda
+0002B7  1B 45 00                   negrita no
+0002BA  1B 2D 00                   subrayado 0
+0002BD  1D 42 00                   invertido no
+0002C0  1D 21 00                   tamaño 1×1
+0002C3  1B 4D 00                   fuente A
+0002C6  49 56 41 20 31 36 25 20 …  texto "IVA 16%                   $22.55"
+0002E6  0A                         salto de línea
+0002E7  1B 61 00                   alineación izquierda
+0002EA  1B 45 00                   negrita no
+0002ED  1B 2D 00                   subrayado 0
+0002F0  1D 42 00                   invertido no
+0002F3  1D 21 00                   tamaño 1×1
+0002F6  1B 4D 00                   fuente A
+0002F9  1B 61 00                   alineación izquierda
+0002FC  1B 45 01                   negrita sí
+0002FF  1B 2D 00                   subrayado 0
+000302  1D 42 00                   invertido no
+000305  1D 21 00                   tamaño 1×1
+000308  1B 4D 00                   fuente A
+00030B  54 4F 54 41 4C 20 20 20 …  texto "TOTAL                    $163.50"
+00032B  0A                         salto de línea
+00032C  1B 61 00                   alineación izquierda
+00032F  1B 45 00                   negrita no
+000332  1B 2D 00                   subrayado 0
+000335  1D 42 00                   invertido no
+000338  1D 21 00                   tamaño 1×1
+00033B  1B 4D 00                   fuente A
+00033E  1B 61 00                   alineación izquierda
+000341  1B 45 00                   negrita no
+000344  1B 2D 00                   subrayado 0
+000347  1D 42 00                   invertido no
+00034A  1D 21 00                   tamaño 1×1
+00034D  1B 4D 00                   fuente A
+000350  45 66 65 63 74 69 76 6F …  texto "Efectivo                 $200.00"
+000370  0A                         salto de línea
+000371  1B 61 00                   alineación izquierda
+000374  1B 45 00                   negrita no
+000377  1B 2D 00                   subrayado 0
+00037A  1D 42 00                   invertido no
+00037D  1D 21 00                   tamaño 1×1
+000380  1B 4D 00                   fuente A
+000383  1B 61 00                   alineación izquierda
+000386  1B 45 00                   negrita no
+000389  1B 2D 00                   subrayado 0
+00038C  1D 42 00                   invertido no
+00038F  1D 21 00                   tamaño 1×1
+000392  1B 4D 00                   fuente A
+000395  43 61 6D 62 69 6F 20 20 …  texto "Cambio                    $36.50"
+0003B5  0A                         salto de línea
+0003B6  1B 61 00                   alineación izquierda
+0003B9  1B 45 00                   negrita no
+0003BC  1B 2D 00                   subrayado 0
+0003BF  1D 42 00                   invertido no
+0003C2  1D 21 00                   tamaño 1×1
+0003C5  1B 4D 00                   fuente A
+0003C8  1B 61 00                   alineación izquierda
+0003CB  1B 45 00                   negrita no
+0003CE  1B 2D 00                   subrayado 0
+0003D1  1D 42 00                   invertido no
+0003D4  1D 21 00                   tamaño 1×1
+0003D7  1B 4D 00                   fuente A
+0003DA  1B 64 01                   avanzar 1 línea(s)
+0003DD  1B 61 01                   alineación centro
+0003E0  1B 45 00                   negrita no
+0003E3  1B 2D 00                   subrayado 0
+0003E6  1D 42 00                   invertido no
+0003E9  1D 21 00                   tamaño 1×1
+0003EC  1B 4D 00                   fuente A
+0003EF  AD 47 72 61 63 69 61 73 …  texto "¡Gracias por su compra!"
+000406  0A                         salto de línea
+000407  1B 61 00                   alineación izquierda
+00040A  1B 45 00                   negrita no
+00040D  1B 2D 00                   subrayado 0
+000410  1D 42 00                   invertido no
+000413  1D 21 00                   tamaño 1×1
+000416  1B 4D 00                   fuente A
+000419  1B 61 00                   alineación izquierda
+00041C  1B 45 00                   negrita no
+00041F  1B 2D 00                   subrayado 0
+000422  1D 42 00                   invertido no
+000425  1D 21 00                   tamaño 1×1
+000428  1B 4D 00                   fuente A
+00042B  1B 64 02                   avanzar 2 línea(s)
+00042E  1B 61 00                   alineación izquierda
+000431  1B 45 00                   negrita no
+000434  1B 2D 00                   subrayado 0
+000437  1D 42 00                   invertido no
+00043A  1D 21 00                   tamaño 1×1
+00043D  1B 4D 00                   fuente A
+000440  1D 56 41 00                avanzar hasta la cuchilla (+0) y corte total

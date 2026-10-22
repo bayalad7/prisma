@@ -18,7 +18,7 @@ PRISMA es un servicio que se instala en una PC, Raspberry Pi o Mac dentro de la 
 }
 ```
 
-> **Estado: en desarrollo.** Ya funcionan el contrato del documento, la configuración, la base de datos y la CLI. Todavía faltan el servidor HTTPS, el renderizador ESC/POS, los conectores, el panel de administración y el SDK. Consulta la [hoja de ruta](#hoja-de-ruta).
+> **Estado: en desarrollo.** Ya funcionan el contrato del documento con su validación, el renderizador ESC/POS con su previsualización, los conectores (red, USB, Bluetooth y archivo), la cola por impresora, la configuración, la base de datos y la CLI; las aplicaciones ya imprimen por la [API v1](docs/api-v1.md) con HTTPS y autorización por niveles, el dueño configura todo desde el [panel de administración](docs/panel.md), los integradores tienen un [SDK JavaScript](sdk/js/) con [guías](docs/integradores/README.md) y firmadores de nivel 3 para PHP, Node.js y Python, y se instala como servicio en Windows, Linux/Raspberry Pi y macOS ([instalación](docs/instalacion.md)). Todavía no hay una versión publicada: está en verificación previa ([reporte](docs/pruebas/reporte-verificacion.md) y [matriz de pruebas](docs/pruebas/matriz.md)). Consulta la [hoja de ruta](#hoja-de-ruta).
 
 ## Principios
 
@@ -64,6 +64,8 @@ En Windows:
 .\build.ps1 build        # dist\prisma.exe
 .\build.ps1 build-todo   # binarios para las 6 plataformas en dist\
 .\build.ps1 lint         # go vet + staticcheck
+.\build.ps1 test-sdk     # SDK JavaScript y firmadores (Node.js, PHP, Python)
+.\build.ps1 deb          # paquetes .deb; también: instalador (Inno Setup), checksums
 ```
 
 En Linux y macOS:
@@ -73,7 +75,30 @@ make test
 make build
 make build-todo
 make lint
+make test-sdk
+make deb                 # también: pkg (solo en macOS), checksums
 ```
+
+El CI ([`.github/workflows`](.github/workflows/)) corre `go test -race`, las pruebas del SDK y la instalación real del servicio en Windows, Ubuntu y macOS. Las versiones se publican con una etiqueta `v*` ([docs/publicar.md](docs/publicar.md)).
+
+## Documentación
+
+| Guía | Contenido |
+|---|---|
+| [Primeros pasos](docs/primeros-pasos.md) | Compilar e imprimir en una impresora virtual en 5 minutos. |
+| [Instalación](docs/instalacion.md) | Producción en Windows, Linux, Raspberry Pi y macOS: servicio, respaldo y actualización. |
+| [Conectores](docs/conectores.md) | Impresoras de red, USB y Bluetooth en cada sistema. |
+| [Panel de administración](docs/panel.md) | Impresoras, aplicaciones, solicitudes, trabajos y ajustes desde el navegador. |
+| [CLI](docs/cli.md) · [Configuración](docs/configuracion.md) | Referencia de comandos y de `config.toml`. |
+| [Arquitectura](docs/arquitectura.md) | Cómo viaja un documento hasta la impresora. |
+| [Desarrollo](docs/desarrollo.md) | Pruebas, golden, convenciones y ramas. |
+| [Solución de problemas](docs/solucion-de-problemas.md) | Errores frecuentes, acentos y columnas. |
+| [Contrato documento v1](docs/contrato-documento-v1.md) | El JSON que envían las aplicaciones. |
+| [API v1](docs/api-v1.md) · [HTTPS y certificados](docs/tls.md) | Endpoints, autorización, CORS, errores y cómo confiar en el certificado. |
+| [Integradores](docs/integradores/README.md) | SDK JavaScript, niveles de seguridad, firmas y problemas comunes. |
+| [Publicar](docs/publicar.md) · [Pruebas](docs/pruebas/README.md) | Llave de las versiones, CI e instaladores; matriz manual y reporte de verificación. |
+
+El índice completo está en [docs/README.md](docs/README.md).
 
 ## Uso
 
@@ -81,9 +106,52 @@ make lint
 prisma version                         # versión, plataforma y versiones del contrato
 prisma config ruta                     # dónde busca la configuración y los datos
 prisma config validar [--config ruta]  # valida config.toml y muestra la configuración efectiva
-prisma ejecutar [--config ruta]        # ejecuta el puente en primer plano
+prisma ejecutar [--config ruta]        # ejecuta el puente (API HTTPS y panel /admin) en primer plano
+prisma admin codigo-inicial            # código para configurar el panel desde otro equipo
 prisma admin restablecer-contrasena    # genera una contraseña nueva para el panel
+prisma tls info | regenerar            # certificado HTTPS en uso / uno nuevo con las IPs actuales
+prisma servicio instalar | iniciar | estado | detener | reiniciar | desinstalar
+prisma actualizar [--comprobar]        # instala la última versión (firma y SHA-256 verificados)
 ```
+
+### Aplicaciones
+
+```sh
+prisma clientes agregar --nombre "Caja web" --nivel 2 --origen https://caja.example   # muestra su llave pk_ una vez
+prisma clientes agregar --nombre "Backend" --nivel 3 --llave-publica publica.pem
+prisma clientes listar | eliminar ID | regenerar-llave ID
+```
+
+Cómo integrar PRISMA en una aplicación (SDK, niveles, firmas y errores): [docs/integradores/](docs/integradores/README.md).
+
+### Impresoras
+
+```sh
+prisma impresoras detectar [--red] [--json]   # impresoras, colas y puertos de este equipo (y de la red)
+prisma impresoras agregar --alias caja --tipo red --destino 192.168.1.50 [--ancho 58|80] [--cajon]
+prisma impresoras listar
+prisma impresoras probar caja                 # comprueba la conexión sin imprimir
+prisma impresoras eliminar caja
+prisma imprimir --impresora caja documento.json   # solo con [dev] modo_desarrollo = true
+```
+
+Cómo obtener el destino de cada impresora (IP fija, nombre USB, cola de CUPS, puerto Bluetooth) y qué permisos necesita el servicio en cada sistema: [docs/conectores.md](docs/conectores.md).
+
+### Herramientas de desarrollo
+
+Todas usan un perfil de prueba de 58 u 80 mm con página de códigos CP858.
+
+```sh
+prisma dev impresora-virtual [--puerto 9100] [--ancho 80]  # impresora de red simulada: traza + vista de cada trabajo
+prisma dev previsualizar documento.json [--ancho 58|80]   # simula el ticket en la terminal
+prisma dev previsualizar documento.json --html vista.html # o en una página HTML
+prisma dev renderizar documento.json -o ticket.bin        # genera los bytes ESC/POS
+prisma dev decodificar ticket.bin                         # traza legible de los comandos
+```
+
+Si el documento usa imágenes guardadas (`"recurso"`), indica con `--recursos carpeta` dónde están los archivos `<nombre>.png`.
+
+Las pruebas golden de `internal/dev` comparan la traza y la vista de cada ejemplo válido a 58 y 80 mm. Si un cambio en el renderizador es intencional, regéneralas con `go test ./internal/dev -actualizar` y revisa la diferencia antes de commitear.
 
 ### Configuración
 
@@ -121,12 +189,25 @@ cmd/prisma/           CLI y punto de entrada
 internal/config/      carga y validación de config.toml
 internal/rutas/       rutas por sistema operativo
 internal/almacen/     SQLite: esquema, migraciones y repositorios
-internal/seguridad/   orígenes, contraseñas y (próximamente) llaves y firmas
+internal/contrato/    tipos del documento v1 y validación (esquema + reglas)
+internal/escpos/      renderizador a ESC/POS, páginas de códigos, QR, códigos de barras e imágenes
+internal/conector/    red, USB (winspool / dispositivo / CUPS), Bluetooth (puerto serie), archivo y detección
+internal/cola/        cola FIFO por impresora y estado (en línea / fuera de línea / ocupada)
+internal/dev/         decodificador ESC/POS, impresora virtual y previsualización
+internal/seguridad/   autorización, llaves, límites, contraseñas y firmas Ed25519 (JCS)
+internal/servidor/    HTTPS y API pública /v1
+internal/admin/       panel de administración /admin (HTML/CSS/JS embebidos)
+internal/servicio/    servicio del sistema (Windows, systemd, launchd) y bitácora rotativa
+internal/actualizacion/ versiones nuevas: firma, checksums y reemplazo del binario
 internal/version/     versión del binario
+sdk/js/               SDK JavaScript público
+sdk/firmadores/       firmadores de nivel 3 (PHP, Node.js, Python)
+testdata/             vector de firma público
+schema/               JSON Schema publicados (embebidos en el binario)
 docs/                 especificaciones
-schema/               JSON Schema publicados
 ejemplos/             documentos de ejemplo válidos e inválidos
-empaquetado/          archivos para instalación
+empaquetado/          instaladores: Inno Setup (Windows), .deb (nfpm), .pkg (macOS) y script de Raspberry Pi
+.github/workflows/    CI y publicación de versiones
 ```
 
 ## Ramas
@@ -142,11 +223,12 @@ Para contribuir, crea tu rama a partir de `develop` y abre el pull request hacia
 
 - [x] Contrato «documento v1», esquema y ejemplos
 - [x] Configuración, base de datos con migraciones y CLI básica
-- [ ] Validación del documento y firma Ed25519 (JCS)
-- [ ] Renderizador ESC/POS y páginas de códigos
-- [ ] Conectores de red, USB, Bluetooth y archivo
-- [ ] Cola por impresora
-- [ ] Servidor HTTPS y API pública `/v1`
-- [ ] Panel de administración
-- [ ] SDK JavaScript
-- [ ] Instalación como servicio y paquetes por plataforma
+- [x] Validación del documento y firma Ed25519 (JCS)
+- [x] Renderizador ESC/POS, páginas de códigos y previsualización
+- [x] Conectores de red, USB, Bluetooth y archivo
+- [x] Cola por impresora
+- [x] Servidor HTTPS, API pública `/v1` y autorización por niveles
+- [x] Panel de administración
+- [x] SDK JavaScript, firmadores de referencia y guías para integradores
+- [x] Instalación como servicio, instaladores por plataforma, actualizaciones y CI
+- [ ] Primera versión publicada

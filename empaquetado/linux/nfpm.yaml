@@ -1,0 +1,40 @@
+# Paquete .deb de PRISMA (nfpm). Desde la raíz del repositorio, después de «make build-todo»:
+#   make deb VERSION=1.2.3        (en Windows: $env:VERSION="1.2.3"; .\build.ps1 deb)
+# Las tareas reemplazan ${ARQ} y ${VERSION} en una copia de este archivo (dist/nfpm-<arq>.yaml)
+# porque nfpm no expande variables en las rutas de contents.
+name: prisma
+arch: ${ARQ}
+platform: linux
+version: ${VERSION}
+section: net
+priority: optional
+maintainer: "PRISMA <https://github.com/bayalad7/prisma>"
+homepage: https://github.com/bayalad7/prisma
+description: |
+  Puente de impresión térmica para la red local de un negocio.
+  Recibe tickets de aplicaciones autorizadas por HTTPS y los imprime en impresoras
+  térmicas por USB, red o Bluetooth. Se administra desde un panel web local.
+
+contents:
+  - src: dist/prisma-linux-${ARQ}
+    dst: /usr/bin/prisma
+    file_info:
+      mode: 0755
+
+  - src: empaquetado/linux/prisma.service
+    dst: /lib/systemd/system/prisma.service
+    file_info:
+      mode: 0644
+
+  # La configuración del administrador nunca se sobrescribe al actualizar.
+  - src: empaquetado/config.toml
+    dst: /etc/prisma/config.toml
+    type: config|noreplace
+    file_info:
+      mode: 0644
+
+scripts:
+  preinstall: empaquetado/linux/scripts/antes-de-instalar.sh
+  postinstall: empaquetado/linux/scripts/despues-de-instalar.sh
+  preremove: empaquetado/linux/scripts/antes-de-quitar.sh
+  postremove: empaquetado/linux/scripts/despues-de-quitar.sh

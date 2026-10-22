@@ -72,3 +72,32 @@ func TestIDsRecientesPurgar(t *testing.T) {
 		t.Fatalf("purgados = %d", n)
 	}
 }
+
+func TestIDsRecientesBuscarYLiberar(t *testing.T) {
+	a, r := nuevoAlmacen(t)
+	hash := bytes.Repeat([]byte{1}, 32)
+	_, err := a.IDsRecientes.Buscar(ctx, "cli_a", "doc-1")
+	exigirError(t, err, ErrNoEncontrado)
+	_, _, err = a.IDsRecientes.Reservar(ctx, IDReciente{ClienteID: "cli_a", DocumentoID: "doc-1", HashContenido: hash, TrabajoID: "trb_1"})
+	exigirSinError(t, err)
+	e, err := a.IDsRecientes.Buscar(ctx, "cli_a", "doc-1")
+	exigirSinError(t, err)
+	if e.TrabajoID != "trb_1" || !bytes.Equal(e.HashContenido, hash) {
+		t.Fatalf("encontrado: %+v", e)
+	}
+
+	// Liberar con otro trabajo no hace nada; con el suyo, deja el id libre.
+	exigirSinError(t, a.IDsRecientes.Liberar(ctx, "cli_a", "doc-1", "trb_otro"))
+	_, err = a.IDsRecientes.Buscar(ctx, "cli_a", "doc-1")
+	exigirSinError(t, err)
+	exigirSinError(t, a.IDsRecientes.Liberar(ctx, "cli_a", "doc-1", "trb_1"))
+	_, err = a.IDsRecientes.Buscar(ctx, "cli_a", "doc-1")
+	exigirError(t, err, ErrNoEncontrado)
+
+	// Un registro vencido no se encuentra.
+	_, _, err = a.IDsRecientes.Reservar(ctx, IDReciente{ClienteID: "cli_a", DocumentoID: "doc-2", HashContenido: hash, TrabajoID: "trb_2"})
+	exigirSinError(t, err)
+	r.avanzar(VentanaIdempotencia)
+	_, err = a.IDsRecientes.Buscar(ctx, "cli_a", "doc-2")
+	exigirError(t, err, ErrNoEncontrado)
+}

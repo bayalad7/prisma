@@ -1,0 +1,6 @@
+#!/bin/sh
+# Antes de copiar el binario nuevo, detiene el puente si ya estaba instalado (actualización).
+if launchctl print system/com.github.bayalad7.prisma >/dev/null 2>&1; then
+	launchctl bootout system/com.github.bayalad7.prisma 2>/dev/null || true
+fi
+exit 0

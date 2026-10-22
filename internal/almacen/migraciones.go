@@ -67,21 +67,53 @@ func migrar(ctx context.Context, db *sql.DB, fsys fs.FS) error {
 			"actualiza PRISMA o restaura un respaldo compatible", actual, len(ms))
 	}
 	for _, m := range ms[actual:] {
-		tx, err := db.BeginTx(ctx, nil)
+		if err := aplicar(ctx, db, m); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// marcaSinClavesForaneas permite reconstruir tablas referenciadas (procedimiento de 12 pasos de
+// SQLite): las claves foráneas se desactivan durante la migración y se comprueban antes de confirmar.
+const marcaSinClavesForaneas = "-- prisma:sin-claves-foraneas"
+
+func aplicar(ctx context.Context, db *sql.DB, m migracion) error {
+	sinFK := strings.Contains(m.sql, marcaSinClavesForaneas)
+	if sinFK {
+		// Debe hacerse fuera de la transacción; la base usa una sola conexión, así que aplica a ella.
+		if _, err := db.ExecContext(ctx, "PRAGMA foreign_keys = OFF"); err != nil {
+			return err
+		}
+		defer db.ExecContext(context.WithoutCancel(ctx), "PRAGMA foreign_keys = ON")
+	}
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	falla := func(err error) error {
+		tx.Rollback()
+		return fmt.Errorf("falló la migración %04d_%s: %w", m.version, m.nombre, err)
+	}
+	if _, err := tx.ExecContext(ctx, m.sql); err != nil {
+		return falla(err)
+	}
+	if sinFK {
+		filas, err := tx.QueryContext(ctx, "PRAGMA foreign_key_check")
 		if err != nil {
-			return err
+			return falla(err)
 		}
-		if _, err := tx.ExecContext(ctx, m.sql); err != nil {
-			tx.Rollback()
-			return fmt.Errorf("falló la migración %04d_%s: %w", m.version, m.nombre, err)
+		hayViolaciones := filas.Next()
+		filas.Close()
+		if hayViolaciones {
+			return falla(fmt.Errorf("deja referencias rotas entre tablas"))
 		}
-		if _, err := tx.ExecContext(ctx, fmt.Sprintf("PRAGMA user_version = %d", m.version)); err != nil {
-			tx.Rollback()
-			return err
-		}
-		if err := tx.Commit(); err != nil {
-			return fmt.Errorf("falló la migración %04d_%s: %w", m.version, m.nombre, err)
-		}
+	}
+	if _, err := tx.ExecContext(ctx, fmt.Sprintf("PRAGMA user_version = %d", m.version)); err != nil {
+		return falla(err)
+	}
+	if err := tx.Commit(); err != nil {
+		return falla(err)
 	}
 	return nil
 }

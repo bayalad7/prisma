@@ -1,17 +1,14 @@
 package almacen
 
 import (
-	"bytes"
 	"reflect"
 	"testing"
-
-	"github.com/bayalad7/prisma/internal/seguridad"
 )
 
 func TestClientesCrearYObtener(t *testing.T) {
 	a, _ := nuevoAlmacen(t)
 	c := clienteDePrueba("cli_tienda01")
-	c.LlaveHash = bytes.Repeat([]byte{7}, 32)
+	c.LlaveHash = "$argon2id$v=19$m=8,t=1,p=1$b3RyYQ$b3Rybw"
 	c.OperacionesSensibles = []string{OperacionAbrirCajon}
 	exigirSinError(t, a.Clientes.Crear(ctx, c))
 
@@ -35,9 +32,10 @@ func TestClientesCrearYObtener(t *testing.T) {
 func TestClientesRestriccionesPorNivel(t *testing.T) {
 	a, _ := nuevoAlmacen(t)
 
+	// Un nivel 2 sin llave es válido: es una llave revocada (no podrá autenticarse).
 	sinLlave := clienteDePrueba("cli_sinllave")
-	sinLlave.LlaveHash, sinLlave.LlavePrefijo = nil, ""
-	exigirError(t, a.Clientes.Crear(ctx, sinLlave), ErrInvalido)
+	sinLlave.LlaveHash, sinLlave.LlavePrefijo = "", ""
+	exigirSinError(t, a.Clientes.Crear(ctx, sinLlave))
 
 	firma := &Cliente{ID: "cli_firma001", Nombre: "Backend", Nivel: NivelFirma, Activo: true}
 	exigirError(t, a.Clientes.Crear(ctx, firma), ErrInvalido)
@@ -51,7 +49,7 @@ func TestClientesRestriccionesPorNivel(t *testing.T) {
 	exigirError(t, a.Clientes.Crear(ctx, &Cliente{ID: "cli_nivel4", Nombre: "x", Nivel: 4}), ErrInvalido)
 
 	malHash := clienteDePrueba("cli_malhash")
-	malHash.LlaveHash = []byte{1, 2, 3}
+	malHash.LlaveHash = "sha256:abc"
 	exigirError(t, a.Clientes.Crear(ctx, malHash), ErrInvalido)
 
 	repetido := clienteDePrueba("cli_otro0001")
@@ -69,7 +67,7 @@ func TestClientesActualizarYEliminar(t *testing.T) {
 	exigirSinError(t, a.Clientes.AgregarOrigen(ctx, c.ID, "https://tienda.example"))
 
 	c.Nivel, c.LlavePublica = NivelFirma, make([]byte, 32)
-	c.LlaveHash, c.LlavePrefijo, c.Activo = nil, "", false
+	c.LlaveHash, c.LlavePrefijo, c.Activo, c.ExigirLlave = "", "", false, false
 	c.OperacionesSensibles = []string{OperacionRaw, OperacionAbrirCajon}
 	exigirSinError(t, a.Clientes.Actualizar(ctx, c))
 	leido, _ := a.Clientes.Obtener(ctx, c.ID)
@@ -97,7 +95,7 @@ func TestClientesOrigenes(t *testing.T) {
 	exigirSinError(t, a.Clientes.AgregarOrigen(ctx, uno.ID, "HTTPS://MiApp.com:443/"))
 	exigirSinError(t, a.Clientes.AgregarOrigen(ctx, uno.ID, "http://localhost:5173"))
 	exigirError(t, a.Clientes.AgregarOrigen(ctx, dos.ID, "https://miapp.com"), ErrDuplicado)
-	exigirError(t, a.Clientes.AgregarOrigen(ctx, dos.ID, "https://*.miapp.com"), seguridad.ErrOrigenInvalido)
+	exigirError(t, a.Clientes.AgregarOrigen(ctx, dos.ID, "https://*.miapp.com"), ErrOrigenInvalido)
 	exigirError(t, a.Clientes.AgregarOrigen(ctx, "cli_noexiste", "https://otra.com"), ErrNoEncontrado)
 
 	origenes, err := a.Clientes.Origenes(ctx, uno.ID)
@@ -168,4 +166,20 @@ func TestClientesImpresorasPermitidas(t *testing.T) {
 	exigirError(t, a.Clientes.EstablecerImpresoras(ctx, "cli_noexiste", true, nil), ErrNoEncontrado)
 	_, err = a.Clientes.PuedeImprimirEn(ctx, "cli_noexiste", "barra")
 	exigirError(t, err, ErrNoEncontrado)
+}
+
+func TestClientesExigirLlave(t *testing.T) {
+	a, _ := nuevoAlmacen(t)
+	c := &Cliente{ID: "cli_firma002", Nombre: "Backend", Nivel: NivelFirma, LlavePublica: make([]byte, 32), ExigirLlave: true, Activo: true}
+	exigirError(t, a.Clientes.Crear(ctx, c), ErrInvalido)
+	c.LlaveHash, c.LlavePrefijo = hashPrueba, "pk_firma002"
+	exigirSinError(t, a.Clientes.Crear(ctx, c))
+	leido, _ := a.Clientes.Obtener(ctx, c.ID)
+	if !leido.ExigirLlave || leido.LlaveHash != hashPrueba {
+		t.Fatalf("leído: %+v", leido)
+	}
+	// Prefijo sin hash (o al revés) no es válido.
+	solo := clienteDePrueba("cli_solopref")
+	solo.LlaveHash = ""
+	exigirError(t, a.Clientes.Crear(ctx, solo), ErrInvalido)
 }

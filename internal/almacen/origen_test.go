@@ -1,4 +1,4 @@
-package seguridad
+package almacen
 
 import (
 	"errors"

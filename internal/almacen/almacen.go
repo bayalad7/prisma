@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sync"
 	"time"
 
 	"modernc.org/sqlite"
@@ -32,7 +33,9 @@ var (
 
 // Almacen es el punto de acceso a la base de datos.
 type Almacen struct {
+	mu    sync.RWMutex // protege db: Restaurar la reemplaza con el puente en marcha
 	db    *sql.DB
+	ruta  string // vacía en las bases en memoria
 	ahora func() time.Time
 
 	Impresoras   *RepoImpresoras
@@ -52,14 +55,12 @@ func Abrir(ctx context.Context, ruta string) (*Almacen, error) {
 	if err := os.MkdirAll(filepath.Dir(ruta), 0o700); err != nil {
 		return nil, fmt.Errorf("no se pudo crear el directorio de datos: %w", err)
 	}
-	db, err := sql.Open("sqlite", ruta+"?"+pragmas+"&_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)")
+	db, err := abrirArchivo(ctx, ruta)
 	if err != nil {
-		return nil, fmt.Errorf("no se pudo abrir la base de datos %q: %w", ruta, err)
+		return nil, err
 	}
-	a, err := iniciar(ctx, db)
-	if err != nil {
-		return nil, fmt.Errorf("base de datos %q: %w", ruta, err)
-	}
+	a := nuevo(db)
+	a.ruta = ruta
 	if runtime.GOOS != "windows" {
 		// Contiene hashes de llaves y de la contraseña del panel.
 		if err := os.Chmod(ruta, 0o600); err != nil {
@@ -76,22 +77,42 @@ func AbrirMemoria(ctx context.Context) (*Almacen, error) {
 	if err != nil {
 		return nil, err
 	}
-	return iniciar(ctx, db)
+	if err := preparar(ctx, db); err != nil {
+		return nil, err
+	}
+	return nuevo(db), nil
 }
 
-func iniciar(ctx context.Context, db *sql.DB) (*Almacen, error) {
+// abrirArchivo abre la base de un archivo y le aplica las migraciones.
+func abrirArchivo(ctx context.Context, ruta string) (*sql.DB, error) {
+	db, err := sql.Open("sqlite", ruta+"?"+pragmas+"&_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)")
+	if err != nil {
+		return nil, fmt.Errorf("no se pudo abrir la base de datos %q: %w", ruta, err)
+	}
+	if err := preparar(ctx, db); err != nil {
+		return nil, fmt.Errorf("base de datos %q: %w", ruta, err)
+	}
+	return db, nil
+}
+
+// preparar configura el pool y aplica las migraciones pendientes.
+func preparar(ctx context.Context, db *sql.DB) error {
 	// Una sola conexión: serializa las escrituras (sin SQLITE_BUSY) y mantiene viva la base en memoria.
 	db.SetMaxOpenConns(1)
 	db.SetConnMaxIdleTime(0)
 	db.SetConnMaxLifetime(0)
 	if err := db.PingContext(ctx); err != nil {
 		db.Close()
-		return nil, err
+		return err
 	}
 	if err := migrar(ctx, db, migracionesFS); err != nil {
 		db.Close()
-		return nil, err
+		return err
 	}
+	return nil
+}
+
+func nuevo(db *sql.DB) *Almacen {
 	a := &Almacen{db: db, ahora: time.Now}
 	a.Impresoras = &RepoImpresoras{a}
 	a.Clientes = &RepoClientes{a}
@@ -100,22 +121,29 @@ func iniciar(ctx context.Context, db *sql.DB) (*Almacen, error) {
 	a.IDsRecientes = &RepoIDsRecientes{a}
 	a.Recursos = &RepoRecursos{a}
 	a.Ajustes = &RepoAjustes{a}
-	return a, nil
+	return a
+}
+
+// bd devuelve la conexión vigente.
+func (a *Almacen) bd() *sql.DB {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.db
 }
 
 // Cerrar libera la base de datos.
 func (a *Almacen) Cerrar() error {
-	return a.db.Close()
+	return a.bd().Close()
 }
 
 // VersionEsquema devuelve la versión de migración aplicada.
 func (a *Almacen) VersionEsquema(ctx context.Context) (int, error) {
-	return versionEsquema(ctx, a.db)
+	return versionEsquema(ctx, a.bd())
 }
 
 // enTransaccion ejecuta fn dentro de una transacción; la confirma si fn no devuelve error.
 func (a *Almacen) enTransaccion(ctx context.Context, fn func(*sql.Tx) error) error {
-	tx, err := a.db.BeginTx(ctx, nil)
+	tx, err := a.bd().BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -146,6 +174,17 @@ func traducirError(err error, que string) error {
 		}
 	}
 	return fmt.Errorf("%s: %w", que, err)
+}
+
+// EsOcupada indica que la base estaba bloqueada por otra conexión o por otro proceso más allá
+// del busy_timeout (SQLITE_BUSY o SQLITE_LOCKED): un estado transitorio, no un error del puente.
+func EsOcupada(err error) bool {
+	var se *sqlite.Error
+	if !errors.As(err, &se) {
+		return false
+	}
+	codigo := se.Code() & 0xff // código primario, sin la parte extendida
+	return codigo == sqlite3.SQLITE_BUSY || codigo == sqlite3.SQLITE_LOCKED
 }
 
 // Conversión de tipos para columnas INTEGER.

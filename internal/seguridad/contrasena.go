@@ -2,8 +2,10 @@ package seguridad
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strings"
@@ -26,14 +28,18 @@ var errHashInvalido = errors.New("hash de contraseña con formato inválido")
 // HashContrasena devuelve el hash argon2id en formato PHC:
 // $argon2id$v=19$m=65536,t=3,p=4$<sal>$<hash>
 func HashContrasena(contrasena string) (string, error) {
+	return hashArgon2id(contrasena, argonMemoriaKiB, argonPasadas, argonHilos)
+}
+
+func hashArgon2id(secreto string, memoriaKiB, pasadas uint32, hilos uint8) (string, error) {
 	sal := make([]byte, argonSal)
 	if _, err := rand.Read(sal); err != nil {
 		return "", err
 	}
-	hash := argon2.IDKey([]byte(contrasena), sal, argonPasadas, argonMemoriaKiB, argonHilos, argonLargo)
+	hash := argon2.IDKey([]byte(secreto), sal, pasadas, memoriaKiB, hilos, argonLargo)
 	b64 := base64.RawStdEncoding
 	return fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
-		argon2.Version, argonMemoriaKiB, argonPasadas, argonHilos, b64.EncodeToString(sal), b64.EncodeToString(hash)), nil
+		argon2.Version, memoriaKiB, pasadas, hilos, b64.EncodeToString(sal), b64.EncodeToString(hash)), nil
 }
 
 // VerificarContrasena compara en tiempo constante. Respeta los parámetros guardados en el hash,
@@ -92,4 +98,32 @@ func GenerarContrasena() (string, error) {
 		b.WriteByte(alfabetoContrasena[int(aleatorio[i])%len(alfabetoContrasena)])
 	}
 	return b.String(), nil
+}
+
+// alfabetoCodigo evita caracteres ambiguos y se dicta fácil en mayúsculas.
+const alfabetoCodigo = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
+
+// GenerarCodigoInicial crea el código de un solo uso para configurar el panel desde otro equipo
+// (8 caracteres, 40 bits, mostrado como XXXX-XXXX) y el hash que se guarda.
+func GenerarCodigoInicial() (codigo, hash string, err error) {
+	b := make([]byte, 8)
+	if _, err := rand.Read(b); err != nil {
+		return "", "", err
+	}
+	for i := range b {
+		b[i] = alfabetoCodigo[int(b[i])%len(alfabetoCodigo)] // 256 es múltiplo de 32: sin sesgo
+	}
+	return string(b[:4]) + "-" + string(b[4:]), HashCodigo(string(b)), nil
+}
+
+// HashCodigo normaliza el código (sin guiones ni espacios, en mayúsculas) y devuelve su SHA-256.
+func HashCodigo(codigo string) string {
+	n := strings.ToUpper(strings.NewReplacer("-", "", " ", "").Replace(codigo))
+	h := sha256.Sum256([]byte(n))
+	return hex.EncodeToString(h[:])
+}
+
+// VerificarCodigo compara en tiempo constante un código con su hash.
+func VerificarCodigo(codigo, hash string) bool {
+	return subtle.ConstantTimeCompare([]byte(HashCodigo(codigo)), []byte(hash)) == 1
 }

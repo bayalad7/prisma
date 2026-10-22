@@ -3,7 +3,12 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
+	"encoding/json"
+	"fmt"
 	"log/slog"
+	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,13 +20,20 @@ import (
 	"github.com/bayalad7/prisma/internal/seguridad"
 )
 
-// configDePrueba escribe un config.toml que guarda los datos en un directorio temporal.
+// configDePrueba escribe un config.toml que guarda los datos en un directorio temporal y escucha
+// solo en 127.0.0.1, en un puerto libre.
 func configDePrueba(t *testing.T) (rutaConfig, dirDatos string) {
 	t.Helper()
 	dir := t.TempDir()
 	dirDatos = filepath.Join(dir, "datos")
 	rutaConfig = filepath.Join(dir, "config.toml")
-	contenido := "[servidor]\npuerto = 9443\n[datos]\nruta = '" + dirDatos + "'\n"
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	puerto := ln.Addr().(*net.TCPAddr).Port
+	ln.Close()
+	contenido := fmt.Sprintf("[servidor]\nescuchar = \"127.0.0.1\"\npuerto = %d\n[datos]\nruta = '%s'\n", puerto, dirDatos)
 	if err := os.WriteFile(rutaConfig, []byte(contenido), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +79,7 @@ func TestComandoVersion(t *testing.T) {
 func TestComandoConfigValidar(t *testing.T) {
 	ruta, _ := configDePrueba(t)
 	salida, err := correr(t, "config", "validar", "--config", ruta)
-	if err != nil || !strings.Contains(salida, "La configuración es válida") || !strings.Contains(salida, "9443") {
+	if err != nil || !strings.Contains(salida, "La configuración es válida") || !strings.Contains(salida, "127.0.0.1") {
 		t.Fatalf("salida %q, error %v", salida, err)
 	}
 
@@ -87,11 +99,32 @@ func TestEjecutarCreaLaBaseDeDatos(t *testing.T) {
 
 	rutaBD := filepath.Join(dirDatos, "prisma.db")
 	limite := time.Now().Add(10 * time.Second)
-	for !strings.Contains(bitacora.String(), "todavía no está implementado") {
+	var url string
+	for url == "" {
+		for _, linea := range strings.Split(bitacora.String(), "\n") {
+			var ev struct{ Msg, URL string }
+			if json.Unmarshal([]byte(linea), &ev) == nil && ev.Msg == "API escuchando" {
+				url = ev.URL
+			}
+		}
 		if time.Now().After(limite) {
+			cancelar()
+			<-listo
 			t.Fatalf("ejecutar no terminó de arrancar; bitácora:\n%s", bitacora.String())
 		}
 		time.Sleep(20 * time.Millisecond)
+	}
+	// La API responde por HTTPS con el certificado autofirmado generado al arrancar.
+	cliente := &http.Client{Timeout: 5 * time.Second, Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
+	res, err := cliente.Get(url)
+	if err != nil || res.StatusCode != 200 || res.TLS == nil {
+		cancelar()
+		<-listo
+		t.Fatalf("GET %s: %v %v", url, err, res)
+	}
+	res.Body.Close()
+	if _, err := os.Stat(filepath.Join(dirDatos, "tls", "certificado.pem")); err != nil {
+		t.Error("no se generó el certificado autofirmado")
 	}
 	cancelar()
 	if err := <-listo; err != nil {
@@ -102,6 +135,37 @@ func TestEjecutarCreaLaBaseDeDatos(t *testing.T) {
 	}
 	if !strings.Contains(bitacora.String(), `"msg":"PRISMA detenido"`) {
 		t.Errorf("falta el mensaje de cierre en la bitácora:\n%s", bitacora.String())
+	}
+}
+
+func TestComandosDev(t *testing.T) {
+	const doc = "../../ejemplos/validos/venta-simple.json"
+	salida, err := correr(t, "dev", "previsualizar", doc, "--ancho", "58", "--sin-color")
+	if err != nil || !strings.Contains(salida, "Leche entera 1 L") || !strings.Contains(salida, "corte total") || strings.Contains(salida, "\x1b[") {
+		t.Fatalf("previsualizar: %v\n%s", err, salida)
+	}
+
+	dir := t.TempDir()
+	html := filepath.Join(dir, "vista.html")
+	if _, err := correr(t, "dev", "previsualizar", doc, "--html", html); err != nil {
+		t.Fatal(err)
+	}
+	if contenido, _ := os.ReadFile(html); !strings.HasPrefix(string(contenido), "<!doctype html>") {
+		t.Fatal("el HTML no se generó")
+	}
+
+	bin := filepath.Join(dir, "ticket.bin")
+	if _, err := correr(t, "dev", "renderizar", doc, "-o", bin); err != nil {
+		t.Fatal(err)
+	}
+	salida, err = correr(t, "dev", "decodificar", bin)
+	if err != nil || !strings.Contains(salida, "inicializar impresora") || !strings.Contains(salida, `texto "ABARROTES LA ESPERANZA"`) {
+		t.Fatalf("decodificar: %v\n%s", err, salida)
+	}
+
+	if _, err := correr(t, "dev", "previsualizar", "../../ejemplos/invalidos/version-no-soportada.json"); err == nil ||
+		!strings.Contains(err.Error(), "VERSION_NO_SOPORTADA") {
+		t.Fatalf("un documento inválido debe mostrar su código: %v", err)
 	}
 }
 
