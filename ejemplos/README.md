@@ -1,6 +1,6 @@
 # Ejemplos del contrato «documento v1»
 
-Documentos JSON de ejemplo. Los usan las pruebas del puente (`internal/contrato`, `internal/dev`) y del SDK (`sdk/js`), así que también funcionan como casos de prueba.
+Documentos JSON de ejemplo. Los usan las pruebas del puente (`internal/contrato`, `internal/dev`) y del SDK (`sdk/js`), así que también funcionan como casos de prueba. El panel ofrece los válidos como plantillas en *Probar impresión* (`ejemplos.go` los embebe).
 
 | Carpeta | Contenido |
 |---|---|

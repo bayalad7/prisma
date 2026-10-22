@@ -117,7 +117,8 @@ internal/version/       versión, commit y fecha (-ldflags)
 sdk/js/                 SDK JavaScript público (@bayalad7/prisma; dist/ se versiona para el CDN)
 sdk/firmadores/         firmadores de nivel 3 (PHP, Node.js, Python) y casos JCS compartidos con el puente
 schema/                 JSON Schema del documento (embebido)
-ejemplos/               documentos válidos e inválidos (con indice.json); los usan puente y SDK
+ejemplos/               documentos válidos e inválidos (con indice.json); los usan puente, SDK y
+                        las plantillas de «Probar impresión» (embebidos)
 testdata/               vector de firma público
 docs/                   por lector: integradores/ instalacion/ administracion/ operacion/ seguridad/
                         arquitectura/ adr/ diagramas/ referencia/ (API, OpenAPI, contrato, errores, CLI)
