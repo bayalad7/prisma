@@ -412,7 +412,7 @@ fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; min-width:
 .opcion .titulo-opcion { font-weight: 650; }
 .opcion .tenue { font-size: .85rem; overflow-wrap: anywhere; }
 .opcion .icono-opcion { width: 28px; height: 28px; color: var(--acento); }
-.segmentos { display: inline-flex; border: 1px solid var(--borde-control); border-radius: var(--radio-chico); overflow: hidden; }
+.segmentos { display: inline-flex; justify-self: start; max-width: 100%; overflow-x: auto; border: 1px solid var(--borde-control); border-radius: var(--radio-chico); }
 .segmentos button { border: 0; border-right: 1px solid var(--borde-control); border-radius: 0; background: var(--superficie); padding: 6px 14px; font: inherit; cursor: pointer; color: var(--tinta); min-height: 36px; }
 .segmentos button:last-child { border-right: 0; }
 .segmentos button[aria-pressed="true"] { background: var(--acento); color: var(--sobre-acento); font-weight: 600; }

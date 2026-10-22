@@ -41,9 +41,6 @@
     en_linea: ['ok', 'En línea'], fuera_de_linea: ['error', 'Fuera de línea'],
     ocupada: ['aviso', 'Imprimiendo'], desconocido: ['', 'Sin probar'],
   };
-  const ESTADOS_TRABAJO = {
-    completado: ['ok', 'Impreso'], fallido: ['error', 'Falló'], encolado: ['acento', 'En cola'], imprimiendo: ['aviso', 'Imprimiendo'],
-  };
   function pastilla(mapa, clave) {
     const [clase, texto] = mapa[clave] || ['', clave];
     return h('span', { class: `pastilla ${clase}` }, texto);
@@ -242,8 +239,9 @@
     navegar();
   }
   function seccionActual() { return seccionDe(location.pathname) || 'inicio'; }
-  function ir(id) {
-    if (location.pathname !== rutaDe(id)) history.pushState(null, '', rutaDe(id));
+  function ir(id, consulta = '') {
+    const destino = rutaDe(id) + consulta;
+    if (location.pathname + location.search !== destino) history.pushState(null, '', destino);
     navegar();
   }
   async function navegar() {
@@ -295,10 +293,11 @@
     const a = ev.target.closest('a[href^="/admin/"]');
     if (!a || !enElPanel() || ev.defaultPrevented || ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
     if (a.target || a.hasAttribute('download')) return;
-    const id = seccionDe(new URL(a.href).pathname);
+    const destino = new URL(a.href);
+    const id = seccionDe(destino.pathname);
     if (!id) return;
     ev.preventDefault();
-    ir(id);
+    ir(id, destino.search);
   });
 
   // Atajos: g y la letra de la sección; ? muestra la ayuda. Se pueden desactivar (WCAG 2.1.4).
@@ -343,7 +342,7 @@
   const ocultarPasos = (si) => { try { localStorage.setItem(CLAVE_PASOS_OCULTOS, si ? '1' : '0'); } catch { /* solo esta vez */ } };
   const ESTADO_INSIGNIA_IMPRESORA = { en_linea: 'ok', fuera_de_linea: 'error', ocupada: 'info', desconocido: 'desconocido', inactiva: 'desconocido' };
   const insigniaImpresora = (estadoImp) => UI.insignia(ESTADO_INSIGNIA_IMPRESORA[estadoImp] || 'desconocido', TI.impresoras.estados[estadoImp] || estadoImp);
-  const enlaceBoton = (seccion, texto, variante = '') => h('a', { class: `boton chico ${variante}`, href: rutaDe(seccion) }, texto);
+  const enlaceBoton = (seccion, texto, variante = '', consulta = '') => h('a', { class: `boton chico ${variante}`, href: rutaDe(seccion) + consulta }, texto);
 
   async function vistaInicio(vista) {
     const r = await api.get('/resumen');
@@ -401,7 +400,7 @@
     return tarjetaCifra(hoy.fallidos > 0 ? 'error' : 'trabajos', hoy.fallidos > 0 ? 'error' : 'ok', TI.hoy.titulo,
       total === 0 ? '0' : TI.hoy.cifra(hoy.fallidos), TI.hoy.texto(hoy.fallidos, total),
       hoy.pruebas > 0 && h('p', { class: 'tenue pequeno' }, TI.hoy.pruebas(hoy.pruebas)),
-      hoy.fallidos > 0 ? enlaceBoton('trabajos', TI.hoy.verQuePaso) : enlaceBoton('trabajos', TI.hoy.verTrabajos, 'texto'));
+      hoy.fallidos > 0 ? enlaceBoton('trabajos', TI.hoy.verQuePaso, '', '?estado=fallido') : enlaceBoton('trabajos', TI.hoy.verTrabajos, 'texto'));
   }
   function tarjetaCertificado(cert, modo) {
     if (!cert) return tarjetaCifra('candado', 'info', TI.certificado.titulo, TI.certificado.sinHttps, TI.certificado.sinHttpsTexto);
@@ -498,20 +497,6 @@
       ],
       filas: lista,
     });
-  }
-
-  function tablaTrabajos(lista) {
-    if (lista.length === 0) return h('div', { class: 'tabla-caja' }, h('p', { class: 'vacio' }, 'No hay trabajos con estos filtros.'));
-    return h('div', { class: 'tabla-caja', tabindex: '0', role: 'region', 'aria-label': 'Tabla (se puede desplazar)' }, h('table', {},
-      h('thead', {}, h('tr', {}, ['Fecha', 'Aplicación', 'Impresora', 'Estado', 'Referencia', 'Error / avisos', 'Duración'].map((t) => h('th', { scope: 'col' }, t)))),
-      h('tbody', {}, lista.map((t) => h('tr', {},
-        h('td', { class: 'numeros' }, fechaHora(t.creado)),
-        h('td', {}, t.cliente_nombre || h('span', { class: 'mono' }, t.cliente_id)),
-        h('td', {}, h('span', { class: 'fila' }, h('span', { class: 'mono' }, t.impresora_alias), insigniaVirtual(t))),
-        h('td', {}, pastilla(ESTADOS_TRABAJO, t.estado)),
-        h('td', { class: 'mono' }, t.referencia || '—'),
-        h('td', {}, t.codigo_error && h('span', { class: 'chip aviso' }, t.codigo_error), (t.advertencias || []).map((a) => h('span', { class: 'chip' }, a)), !t.codigo_error && !(t.advertencias || []).length && '—'),
-        h('td', { class: 'numeros' }, duracion(t.duracion_ms)))))));
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -1393,31 +1378,151 @@
   }
 
   // ---------------------------------------------------------------------------------------------
-  // 5. Trabajos
+  // 5. Trabajos: el historial, con el detalle de cada trabajo (qué pasó y qué hacer).
   // ---------------------------------------------------------------------------------------------
+  const TT = window.PRISMA_TEXTOS.trabajos;
+  const conAviso = (t) => t.estado === 'completado' && (t.advertencias || []).length > 0;
+  function insigniaTrabajo(t) {
+    const E = TT.estados;
+    if (t.estado === 'fallido') return UI.insignia('error', E.fallido);
+    if (t.estado === 'completado') return conAviso(t) ? UI.insignia('aviso', E.conAviso) : UI.insignia('ok', E.completado);
+    return UI.insignia(t.estado === 'imprimiendo' ? 'info' : 'acento', E[t.estado] || t.estado);
+  }
+  const nombreAplicacion = (t) => (t.cliente_id === 'cli_panel' ? TT.panel : t.cliente_id === 'cli_consola' ? TT.consola : t.cliente_nombre || t.cliente_id);
+  const referenciaDe = (t) => t.referencia || t.id;
+
   async function vistaTrabajos(vista) {
-    const [clientes, impresoras] = await Promise.all([api.get('/clientes'), api.get('/impresoras')]);
-    const sel = (id, etiqueta, opciones) => h('label', { class: 'campo', for: id }, h('span', {}, etiqueta),
-      h('select', { id }, h('option', { value: '' }, 'Todos'), opciones.map(([v, t]) => h('option', { value: v }, t))));
+    const [clientes, impresoras, ajustes] = await Promise.all([api.get('/clientes'), api.get('/impresoras'), api.get('/ajustes').catch(() => ({}))]);
+    const consulta = new URLSearchParams(location.search);
+    // Estado: los del historial más «con aviso», que se filtra aquí (son trabajos impresos).
+    const estados = [['', TT.filtros.todos], ['fallido', TT.filtros.fallidos], ['aviso', TT.filtros.conAviso], ['encolado', TT.filtros.enCola]];
+    let estadoActual = estados.some(([v]) => v === consulta.get('estado')) ? consulta.get('estado') : '';
+    const segmentos = h('div', { class: 'segmentos', role: 'group', 'aria-label': TT.filtros.etiqueta }, estados.map(([v, t]) => {
+      const b = h('button', { type: 'button', 'aria-pressed': String(v === estadoActual) }, t);
+      b.addEventListener('click', () => {
+        estadoActual = v;
+        for (const x of segmentos.children) x.setAttribute('aria-pressed', String(x === b));
+        cargar();
+      });
+      return b;
+    }));
+    const selector = (id, etiqueta, opciones) => UI.campo({ id, etiqueta, control: UI.selector({ opciones: [['', TT.todas], ...opciones] }) });
     const filtros = {
-      cliente: sel('f-cliente', 'Aplicación', clientes.map((c) => [c.id, c.nombre]).concat([['cli_consola', 'Consola (CLI)'], ['cli_panel', 'Panel']])),
-      impresora: sel('f-impresora', 'Impresora', impresoras.map((i) => [i.alias, i.alias])),
-      estado: sel('f-estado', 'Estado', Object.entries(ESTADOS_TRABAJO).map(([v, [, t]]) => [v, t])),
-      desde: h('label', { class: 'campo', for: 'f-desde' }, h('span', {}, 'Desde'), h('input', { type: 'date', id: 'f-desde' })),
-      hasta: h('label', { class: 'campo', for: 'f-hasta' }, h('span', {}, 'Hasta'), h('input', { type: 'date', id: 'f-hasta' })),
+      cliente: selector('f-cliente', TT.aplicacion, clientes.map((c) => [c.id, c.nombre]).concat([['cli_panel', TT.panel], ['cli_consola', TT.consola]])),
+      impresora: selector('f-impresora', TT.impresora, impresoras.map((i) => [i.alias, i.virtual ? `${i.alias} (${TV.insignia})` : i.alias])),
+      desde: UI.campo({ id: 'f-desde', etiqueta: TT.desde, control: UI.entrada({ tipo: 'date' }) }),
+      hasta: UI.campo({ id: 'f-hasta', etiqueta: TT.hasta, control: UI.entrada({ tipo: 'date' }) }),
     };
-    const resultados = h('div', {});
-    const cargar = async () => {
+    const mas = h('details', { class: 'avanzado' }, h('summary', {}, TT.masFiltros), h('div', {}, h('div', { class: 'campos' }, Object.values(filtros))));
+    mas.addEventListener('change', () => cargar());
+    const resultados = h('div', { class: 'pila-amplia', 'aria-live': 'polite' });
+    async function cargar() {
       const q = new URLSearchParams();
       for (const [k, el] of Object.entries(filtros)) { const v = el.querySelector('select, input').value; if (v) q.set(k, v); }
-      try { vaciar(resultados, tablaTrabajos(await api.get(`/trabajos?${q}`))); } catch (e) { vaciar(resultados, h('p', { class: 'nota error' }, e.message)); }
-    };
-    const form = h('form', { class: 'tarjeta', onchange: cargar, onsubmit: (ev) => ev.preventDefault() },
-      h('div', { class: 'campos' }, Object.values(filtros)));
-    agregar(vista,
-      encabezado('Trabajos', 'Bitácora de impresión. Por privacidad no guarda el contenido de los tickets.'),
-      form, resultados);
+      if (estadoActual === 'fallido' || estadoActual === 'encolado') q.set('estado', estadoActual);
+      if (estadoActual === 'aviso') q.set('estado', 'completado');
+      const filtrando = [...q.keys()].length > 0 || estadoActual !== '';
+      vaciar(resultados, UI.esqueleto({ lineas: 4 }));
+      try {
+        let lista = await api.get(`/trabajos?${q}`);
+        const enLimite = lista.length >= 100;
+        if (estadoActual === 'aviso') lista = lista.filter(conAviso);
+        const fallidos = lista.filter((t) => t.estado === 'fallido').length;
+        vaciar(resultados,
+          fallidos > 0 && estadoActual !== 'fallido' && UI.nota({ tipo: 'error', titulo: TT.hayFallidos(fallidos), texto: TT.hayFallidosTexto }),
+          lista.length === 0
+            ? UI.vacio({ icono: 'trabajos', titulo: filtrando ? TT.vacio : TT.vacioTodo, texto: filtrando ? TT.vacioTexto : TT.vacioTodoTexto })
+            : tablaTrabajos(lista, impresoras),
+          lista.length > 0 && h('p', { class: 'tenue pequeno' }, TT.cuenta(lista.length, ajustes.retencion_dias || 30), enLimite ? ` ${TT.limite}` : ''));
+      } catch (e) { vaciar(resultados, UI.nota({ tipo: 'error', titulo: e.message, texto: e.sugerencia })); }
+    }
+    agregar(vista, encabezado(TT.titulo, TT.subtitulo), h('div', { class: 'pila' }, segmentos, mas), resultados);
     await cargar();
+  }
+
+  function tablaTrabajos(lista, impresoras) {
+    const C = TT.columnas;
+    return UI.tabla({
+      etiqueta: TT.titulo, nombreFila: (t) => TT.fila(referenciaDe(t)), alAbrir: (t) => detalleTrabajo(t, impresoras),
+      columnas: [
+        { titulo: C.referencia, celda: (t) => h('span', { class: 'mono' }, t.referencia || TT.sinReferencia) },
+        { titulo: C.fecha, celda: (t) => fechaHora(t.creado), clase: 'numeros' },
+        { titulo: C.aplicacion, celda: nombreAplicacion },
+        { titulo: C.impresora, celda: (t) => h('span', { class: 'fila' }, h('span', { class: 'mono' }, t.impresora_alias), insigniaVirtual(t)) },
+        { titulo: C.estado, celda: insigniaTrabajo },
+        { titulo: C.detalle, celda: (t) => {
+          if (t.codigo_error) return (TT.codigos[t.codigo_error] || TT.detalle.desconocido).que;
+          const adv = t.advertencias || [];
+          return adv.length ? (TT.avisos[adv[0]] || { que: adv[0] }).que : '—';
+        }, clase: 'envolver' },
+        { titulo: C.duracion, celda: (t) => duracion(t.duracion_ms), clase: 'numeros' },
+      ],
+      filas: lista,
+    });
+  }
+
+  // Detalle de un trabajo: para uno fallido, qué pasó, por qué suele pasar y qué hacer, con la acción
+  // directa (probar la impresora); para uno con aviso, cada aviso explicado.
+  function detalleTrabajo(t, impresoras) {
+    const D = TT.detalle;
+    const ref = referenciaDe(t);
+    const imp = impresoras.find((i) => i.alias === t.impresora_alias);
+    const titulo = t.estado === 'fallido' ? D.fallido(ref) : conAviso(t) ? D.conAviso(ref) : t.estado === 'completado' ? D.completado(ref) : D.pendiente(ref);
+    const resultado = h('div', { 'aria-live': 'polite' });
+    const botonProbar = () => {
+      const b = UI.boton({ texto: D.probar, variante: 'primario', icono: 'red', chico: true });
+      b.addEventListener('click', async () => {
+        try {
+          await conEspera(b, () => api.post(`/impresoras/${enc(imp.alias)}/probar`));
+          vaciar(resultado, UI.nota({ tipo: 'ok', titulo: D.respondio }));
+        } catch (e) { vaciar(resultado, UI.nota({ tipo: 'error', titulo: e.message, texto: e.sugerencia })); }
+      });
+      return b;
+    };
+    const irImpresoras = () => h('a', { class: 'boton chico', href: rutaDe('impresoras') }, D.irImpresoras);
+    const lista = (titulo2, items, ordenada) => items.length > 0 && h('div', { class: 'pila' }, h('h3', {}, titulo2),
+      h(ordenada ? 'ol' : 'ul', {}, items.map((x) => h('li', {}, x))));
+    let cuerpo;
+    if (t.estado === 'fallido') {
+      const c = TT.codigos[t.codigo_error] || D.desconocido;
+      cuerpo = [
+        h('div', { class: 'pila' }, h('h3', {}, D.que), h('p', {}, c.que)),
+        lista(D.porque, c.porque, false),
+        lista(D.hacer, c.hacer, true),
+        h('div', { class: 'acciones' }, imp && botonProbar(), irImpresoras()),
+        resultado,
+        t.codigo_error !== 'PUENTE_REINICIADO' && h('p', { class: 'tenue pequeno' }, D.reintento),
+      ];
+    } else {
+      const avisos = (t.advertencias || []).map((a) => ({ codigo: a, ...(TT.avisos[a] || { que: a, hacer: '' }) }));
+      cuerpo = [
+        avisos.length > 0 && h('div', { class: 'pila' }, h('h3', {}, D.avisos), h('ul', {}, avisos.map((a) => h('li', {}, a.que, a.hacer && [' ', h('span', { class: 'tenue' }, a.hacer)])))),
+        avisos.some((a) => a.codigo === 'CARACTER_SUSTITUIDO') && imp && !imp.virtual && h('div', { class: 'acciones' }, (() => {
+          const b = UI.boton({ texto: D.probarAcentos, chico: true });
+          b.addEventListener('click', () => probarAcentos(imp, b));
+          return b;
+        })()),
+      ];
+      // Si la impresora es virtual y el ticket sigue en su rollo, se muestra.
+      if (t.virtual && t.estado === 'completado' && imp && imp.virtual) {
+        const img = h('img', { alt: D.verTicket, src: api.url(`/impresoras/${enc(imp.alias)}/rollo/${enc(t.id)}/imagen`) });
+        const figura = h('figure', { class: 'ticket' }, h('div', { class: 'ticket-papel' }, img), h('figcaption', { class: 'tenue pequeno' }, D.verTicket));
+        img.addEventListener('error', () => figura.remove());
+        cuerpo.push(figura);
+      }
+    }
+    dialogo({
+      titulo, ancho: 640,
+      cuerpo: h('div', { class: 'pila-amplia' },
+        h('div', { class: 'fila' }, insigniaTrabajo(t), h('span', { class: 'tenue pequeno' }, `${fechaHora(t.creado)} · ${nombreAplicacion(t)} · `,
+          h('span', { class: 'mono' }, t.impresora_alias)), insigniaVirtual(t)),
+        t.virtual && h('p', { class: 'tenue pequeno' }, D.virtual),
+        cuerpo,
+        h('dl', { class: 'datos tenue pequeno' },
+          h('dt', {}, D.trabajo), h('dd', { class: 'mono' }, t.id),
+          t.duracion_ms !== null && t.duracion_ms !== undefined && [h('dt', {}, D.duracion), h('dd', {}, duracion(t.duracion_ms))],
+          (t.codigo_error || (t.advertencias || []).length > 0) && [h('dt', {}, D.codigo), h('dd', { class: 'mono' }, [t.codigo_error, ...(t.advertencias || [])].filter(Boolean).join(', '))])),
+    });
   }
 
   // ---------------------------------------------------------------------------------------------
