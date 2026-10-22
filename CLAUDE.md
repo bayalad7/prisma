@@ -90,6 +90,9 @@ según el perfil de la impresora y lo imprime por USB, red (TCP 9100) o Bluetoot
 - Documentación fiel al código: `go test ./docs` compara las rutas de la API con
   docs/referencia/openapi.yaml, exige cada código de error en docs/referencia/codigos-de-error.md y
   revisa los enlaces y anclas de todos los Markdown. Si cambias rutas, códigos o archivos, actualízalos.
+- Diagramas: `scripts/validar-diagramas.sh` / `.\scripts\validar-diagramas.ps1` compila cada bloque Mermaid
+  (lo corre el CI). Cada docs/diagramas/NN-*.md cita sus fuentes en el código: si cambias ese código,
+  revisa el diagrama y su «Última verificación». Colores comunes: classDef externo/prisma/datos/seguridad.
 - Antes de publicar: docs/desarrollo/pruebas/matriz.md (manual) y docs/desarrollo/pruebas/ (reportes);
   pasos en docs/desarrollo/publicar.md. Cada versión mueve «Sin publicar» de CHANGELOG.md.
 

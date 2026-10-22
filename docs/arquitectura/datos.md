@@ -14,8 +14,8 @@ SQLite (`prisma.db`) en modo WAL, con claves foráneas activas y tablas `STRICT`
 | `recursos` | Imágenes PNG guardadas en el puente. |
 | `ajustes` | Contraseña del panel, retención, límites, nombre del puente, acceso al panel, etc. |
 
-- **Idempotencia:** un `id` se reserva al aceptar el trabajo y se libera si el trabajo falla o lo interrumpe un reinicio, para que el reintento se imprima. Ver [diagramas/idempotencia.md](../diagramas/idempotencia.md).
+- **Idempotencia:** un `id` se reserva al aceptar el trabajo y se libera si el trabajo falla o lo interrumpe un reinicio, para que el reintento se imprima. Ver [diagramas/24-idempotencia.md](../diagramas/24-idempotencia.md).
 - **Mantenimiento:** cada hora se purgan los trabajos más viejos que la retención, los `id` vencidos y las solicitudes de origen sin actividad (30 días las pendientes, 90 las rechazadas).
 - **Respaldo antes de migrar:** si una versión nueva trae migraciones, la base se copia a `respaldos/` antes de migrarla y se conservan las últimas 5.
 
-El diagrama de tablas está en [diagramas/modelo-datos.md](../diagramas/modelo-datos.md).
+El diagrama de tablas está en [diagramas/11-modelo-datos.md](../diagramas/11-modelo-datos.md).

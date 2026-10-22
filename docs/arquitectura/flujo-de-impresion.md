@@ -1,6 +1,6 @@
 # Del documento a los bytes
 
-Qué hace el puente con un documento desde que lo acepta hasta que la impresora lo recibe. La secuencia completa de una petición está en [diagramas/secuencia-imprimir.md](../diagramas/secuencia-imprimir.md).
+Qué hace el puente con un documento desde que lo acepta hasta que la impresora lo recibe. La secuencia completa de una petición está en [diagramas/03-flujo-impresion.md](../diagramas/03-flujo-impresion.md).
 
 ## 1. Validación (`internal/contrato`)
 
@@ -32,7 +32,7 @@ El resultado son tipos Go (`*contrato.Texto`, `*contrato.Fila`, …) con los val
 - **Una goroutine por impresora:** atiende en orden FIFO y de a un trabajo a la vez; las impresoras distintas trabajan en paralelo.
 - **Límite:** como máximo 20 trabajos por impresora, entre los que esperan y el que se imprime; el siguiente recibe `COLA_LLENA`.
 - **Resultado:** llega por un canal: ok, duración, error y, si la impresora recibió el ticket pero informó un problema, un `Aviso` (el trabajo cuenta como completado y el aviso queda como advertencia).
-- **Estado:** la misma goroutine llama a `Probar()` cada 30 s, así que nunca prueba mientras imprime. Estados posibles: `desconocido` (todavía sin probar), `en_linea`, `fuera_de_linea` y `ocupada`. Ver [diagramas/estados-impresora.md](../diagramas/estados-impresora.md).
+- **Estado:** la misma goroutine llama a `Probar()` cada 30 s, así que nunca prueba mientras imprime. Estados posibles: `desconocido` (todavía sin probar), `en_linea`, `fuera_de_linea` y `ocupada`. Ver [diagramas/26-estados-impresora.md](../diagramas/26-estados-impresora.md).
 
 ## 4. Conectores (`internal/conector`)
 

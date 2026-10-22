@@ -4,7 +4,7 @@ Para PRISMA 0.1.0. Cada mitigación cita el código que la implementa; cada ries
 
 ## Contexto
 
-El puente corre en un equipo de la red local de un negocio. Recibe documentos de aplicaciones (navegadores, backends) por HTTPS y los imprime. El dueño lo administra desde un panel web en el mismo puerto. Ver [diagramas/contexto.md](../diagramas/contexto.md).
+El puente corre en un equipo de la red local de un negocio. Recibe documentos de aplicaciones (navegadores, backends) por HTTPS y los imprime. El dueño lo administra desde un panel web en el mismo puerto. Ver [diagramas/01-contexto.md](../diagramas/01-contexto.md).
 
 ## Activos
 

@@ -15,7 +15,7 @@ Además, en todos los niveles:
 
 ## Cuál elegir
 
-El árbol de decisión está en [diagramas/elegir-nivel.md](../diagramas/elegir-nivel.md).
+El árbol de decisión está en [diagramas/27-elegir-nivel.md](../diagramas/27-elegir-nivel.md).
 
 - **Nivel 1:** una carta digital que manda comandas a cocina, en una red sin invitados.
 - **Nivel 2:** la opción por defecto. Sirve tanto en una página como en un backend o en una app de escritorio. Desde un servidor (sin navegador) basta la llave.
@@ -23,7 +23,7 @@ El árbol de decisión está en [diagramas/elegir-nivel.md](../diagramas/elegir-
 
 ## Cómo decide el puente
 
-Cada petición pasa por estas comprobaciones, en orden, y se detiene en la primera que falla: límite por IP, origen, llave, firma (nivel 3), idempotencia (mismo `id` en los últimos 10 minutos) y permisos sobre la impresora y las operaciones. El árbol completo, con el código de cada rechazo, está en [diagramas/autorizacion.md](../diagramas/autorizacion.md), y el detalle en [referencia/api-v1.md](../referencia/api-v1.md#orden-de-las-comprobaciones).
+Cada petición pasa por estas comprobaciones, en orden, y se detiene en la primera que falla: límite por IP, origen, llave, firma (nivel 3), idempotencia (mismo `id` en los últimos 10 minutos) y permisos sobre la impresora y las operaciones. El árbol completo, con el código de cada rechazo, está en [diagramas/07-orden-autorizacion.md](../diagramas/07-orden-autorizacion.md), y el detalle en [referencia/api-v1.md](../referencia/api-v1.md#orden-de-las-comprobaciones).
 
 Si una petición no trae ni origen ni llave, el puente solo la acepta si trae un documento firmado: identifica a la aplicación por el `cliente_id` de la firma.
 

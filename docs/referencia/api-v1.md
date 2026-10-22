@@ -40,7 +40,7 @@ Cada aplicación se registra en el puente como un **cliente** (en el panel se ll
 | `Authorization: Bearer pk_…` | Nivel 2, y nivel 3 si el cliente exige llave. Si se envía, debe ser válida aunque el nivel no la exija. |
 | `cliente_id`, `emitido`, `expira` y `firma` del documento | Nivel 3. |
 
-Para elegir el nivel, ver [integradores/niveles-de-seguridad.md](../integradores/niveles-de-seguridad.md). El árbol de decisión completo está en [diagramas/autorizacion.md](../diagramas/autorizacion.md).
+Para elegir el nivel, ver [integradores/niveles-de-seguridad.md](../integradores/niveles-de-seguridad.md). El árbol de decisión completo está en [diagramas/07-orden-autorizacion.md](../diagramas/07-orden-autorizacion.md).
 
 **Cómo se registra un cliente:** el dueño lo crea en el panel (*Aplicaciones*) o aprueba en *Solicitudes* el origen de tu página después de su primer intento. También se puede con la CLI:
 
@@ -73,7 +73,7 @@ El puente aplica las comprobaciones en este orden y se detiene en la primera que
 8. **Permisos:** la impresora debe estar permitida para el cliente, y `abrir_cajon` y `raw` deben estar habilitadas para él.
 9. **Validación completa del documento**, perfil de la impresora, render, cola y respuesta.
 
-La secuencia completa está en [diagramas/secuencia-imprimir.md](../diagramas/secuencia-imprimir.md).
+La secuencia completa está en [diagramas/03-flujo-impresion.md](../diagramas/03-flujo-impresion.md).
 
 ---
 
@@ -159,7 +159,7 @@ Genera un `id` (UUID v4) nuevo para cada ticket y **reutilízalo** en los reinte
 - **Mismo `id` con otro contenido:** `409 ID_REUTILIZADO`.
 - **El trabajo original no se imprimió** (impresora apagada, sin papel, puente reiniciado con el ticket en cola): el `id` queda libre y el mismo documento se imprime al reenviarlo.
 
-Reintenta solo cuando no hubo respuesta (error de red o tiempo agotado), o cuando la respuesta es un 503 con `Retry-After`. Cualquier otro error con código es una respuesta del puente: no cambiará por insistir. Ver [diagramas/idempotencia.md](../diagramas/idempotencia.md).
+Reintenta solo cuando no hubo respuesta (error de red o tiempo agotado), o cuando la respuesta es un 503 con `Retry-After`. Cualquier otro error con código es una respuesta del puente: no cambiará por insistir. Ver [diagramas/24-idempotencia.md](../diagramas/24-idempotencia.md).
 
 ## `POST /v1/previsualizar`
 
@@ -185,7 +185,7 @@ Consecuencias en el navegador:
 - **Página pública → puente en la red local:** Chrome y Edge aplican *Private Network Access* / *Local Network Access*. El puente responde al preflight que piden, y las versiones recientes además piden permiso a la persona. Ver [integradores/problemas-comunes.md](../integradores/problemas-comunes.md#chrome-o-edge-permiso-de-red-local).
 - **Página `https://` → puente `http://`:** el navegador lo bloquea por contenido mixto, salvo con `localhost`.
 
-El recorrido completo está en [diagramas/cors.md](../diagramas/cors.md).
+El recorrido completo está en [diagramas/04-secuencia-nivel-1.md](../diagramas/04-secuencia-nivel-1.md).
 
 ## Límites
 

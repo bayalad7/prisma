@@ -1,6 +1,6 @@
 # Componentes
 
-Un solo binario, `prisma`, con estos paquetes. La columna *Importa* sale de `go list ./...` (solo paquetes del propio proyecto); el diagrama está en [diagramas/componentes.md](../diagramas/componentes.md).
+Un solo binario, `prisma`, con estos paquetes. La columna *Importa* sale de `go list ./...` (solo paquetes del propio proyecto); el diagrama está en [diagramas/02-componentes.md](../diagramas/02-componentes.md).
 
 | Paquete | Rol | Importa |
 |---|---|---|

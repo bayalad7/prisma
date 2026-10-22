@@ -17,6 +17,8 @@ go test ./internal/dev -actualizar  # regenera los archivos golden
 - **Race detector:** el CI corre `go test -race ./...` en los tres sistemas, con `CGO_ENABLED=1` solo para las pruebas (los binarios publicados se compilan sin CGO). En local, en Windows sin compilador de C, córrelo en un contenedor Linux: `docker run --rm -v "$PWD:/src" -w /src golang:1.26 go test -race ./...`.
 - **Documentación fiel al código:** `docs/` tiene pruebas propias (`go test ./docs`). Comprueban que las rutas de la API coincidan con [referencia/openapi.yaml](../referencia/openapi.yaml), que cada código de error del puente y del SDK esté en [referencia/codigos-de-error.md](../referencia/codigos-de-error.md), y que los enlaces y anclas de todos los Markdown del repositorio existan. Si agregas una ruta o un código, documéntalo o la prueba falla.
 
+- **Diagramas:** `scripts/validar-diagramas.sh` (o `.ps1` en Windows) extrae cada bloque Mermaid de los Markdown y lo compila con `@mermaid-js/mermaid-cli`; el CI lo corre en el trabajo *Diagramas Mermaid*. `go test ./docs` exige además que cada `docs/diagramas/NN-*.md` tenga sus secciones, los colores comunes y fuentes en el código que existan.
+
 ## Pruebas manuales
 
 Antes de publicar una versión, la [matriz manual](pruebas/matriz.md) cubre lo que el CI no puede: impresoras reales, navegadores y teléfonos. Los resultados de cada verificación quedan en [pruebas/](pruebas/README.md).

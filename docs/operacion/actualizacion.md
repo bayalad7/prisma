@@ -25,7 +25,7 @@ Opciones: `--si` no pide confirmación; `--forzar` reinstala aunque no haya vers
 
 Al arrancar, si la versión nueva cambia la base de datos, el puente guarda antes una copia en `respaldos/` (ver [respaldo-y-restauracion.md](respaldo-y-restauracion.md)). La configuración y los datos se mantienen.
 
-El diagrama completo está en [diagramas/actualizacion.md](../diagramas/actualizacion.md).
+El diagrama completo está en [diagramas/28-actualizacion.md](../diagramas/28-actualizacion.md).
 
 ## Volver a la versión anterior
 

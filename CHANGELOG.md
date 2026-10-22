@@ -11,7 +11,8 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 - Licencia Apache-2.0 (`LICENSE`, `NOTICE`). El SDK pasa de `UNLICENSED` a `Apache-2.0`.
 - Documentación reorganizada por tipo de lector: `instalacion/`, `administracion/`, `operacion/`, `integradores/`, `seguridad/`, `arquitectura/`, `adr/`, `diagramas/`, `referencia/` y `desarrollo/`.
 - Referencia formal de la API en OpenAPI 3.1 (`docs/referencia/openapi.yaml`) y una tabla con todos los códigos de error y advertencias.
-- Modelo de amenazas, políticas de seguridad, runbook de operación, 14 registros de decisiones (ADR) y 19 diagramas.
+- Modelo de amenazas, políticas de seguridad, runbook de operación y 14 registros de decisiones (ADR).
+- 27 diagramas Mermaid numerados en `docs/diagramas/`, cada uno con las fuentes en el código en que se basa, y `scripts/validar-diagramas.sh` (y `.ps1`), que los compila con mermaid-cli. El CI falla si alguno no compila.
 - Pruebas que mantienen la documentación fiel al código (`go test ./docs`): rutas de la API, códigos de error y enlaces.
 - `CONTRIBUTING.md` y `SECURITY.md`.
 

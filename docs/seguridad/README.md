@@ -16,4 +16,4 @@ PRISMA es **seguro por defecto**: ninguna página web ni equipo de la red imprim
 | 2 — Llave (por defecto) | `Origin` aprobado y llave `pk_…`. | Además, equipos de la red sin la llave. | Quien tenga la llave, por ejemplo leyéndola del código de una página. |
 | 3 — Firma | Documento firmado con Ed25519 por el backend; el puente solo guarda la llave pública. | Además, documentos alterados, repetidos o falsificados. | Quien controle el backend que firma. |
 
-Cómo elegir el nivel de una aplicación: [integradores/niveles-de-seguridad.md](../integradores/niveles-de-seguridad.md). Cómo decide el puente cada petición: [diagramas/autorizacion.md](../diagramas/autorizacion.md).
+Cómo elegir el nivel de una aplicación: [integradores/niveles-de-seguridad.md](../integradores/niveles-de-seguridad.md). Cómo decide el puente cada petición: [diagramas/07-orden-autorizacion.md](../diagramas/07-orden-autorizacion.md).

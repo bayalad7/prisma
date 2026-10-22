@@ -346,6 +346,8 @@ Todo lo de §3.5 quedó hecho, con estas precisiones:
 - **Diagramas:** los 19, validados con `@mermaid-js/mermaid-cli` 11.4.2: los 22 bloques Mermaid del repositorio se renderizan sin errores.
 - **OpenAPI:** validado con `@redocly/cli` 1.34.0, sin errores ni advertencias.
 
+- **Diagramas, segunda versión (22 de octubre):** los 19 se reorganizaron en 27 archivos numerados (`NN-nombre.md`), con un formato común (qué responde y para quién, explicación, fuentes en el código, última verificación), colores comunes por `classDef` y un máximo de unos 15 nodos. De la lista pedida no se crearon 13 (certificado remoto), 21 (motor WASM) y 22 (integración TEDYC): no existen en el código de 0.1.0. Ver [diagramas/README.md](diagramas/README.md). `scripts/validar-diagramas.sh` (y `.ps1`) los compila y corre en el CI.
+
 ### Discrepancias encontradas al ejecutar
 
 | # | Documento | Qué decía | Qué hace el código | Estado |
