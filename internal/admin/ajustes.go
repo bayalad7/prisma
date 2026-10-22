@@ -50,11 +50,12 @@ func (a *Admin) resumen(w http.ResponseWriter, r *http.Request) {
 		Estado     any    `json:"estado"`
 		Pendientes int    `json:"pendientes"`
 		Virtual    bool   `json:"virtual"`
+		AnchoMM    int    `json:"ancho_mm"`
 	}
 	imps := []impresoraResumen{}
 	for _, imp := range lista {
 		j := a.aJSON(imp)
-		imps = append(imps, impresoraResumen{j.Alias, j.Nombre, j.Estado, j.Pendientes, j.Virtual})
+		imps = append(imps, impresoraResumen{j.Alias, j.Nombre, j.Estado, j.Pendientes, j.Virtual, j.AnchoMM})
 	}
 	pendientes, err := a.op.Almacen.Solicitudes.Listar(ctx, "pendiente")
 	if err != nil {
@@ -68,6 +69,26 @@ func (a *Admin) resumen(w http.ResponseWriter, r *http.Request) {
 		a.error(w, r, err)
 		return
 	}
+	// Las pruebas del panel (diagnóstico, páginas de códigos) se cuentan aparte: no son tickets del negocio.
+	pruebas, err := a.op.Almacen.Trabajos.ContarDe(ctx, hoy, ClientePanel)
+	if err != nil {
+		a.error(w, r, err)
+		return
+	}
+	clientes, err := a.op.Almacen.Clientes.Listar(ctx)
+	if err != nil {
+		a.error(w, r, err)
+		return
+	}
+	fisicas, virtuales := 0, 0
+	for _, imp := range lista {
+		if imp.Tipo == almacen.ConexionVirtual {
+			virtuales++
+		} else {
+			fisicas++
+		}
+	}
+	pruebaImpresa, acentosProbados := a.pasosDePrueba(r)
 	ultimos, err := a.trabajosJSON(r, almacen.FiltroTrabajos{Limite: 8})
 	if err != nil {
 		a.error(w, r, err)
@@ -84,8 +105,17 @@ func (a *Admin) resumen(w http.ResponseWriter, r *http.Request) {
 		"certificado":            a.avisoCertificado(),
 		"impresoras":             imps,
 		"solicitudes_pendientes": len(pendientes),
-		"trabajos_hoy":           map[string]int{"completados": conteo[almacen.TrabajoCompletado], "fallidos": conteo[almacen.TrabajoFallido]},
-		"ultimos_trabajos":       ultimos,
+		"trabajos_hoy": map[string]int{
+			"completados": conteo[almacen.TrabajoCompletado] - pruebas[almacen.TrabajoCompletado],
+			"fallidos":    conteo[almacen.TrabajoFallido] - pruebas[almacen.TrabajoFallido],
+			"pruebas":     pruebas[almacen.TrabajoCompletado] + pruebas[almacen.TrabajoFallido],
+		},
+		"certificado_actual": a.estadoTLS()["certificado"], // nil en el modo solo_localhost_http
+		"primeros_pasos": map[string]any{
+			"impresoras_fisicas": fisicas, "impresoras_virtuales": virtuales, "aplicaciones": len(clientes),
+			"prueba_impresa": pruebaImpresa, "acentos_probados": acentosProbados,
+		},
+		"ultimos_trabajos": ultimos,
 	})
 }
 
@@ -538,4 +568,31 @@ func (a *Admin) restaurar(w http.ResponseWriter, r *http.Request) {
 	borrarCookie(w, r)
 	a.op.Log.Warn("base de datos restaurada desde un respaldo")
 	responder(w, ok)
+}
+
+// pasosDePrueba dice si ya se imprimió un ticket de prueba y si ya se probaron los acentos en una
+// impresora física. Si las marcas aún no existen (un puente que viene de 0.1.0), los deduce de las
+// pruebas del panel que quedan en el historial y las guarda.
+func (a *Admin) pasosDePrueba(r *http.Request) (prueba, acentos bool) {
+	ctx := r.Context()
+	marcado := func(clave string) bool { v, _, _ := a.op.Almacen.Ajustes.Obtener(ctx, clave); return v == "1" }
+	prueba, acentos = marcado(almacen.AjustePrimeraPrueba), marcado(almacen.AjusteAcentosProbados)
+	if prueba && acentos {
+		return
+	}
+	lista, err := a.op.Almacen.Trabajos.Listar(ctx, almacen.FiltroTrabajos{ClienteID: ClientePanel, Estado: almacen.TrabajoCompletado, Limite: 500})
+	if err != nil {
+		return
+	}
+	for _, t := range lista {
+		if !prueba && t.Referencia == "DIAGNOSTICO" {
+			prueba = true
+			a.marcarPaso(r, almacen.AjustePrimeraPrueba)
+		}
+		if !acentos && t.Referencia == "PAGINAS" && !t.Virtual {
+			acentos = true
+			a.marcarPaso(r, almacen.AjusteAcentosProbados)
+		}
+	}
+	return
 }

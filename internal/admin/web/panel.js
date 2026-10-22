@@ -338,56 +338,171 @@
   }
 
   // ---------------------------------------------------------------------------------------------
-  // 1. Inicio
+  // 1. Inicio: el estado de un vistazo, con una acción directa en cada tarjeta, y «Primeros pasos»
+  // hasta que el puente esté listo. Los pasos salen de los datos del puente (persisten entre
+  // equipos); ocultar la lista es una comodidad de cada navegador.
   // ---------------------------------------------------------------------------------------------
+  const TI = window.PRISMA_TEXTOS.inicio;
+  const CLAVE_PASOS_OCULTOS = 'prisma.primerosPasos.ocultos';
+  const pasosOcultos = () => { try { return localStorage.getItem(CLAVE_PASOS_OCULTOS) === '1'; } catch { return false; } };
+  const ocultarPasos = (si) => { try { localStorage.setItem(CLAVE_PASOS_OCULTOS, si ? '1' : '0'); } catch { /* solo esta vez */ } };
+  const ESTADO_INSIGNIA_IMPRESORA = { en_linea: 'ok', fuera_de_linea: 'error', ocupada: 'info', desconocido: 'desconocido', inactiva: 'desconocido' };
+  const insigniaImpresora = (estadoImp) => UI.insignia(ESTADO_INSIGNIA_IMPRESORA[estadoImp] || 'desconocido', TI.impresoras.estados[estadoImp] || estadoImp);
+  const enlaceBoton = (seccion, texto, variante = '') => h('a', { class: `boton chico ${variante}`, href: rutaDe(seccion) }, texto);
+
   async function vistaInicio(vista) {
     const r = await api.get('/resumen');
     estado.pendientes = r.solicitudes_pendientes;
     estado.direccion = r.puente.direccion;
     actualizarContador();
 
-    const enLinea = r.impresoras.filter((i) => i.estado === 'en_linea').length;
+    const imps = r.impresoras;
+    const listas = imps.filter((i) => i.estado === 'en_linea').length;
+    const sinRespuesta = imps.filter((i) => i.estado === 'fuera_de_linea');
+    const cert = r.certificado_actual;
+    const certMal = cert && cert.estado !== 'vigente';
+    const porRevisar = sinRespuesta.length + (r.solicitudes_pendientes > 0 ? 1 : 0) + (r.trabajos_hoy.fallidos > 0 ? 1 : 0) + (certMal ? 1 : 0);
+
     agregar(vista,
-      encabezado(r.puente.nombre, 'Estado del puente de impresión de este negocio.'),
-      r.solicitudes_pendientes > 0 && h('div', { class: 'aviso-caja', role: 'status' },
-        h('div', {}, h('strong', {}, r.solicitudes_pendientes === 1 ? '1 sitio web quiere imprimir' : `${r.solicitudes_pendientes} sitios web quieren imprimir`),
-          h('div', { class: 'pequeno' }, 'Intentaron imprimir desde un origen que no está aprobado. No imprimen hasta que los apruebes.')),
-        h('a', { class: 'boton primario', href: rutaDe('solicitudes') }, 'Revisar solicitudes')),
-      r.certificado && h('div', { class: 'aviso-caja', role: 'alert' },
-        h('div', {},
-          h('strong', {}, r.certificado.estado === 'vencido'
-            ? `El certificado HTTPS venció el ${r.certificado.vence}: las aplicaciones no pueden imprimir`
-            : `El certificado HTTPS vence en ${r.certificado.dias_restantes} días (${r.certificado.vence})`),
-          h('div', { class: 'pequeno' }, r.certificado.autofirmado
-            ? 'Regenéralo en Ajustes → HTTPS y vuelve a instalarlo en cada equipo que imprime.'
-            : 'Renueva los archivos del certificado configurados en config.toml; el puente los toma sin reiniciar.')),
-        h('a', { class: 'boton primario', href: rutaDe('ajustes') }, 'Ir a Ajustes')),
-      r.actualizacion && h('div', { class: 'aviso-caja', role: 'status' },
-        h('div', {}, h('strong', {}, `Hay una versión nueva de PRISMA: ${r.actualizacion.version}`),
-          h('div', { class: 'pequeno' }, `Tienes la ${r.puente.version}. En el equipo del puente, como administrador, ejecuta «prisma actualizar», o descarga el instalador de la página de la versión.`)),
-        h('a', { class: 'boton', href: r.actualizacion.url, target: '_blank', rel: 'noopener noreferrer' }, 'Ver la versión')),
-      h('div', { class: 'rejilla' },
-        h('section', { class: 'tarjeta', 'aria-labelledby': 't-puente' }, h('h2', { id: 't-puente' }, 'Puente'),
-          h('dl', { class: 'datos' },
-            h('dt', {}, 'Dirección'), h('dd', { class: 'mono' }, r.puente.direccion),
-            h('dt', {}, 'HTTPS'), h('dd', {}, { autofirmado: 'Certificado autofirmado', archivos: 'Certificado propio', solo_localhost_http: 'HTTP solo en este equipo' }[r.puente.modo_tls] || r.puente.modo_tls),
-            h('dt', {}, 'En marcha'), h('dd', {}, `desde ${fechaHora(r.puente.iniciado)}`),
-            h('dt', {}, 'Versión'), h('dd', { class: 'mono' }, r.puente.version))),
-        h('section', { class: 'tarjeta', 'aria-labelledby': 't-imp' },
-          h('div', { class: 'tarjeta-cabeza' }, h('h2', { id: 't-imp' }, 'Impresoras'),
-            h('span', { class: 'tenue pequeno numeros' }, `${enLinea} de ${r.impresoras.length} en línea`)),
-          r.impresoras.length === 0
-            ? h('div', { class: 'pila' }, h('p', { class: 'tenue' }, TV.inicioVacio, ' ', h('a', { href: rutaDe('impresoras') }, TV.inicioAgregar), ' ', TV.inicioVirtual, '.'),
-              h('div', {}, botonCrearVirtual()))
-            : h('div', { class: 'pila' }, r.impresoras.map((i) => h('div', { class: 'fila-entre' },
-              h('span', { class: 'fila' }, h('span', {}, h('span', { class: 'mono' }, i.alias), ' ', h('span', { class: 'tenue pequeno' }, i.nombre)), insigniaVirtual(i)),
-              h('span', { class: 'fila' }, i.pendientes > 0 && h('span', { class: 'tenue pequeno numeros' }, `${i.pendientes} en cola`), pastilla(ESTADOS_IMPRESORA, i.estado)))))),
-        h('section', { class: 'tarjeta', 'aria-labelledby': 't-hoy' }, h('h2', { id: 't-hoy' }, 'Hoy'),
-          h('div', { class: 'cifras' },
-            h('div', {}, h('div', { class: 'cifra' }, fmtNum.format(r.trabajos_hoy.completados)), h('div', { class: 'tenue pequeno' }, 'tickets impresos')),
-            h('div', {}, h('div', { class: 'cifra' }, fmtNum.format(r.trabajos_hoy.fallidos)), h('div', { class: 'tenue pequeno' }, 'con error'))),
-          h('a', { href: rutaDe('trabajos'), class: 'pequeno' }, 'Ver todos los trabajos'))),
-      h('section', { class: 'pila', 'aria-labelledby': 't-ultimos' }, h('h2', { id: 't-ultimos' }, 'Últimos trabajos'), tablaTrabajos(r.ultimos_trabajos)));
+      encabezado(r.puente.nombre, TI.subtitulo, porRevisar === 0 ? UI.insignia('ok', TI.todoBien) : UI.insignia('aviso', TI.porRevisar(porRevisar))),
+      r.certificado && UI.nota({
+        tipo: r.certificado.estado === 'vencido' ? 'error' : 'aviso',
+        titulo: r.certificado.estado === 'vencido' ? TI.certificado.avisoVencido(r.certificado.vence)
+          : TI.certificado.avisoVence(TI.certificado.dias(r.certificado.dias_restantes), r.certificado.vence),
+        texto: r.certificado.autofirmado ? TI.certificado.avisoAutofirmado : TI.certificado.avisoArchivos,
+        acciones: enlaceBoton('ajustes', TI.certificado.irAjustes, 'primario'),
+      }),
+      r.actualizacion && UI.nota({
+        tipo: 'info', titulo: TI.actualizacion.titulo(r.actualizacion.version), texto: TI.actualizacion.texto(r.puente.version),
+        acciones: h('a', { class: 'boton chico', href: r.actualizacion.url, target: '_blank', rel: 'noopener noreferrer' }, UI.icono('externo'), TI.actualizacion.ver),
+      }),
+      primerosPasos(r),
+      h('div', { class: 'rejilla de-cuatro' },
+        tarjetaCifra('impresora', sinRespuesta.length > 0 ? 'error' : 'ok', TI.impresoras.titulo,
+          imps.length ? TI.impresoras.cifra(listas, imps.length) : '0', imps.length ? TI.impresoras.texto : TI.impresoras.ninguna,
+          imps.length > 0 && h('ul', { class: 'lista-impresoras' }, imps.map((i) => h('li', {},
+            h('span', { class: 'lista-impresoras-nombre' }, h('span', { class: 'mono' }, i.alias), ' ', h('span', { class: 'tenue pequeno' }, i.nombre)),
+            h('span', { class: 'fila' }, i.pendientes > 0 && h('span', { class: 'tenue pequeno numeros' }, TI.impresoras.enCola(i.pendientes)),
+              insigniaVirtual(i), insigniaImpresora(i.estado))))),
+          sinRespuesta.length > 0 ? enlaceBoton('impresoras', TI.impresoras.revisar(sinRespuesta[0].alias))
+            : imps.length === 0 ? botonCrearVirtual() : enlaceBoton('impresoras', TI.impresoras.verTodas, 'texto')),
+        tarjetaCifra('solicitud', r.solicitudes_pendientes > 0 ? 'aviso' : 'ok', TI.solicitudes.titulo, String(r.solicitudes_pendientes),
+          r.solicitudes_pendientes > 0 ? TI.solicitudes.texto(r.solicitudes_pendientes) : TI.solicitudes.ninguna, null,
+          r.solicitudes_pendientes > 0 && enlaceBoton('solicitudes', TI.solicitudes.revisar, 'primario')),
+        tarjetaHoy(r.trabajos_hoy),
+        tarjetaCertificado(cert, r.puente.modo_tls)),
+      h('section', { class: 'pila', 'aria-labelledby': 't-ultimos' },
+        h('div', { class: 'fila-entre' }, h('h2', { id: 't-ultimos' }, TI.ultimos.titulo), r.ultimos_trabajos.length > 0 && h('a', { href: rutaDe('trabajos'), class: 'pequeno' }, TI.ultimos.verTodos)),
+        tablaUltimos(r.ultimos_trabajos)));
+  }
+
+  function tarjetaCifra(ic, tipo, titulo, cifra, texto, detalle, accion) {
+    return UI.tarjeta({ clase: `estado-${tipo}`, titulo, nivel: 2 },
+      h('div', { class: 'cifra-estado' }, UI.icono(ic), h('div', {}, h('div', { class: 'cifra numeros' }, cifra), h('div', { class: 'tenue pequeno' }, texto))),
+      detalle, accion && h('div', {}, accion));
+  }
+  function tarjetaHoy(hoy) {
+    const total = hoy.completados + hoy.fallidos;
+    return tarjetaCifra(hoy.fallidos > 0 ? 'error' : 'trabajos', hoy.fallidos > 0 ? 'error' : 'ok', TI.hoy.titulo,
+      total === 0 ? '0' : TI.hoy.cifra(hoy.fallidos), TI.hoy.texto(hoy.fallidos, total),
+      hoy.pruebas > 0 && h('p', { class: 'tenue pequeno' }, TI.hoy.pruebas(hoy.pruebas)),
+      hoy.fallidos > 0 ? enlaceBoton('trabajos', TI.hoy.verQuePaso) : enlaceBoton('trabajos', TI.hoy.verTrabajos, 'texto'));
+  }
+  function tarjetaCertificado(cert, modo) {
+    if (!cert) return tarjetaCifra('candado', 'info', TI.certificado.titulo, TI.certificado.sinHttps, TI.certificado.sinHttpsTexto);
+    const vencido = cert.estado === 'vencido';
+    return tarjetaCifra('candado', vencido ? 'error' : (cert.estado === 'por_vencer' ? 'aviso' : 'info'), TI.certificado.titulo,
+      vencido ? TI.certificado.vencido : TI.certificado.dias(cert.dias_restantes),
+      vencido ? TI.certificado.vencidoTexto(cert.vence) : TI.certificado.texto, null,
+      cert.estado !== 'vigente' ? enlaceBoton('ajustes', TI.certificado.renovar)
+        : modo === 'autofirmado' && enlaceBoton('ayuda', TI.certificado.instalar, 'texto'));
+  }
+
+  function primerosPasos(r) {
+    const p = r.primeros_pasos;
+    const conImpresora = p.impresoras_fisicas + p.impresoras_virtuales > 0;
+    const pasos = [
+      { hecho: true, titulo: TI.pasos.contrasena },
+      { hecho: conImpresora, titulo: TI.pasos.impresora, texto: TI.pasos.impresoraTexto,
+        accion: () => h('div', { class: 'acciones' }, enlaceBoton('impresoras', TI.pasos.impresoraBoton, 'primario'), botonCrearVirtual()) },
+      { hecho: p.prueba_impresa, titulo: TI.pasos.prueba, texto: TI.pasos.pruebaTexto, accion: () => conImpresora && botonPrueba(r.impresoras) },
+      p.impresoras_fisicas > 0 && { hecho: p.acentos_probados, titulo: TI.pasos.acentos, texto: TI.pasos.acentosTexto,
+        accion: () => enlaceBoton('impresoras', TI.pasos.acentosBoton) },
+      { hecho: p.aplicaciones > 0, titulo: TI.pasos.aplicacion, texto: TI.pasos.aplicacionTexto,
+        accion: () => enlaceBoton('aplicaciones', TI.pasos.aplicacionBoton, 'primario') },
+      p.impresoras_fisicas === 0 && p.impresoras_virtuales > 0 && { hecho: false, titulo: TI.pasos.fisica, texto: TI.pasos.fisicaTexto,
+        accion: () => enlaceBoton('impresoras', TI.pasos.fisicaBoton) },
+    ].filter(Boolean);
+    const hechos = pasos.filter((x) => x.hecho).length;
+    const caja = h('div', {});
+    const pintar = () => {
+      if (pasosOcultos()) {
+        const ver = UI.boton({ texto: TI.pasos.ver(hechos, pasos.length), variante: 'texto', chico: true, icono: 'check' });
+        ver.addEventListener('click', () => { ocultarPasos(false); pintar(); });
+        vaciar(caja, h('div', {}, ver));
+        return;
+      }
+      const ocultar = UI.boton({ texto: TI.pasos.ocultar, variante: 'texto', chico: true });
+      ocultar.addEventListener('click', () => { ocultarPasos(true); pintar(); });
+      if (hechos === pasos.length) {
+        vaciar(caja, UI.nota({ tipo: 'ok', titulo: TI.pasos.listo, acciones: ocultar }));
+        return;
+      }
+      const barra = h('span');
+      barra.style.width = `${(hechos / pasos.length) * 100}%`;
+      vaciar(caja, UI.tarjeta({ titulo: TI.pasos.titulo, subtitulo: TI.pasos.avance(hechos, pasos.length), icono: 'check', acciones: ocultar },
+        h('div', { class: 'progreso', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(pasos.length), 'aria-valuenow': String(hechos), 'aria-label': TI.pasos.titulo },
+          h('div', { class: 'progreso-barra' }, barra)),
+        h('ol', { class: 'lista-pasos' }, pasos.map((x) => h('li', { class: x.hecho ? 'hecho' : '' },
+          h('span', { class: 'paso-marca', 'aria-hidden': 'true' }, x.hecho ? UI.icono('check') : ''),
+          h('div', {}, h('p', { class: 'paso-titulo' }, x.titulo, x.hecho && h('span', { class: 'solo-lector' }, ` ${TI.pasos.hecho}`)),
+            !x.hecho && x.texto && h('p', { class: 'tenue pequeno' }, x.texto)),
+          !x.hecho && x.accion && x.accion())))));
+    };
+    pintar();
+    return caja;
+  }
+
+  // Imprime el ticket de diagnóstico en la impresora más adecuada (una física en línea, si no la
+  // primera) y muestra cómo salió.
+  function botonPrueba(imps) {
+    const imp = imps.find((i) => !i.virtual && i.estado === 'en_linea') || imps.find((i) => i.estado !== 'fuera_de_linea') || imps[0];
+    const b = UI.boton({ texto: `${TI.pasos.pruebaBoton} (${imp.alias})`, icono: 'ticket', variante: 'primario', chico: true });
+    b.addEventListener('click', async () => {
+      try {
+        const r = await conEspera(b, () => api.post(`/impresoras/${enc(imp.alias)}/diagnostico`));
+        await dialogo({ titulo: TI.diagnostico.titulo, ancho: 520, cuerpo: h('div', { class: 'pila' },
+          h('p', { class: 'tenue pequeno' }, imp.virtual ? TV.diagnosticoVirtual : TV.diagnosticoFisica),
+          UI.ticketPapel({ imagen: r.imagen, anchoMm: imp.ancho_mm || 80 })) });
+        recargar();
+      } catch (e) { avisoError(e); }
+    });
+    return b;
+  }
+
+  // Últimos trabajos: tabla que en celular se vuelve tarjetas (el detalle llega en la entrega de Trabajos).
+  function tablaUltimos(lista) {
+    if (lista.length === 0) return UI.vacio({ icono: 'trabajos', titulo: TI.ultimos.vacio, texto: TI.ultimos.vacioTexto });
+    const C = TI.ultimos.columnas, E = TI.ultimos.estados;
+    const insigniaTrabajo = (t) => t.estado === 'fallido' ? UI.insignia('error', E.fallido)
+      : t.estado === 'completado' ? ((t.advertencias || []).length ? UI.insignia('aviso', E.conAviso) : UI.insignia('ok', E.completado))
+        : UI.insignia(t.estado === 'imprimiendo' ? 'info' : 'acento', E[t.estado] || t.estado);
+    return UI.tabla({
+      etiqueta: TI.ultimos.titulo,
+      columnas: [
+        { titulo: C.referencia, celda: (t) => h('span', { class: 'mono' }, t.referencia || '—') },
+        { titulo: C.fecha, celda: (t) => fechaHora(t.creado), clase: 'numeros' },
+        { titulo: C.aplicacion, celda: (t) => (t.cliente_id === 'cli_panel' ? TI.ultimos.prueba : t.cliente_nombre || t.cliente_id) },
+        { titulo: C.impresora, celda: (t) => h('span', { class: 'fila' }, h('span', { class: 'mono' }, t.impresora_alias), insigniaVirtual(t)) },
+        { titulo: C.estado, celda: insigniaTrabajo },
+        { titulo: C.detalle, celda: (t) => {
+          if (t.codigo_error) return h('span', { class: 'chip aviso' }, t.codigo_error);
+          const adv = t.advertencias || [];
+          return adv.length ? h('span', { class: 'fila' }, adv.map((a) => h('span', { class: 'chip' }, a))) : '—';
+        } },
+      ],
+      filas: lista,
+    });
   }
 
   function tablaTrabajos(lista) {

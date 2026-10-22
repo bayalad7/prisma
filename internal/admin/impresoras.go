@@ -334,10 +334,11 @@ func (a *Admin) impresoraParaImprimir(w http.ResponseWriter, r *http.Request) (*
 }
 
 // imprimirPrueba encola bytes generados por el panel, guarda el trabajo y espera el resultado.
-func (a *Admin) imprimirPrueba(w http.ResponseWriter, r *http.Request, imp *almacen.Impresora, referencia string, datos []byte) {
+// imprimirPrueba imprime un ticket de prueba del panel y responde; devuelve si se imprimió.
+func (a *Admin) imprimirPrueba(w http.ResponseWriter, r *http.Request, imp *almacen.Impresora, referencia string, datos []byte) bool {
 	if err := a.op.Servidor.AsegurarRegistrada(*imp); err != nil {
 		a.error(w, r, err)
-		return
+		return false
 	}
 	ctx := r.Context()
 	id := servidor.NuevoTrabajoID()
@@ -345,7 +346,7 @@ func (a *Admin) imprimirPrueba(w http.ResponseWriter, r *http.Request, imp *alma
 		Virtual: imp.Tipo == almacen.ConexionVirtual, Referencia: referencia}
 	if err := a.op.Almacen.Trabajos.Crear(ctx, t); err != nil {
 		a.error(w, r, err)
-		return
+		return false
 	}
 	canal, err := a.op.Cola.Encolar(imp.Alias, id, datos)
 	var res cola.Resultado
@@ -372,7 +373,7 @@ func (a *Admin) imprimirPrueba(w http.ResponseWriter, r *http.Request, imp *alma
 		"codigo_error", codigo, "duracion_ms", res.Duracion.Milliseconds())
 	if !res.OK {
 		servidor.ResponderError(w, r, res.Err, id, a.op.Log)
-		return
+		return false
 	}
 	pagina := dev.Simular(datos, *imp)
 	resp := map[string]any{"ok": true, "trabajo_id": id, "vista": dev.VistaTexto(pagina, false),
@@ -381,6 +382,7 @@ func (a *Admin) imprimirPrueba(w http.ResponseWriter, r *http.Request, imp *alma
 		resp["aviso"] = res.Aviso.Mensaje
 	}
 	responder(w, resp)
+	return true
 }
 
 func (a *Admin) diagnostico(w http.ResponseWriter, r *http.Request) {
@@ -394,7 +396,16 @@ func (a *Admin) diagnostico(w http.ResponseWriter, r *http.Request) {
 		a.error(w, r, err)
 		return
 	}
-	a.imprimirPrueba(w, r, imp, "DIAGNOSTICO", datos)
+	if a.imprimirPrueba(w, r, imp, "DIAGNOSTICO", datos) {
+		a.marcarPaso(r, almacen.AjustePrimeraPrueba)
+	}
+}
+
+// marcarPaso guarda que se completó un paso de «Primeros pasos» (un error no afecta la respuesta).
+func (a *Admin) marcarPaso(r *http.Request, clave string) {
+	if err := a.op.Almacen.Ajustes.Establecer(context.WithoutCancel(r.Context()), clave, "1"); err != nil {
+		a.op.Log.Warn("no se pudo guardar el paso de primeros pasos", "paso", clave, "error", err.Error())
+	}
 }
 
 // ticketDiagnostico describe la impresora y prueba el ancho, los acentos, la alineación y el QR.
@@ -455,5 +466,7 @@ func (a *Admin) paginasCodigos(w http.ResponseWriter, r *http.Request) {
 		a.error(w, r, err)
 		return
 	}
-	a.imprimirPrueba(w, r, imp, "PAGINAS", datos)
+	if a.imprimirPrueba(w, r, imp, "PAGINAS", datos) && imp.Tipo != almacen.ConexionVirtual {
+		a.marcarPaso(r, almacen.AjusteAcentosProbados)
+	}
 }

@@ -237,6 +237,8 @@ kbd {
   background: var(--superficie); color: var(--tinta); font: inherit; font-weight: 550; cursor: pointer;
   text-decoration: none; white-space: nowrap;
 }
+/* Dentro de una tarjeta el texto del botón puede partirse: nunca se sale de la tarjeta. */
+.tarjeta .boton { max-width: 100%; white-space: normal; text-align: center; }
 .boton:hover { background: var(--superficie-2); }
 .boton:disabled { opacity: .55; cursor: not-allowed; }
 .boton.primario { background: var(--acento); border-color: var(--acento); color: var(--sobre-acento); }
@@ -580,6 +582,10 @@ dialog::backdrop { background: var(--velo); }
 }
 .ref { white-space: nowrap; }
 .cifra-estado { display: flex; align-items: center; gap: 12px; }
+.lista-impresoras { list-style: none; padding: 0; display: grid; gap: 6px; }
+.lista-impresoras li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; }
+.lista-impresoras-nombre { min-width: 0; overflow-wrap: anywhere; }
+.encabezado .insignia { align-self: center; }
 .cifra-estado .icono { width: 28px; height: 28px; color: var(--c, var(--acento)); }
 
 .demo-cinta {
