@@ -1,0 +1,28 @@
+{
+  "axe": {
+    "fallidos-escritorio": [],
+    "detalle-fallido-escritorio": [],
+    "todos-escritorio": [],
+    "fallidos-celular": [],
+    "detalle-celular": []
+  },
+  "desborde": {
+    "fallidos-escritorio": 0,
+    "detalle-fallido-escritorio": 0,
+    "todos-escritorio": 0,
+    "fallidos-celular": 0,
+    "detalle-celular": 0
+  },
+  "consola": [
+    "escritorio: Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+  ],
+  "comprobaciones": [
+    "ok    ticket de prueba en la virtual 200",
+    "ok    «Ver qué pasó» abre los fallidos https://127.0.0.1:18443/admin/trabajos?estado=fallido",
+    "ok    el detalle explica qué pasó y qué hacer ",
+    "ok    «Probar la impresora» muestra el resultado ahí mismo ",
+    "ok    «Con aviso» filtra los trabajos impresos con aviso 1 filas",
+    "ok    el aviso se explica en lenguaje llano ",
+    "ok    el detalle de un trabajo virtual muestra su ticket "
+  ]
+}

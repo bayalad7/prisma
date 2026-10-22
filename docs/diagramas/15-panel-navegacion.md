@@ -9,7 +9,7 @@ flowchart LR
         inicio["/admin/ · inicio: primeros pasos, impresoras,<br/>solicitudes, hoy, certificado, últimos trabajos"]:::prisma
         imp["/admin/impresoras: agregar (física o virtual), probar,<br/>diagnóstico, páginas de códigos, tickets virtuales"]:::prisma
         sol["/admin/solicitudes: aprobar con aplicación<br/>nueva o existente, rechazar, olvidar"]:::seguridad
-        trab["/admin/trabajos: historial filtrable,<br/>sin contenido de tickets"]:::datos
+        trab["/admin/trabajos: historial filtrable, detalle<br/>con qué pasó y qué hacer; sin contenido de tickets"]:::datos
     end
     subgraph integracion["Integración"]
         apps["/admin/aplicaciones: crear, nivel, orígenes, impresoras,<br/>operaciones sensibles, regenerar o revocar llave"]:::seguridad
