@@ -608,3 +608,18 @@ dialog::backdrop { background: var(--velo); }
 .previa-prueba { display: grid; justify-items: center; min-width: 0; }
 .estado-valido { display: flex; gap: 6px; align-items: center; color: var(--ok); margin: 0; }
 .lista-avisos { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+.rejilla-campos { display: grid; gap: var(--e-3); grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); align-items: start; }
+.operaciones { display: grid; gap: var(--e-2); }
+.operacion { border: 1px solid var(--borde); border-radius: var(--radio); background: var(--superficie); min-width: 0; }
+.operacion[open] { border-color: var(--acento); }
+.operacion > summary { display: flex; gap: var(--e-2); align-items: baseline; padding: 10px 12px; cursor: pointer; min-width: 0; }
+.operacion > summary:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; border-radius: var(--radio); }
+.operacion-numero { color: var(--tenue); min-width: 1.5em; }
+.operacion-resumen { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; font-size: .85rem; }
+.operacion-cuerpo { padding: 0 12px 12px; }
+.operacion-mover { justify-content: flex-end; }
+.columna-fila { border: 1px solid var(--borde); border-radius: var(--radio-chico); padding: var(--e-2) var(--e-3); display: grid; gap: var(--e-2); min-width: 0; margin: 0; }
+.columna-fila legend { font-weight: 600; font-size: .85rem; padding: 0 4px; }
+.agregar-operacion { display: flex; flex-wrap: wrap; gap: var(--e-2); align-items: flex-end; }
+.agregar-operacion .campo { flex: 1 1 200px; }
+.girar .icono { transform: rotate(180deg); }

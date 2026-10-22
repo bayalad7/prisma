@@ -1697,7 +1697,7 @@
       imp = impresoras.find((i) => i.alias === selImp.value);
       bEnviar.lastChild.textContent = TPr.enviar(imp.alias);
       vaciar(resultado);
-      if (doc) escribir(JSON.stringify(conImpresora(doc), null, 2));
+      if (doc) { doc.impresora = imp.alias; escribir(JSON.stringify(doc, null, 2)); }
       else revisar();
     });
 
@@ -1708,7 +1708,8 @@
       vaciar(advertencias);
       if (!texto.trim()) { doc = null; vaciar(estadoDoc); editor.removeAttribute('aria-invalid'); habilitar(false); return; }
       try {
-        doc = JSON.parse(texto);
+        // Si el texto salió del constructor, se conserva el mismo objeto: el constructor lo edita.
+        if (!doc || texto !== JSON.stringify(doc, null, 2)) doc = JSON.parse(texto);
         if (!doc || typeof doc !== 'object' || Array.isArray(doc)) throw Object.assign(new Error(TPr.noObjeto), { propio: true });
       } catch (e) {
         doc = null;
@@ -1769,11 +1770,210 @@
       temporizador = setTimeout(revisar, 400);
     });
 
+    // Constructor visual: edita doc.operaciones por índice y reescribe el JSON, así los tres modos
+    // comparten un solo documento. Solo se vuelve a dibujar al agregar, mover o quitar.
+    const K = TPr.constructor;
+    const constructor = h('div', { class: 'pila constructor' });
+    let recursos = null;
+    const abiertas = new Set();
+    function cambiado() {
+      texto = JSON.stringify(doc, null, 2);
+      editor.value = texto;
+      for (const r of listaPlantillas.querySelectorAll('input')) r.checked = false;
+      vaciar(falta);
+      clearTimeout(temporizador);
+      temporizador = setTimeout(revisar, 400);
+    }
+    // Pone un campo de la operación i (o lo quita si queda vacío, para que valga el de por defecto).
+    const poner = (i, clave, valor) => {
+      const op = doc.operaciones[i];
+      if (valor === undefined || valor === '' || valor === false) delete op[clave]; else op[clave] = valor;
+      cambiado();
+      const r = document.querySelector(`#pr-op-${i}-resumen .operacion-resumen`);
+      if (r) r.textContent = resumen(op);
+    };
+    const idCampo = (i, clave) => `pr-op-${i}-${clave}`;
+    const campoTexto = (i, clave, etiqueta, { area, maximo, ayuda, numero, min, max } = {}) => {
+      const op = doc.operaciones[i];
+      const control = area ? h('textarea', { rows: '2', maxlength: maximo }) : UI.entrada({ tipo: numero ? 'number' : 'text', maxlength: maximo, min, max });
+      control.value = op[clave] ?? '';
+      control.addEventListener('input', () => poner(i, clave, numero ? (control.value === '' ? undefined : Number(control.value)) : control.value));
+      return UI.campo({ id: idCampo(i, clave), etiqueta, control, ayuda });
+    };
+    const campoLista = (i, clave, etiqueta, opciones, porDefecto) => {
+      const op = doc.operaciones[i];
+      const control = UI.selector({ opciones, valor: op[clave] ?? porDefecto });
+      control.addEventListener('change', () => poner(i, clave, control.value === porDefecto ? undefined : (/^\d+$/.test(control.value) ? Number(control.value) : control.value)));
+      return UI.campo({ id: idCampo(i, clave), etiqueta, control });
+    };
+    const casillaOp = (i, clave, etiqueta) => {
+      const c = UI.casilla({ id: idCampo(i, clave), texto: etiqueta, marcado: !!doc.operaciones[i][clave] });
+      c.input.addEventListener('change', () => poner(i, clave, c.input.checked));
+      return c;
+    };
+    const alineacion = (i) => campoLista(i, 'alineacion', K.alineacion, Object.entries(K.alineaciones), 'izquierda');
+    const casillas = (...cs) => h('div', { class: 'fila' }, cs);
+
+    function camposTexto(i) {
+      const op = doc.operaciones[i];
+      const actual = JSON.stringify(op.tamano || [1, 1]);
+      const opciones = K.tamanos.map(([t, n]) => [JSON.stringify(t), n]);
+      if (!opciones.some(([v]) => v === actual)) opciones.push([actual, K.tamanoOtro(...(op.tamano || [1, 1]))]);
+      const tam = UI.selector({ opciones, valor: actual });
+      tam.addEventListener('change', () => poner(i, 'tamano', tam.value === '[1,1]' ? undefined : JSON.parse(tam.value)));
+      return [campoTexto(i, 'valor', K.valor, { area: true, maximo: 4096 }),
+        h('div', { class: 'rejilla-campos' }, alineacion(i), UI.campo({ id: idCampo(i, 'tamano'), etiqueta: K.tamano, control: tam })),
+        casillas(casillaOp(i, 'negrita', K.negrita), casillaOp(i, 'subrayado', K.subrayado), casillaOp(i, 'invertido', K.invertido))];
+    }
+    function camposFila(i) {
+      const op = doc.operaciones[i];
+      const columnas = op.columnas || (op.columnas = []);
+      const lista = columnas.map((c, k) => {
+        const id = (x) => `pr-op-${i}-c${k}-${x}`;
+        const t = UI.entrada({ maxlength: 1024 });
+        t.value = c.texto ?? '';
+        t.addEventListener('input', () => { c.texto = t.value; cambiado(); document.querySelector(`#pr-op-${i}-resumen .operacion-resumen`).textContent = resumen(op); });
+        const a = UI.entrada({ tipo: 'number', min: 1, max: 100, placeholder: 'auto' });
+        a.value = typeof c.ancho === 'number' ? c.ancho : '';
+        a.addEventListener('input', () => { if (a.value === '') delete c.ancho; else c.ancho = Number(a.value); cambiado(); });
+        const al = UI.selector({ opciones: Object.entries(K.alineaciones), valor: c.alineacion || 'izquierda' });
+        al.addEventListener('change', () => { if (al.value === 'izquierda') delete c.alineacion; else c.alineacion = al.value; cambiado(); });
+        const quitar = UI.boton({ icono: 'papelera', etiqueta: K.quitarColumna(k + 1), variante: 'texto', chico: true });
+        quitar.disabled = columnas.length === 1;
+        quitar.addEventListener('click', () => { columnas.splice(k, 1); cambiado(); pintarConstructor(`pr-op-${i}-agregar-columna`); });
+        return h('fieldset', { class: 'columna-fila' }, h('legend', {}, K.columna(k + 1)),
+          UI.campo({ id: id('texto'), etiqueta: K.contenido, control: t }),
+          h('div', { class: 'rejilla-campos' }, UI.campo({ id: id('ancho'), etiqueta: K.ancho, control: a, ayuda: K.anchoAyuda }),
+            UI.campo({ id: id('alineacion'), etiqueta: K.alineacion, control: al })),
+          h('div', {}, quitar));
+      });
+      const mas = UI.boton({ texto: K.agregarColumna, icono: 'mas', chico: true, id: `pr-op-${i}-agregar-columna` });
+      mas.disabled = columnas.length >= 8;
+      mas.addEventListener('click', () => { columnas.push({ texto: K.nuevo.columna }); cambiado(); pintarConstructor(`pr-op-${i}-c${columnas.length - 1}-texto`); });
+      return [lista, casillas(casillaOp(i, 'negrita', K.negrita)), h('div', {}, mas)];
+    }
+    function camposImagen(i) {
+      const op = doc.operaciones[i];
+      if (op.base64) return [h('p', { class: 'tenue pequeno' }, K.incluida), h('div', { class: 'rejilla-campos' }, alineacion(i), campoTexto(i, 'ancho_max', K.anchoMax, { numero: true, min: 1, max: 100 }))];
+      const nombres = (recursos || []).map((r) => r.nombre);
+      if (op.recurso && !nombres.includes(op.recurso)) nombres.unshift(op.recurso);
+      return [nombres.length ? campoLista(i, 'recurso', K.recurso, nombres.map((n) => [n, n]), null) : h('p', { class: 'tenue pequeno' }, K.sinRecursos),
+        h('div', { class: 'rejilla-campos' }, alineacion(i), campoTexto(i, 'ancho_max', K.anchoMax, { numero: true, min: 1, max: 100 }))];
+    }
+    const CAMPOS = {
+      texto: camposTexto,
+      separador: (i) => [campoTexto(i, 'caracter', K.caracter, { maximo: 1, ayuda: K.caracterAyuda })],
+      par: (i) => [h('div', { class: 'rejilla-campos' }, campoTexto(i, 'izquierda', K.izquierda, { maximo: 1024 }), campoTexto(i, 'derecha', K.derecha, { maximo: 1024 })),
+        casillas(casillaOp(i, 'negrita', K.negrita))],
+      fila: camposFila,
+      salto: (i) => [campoTexto(i, 'lineas', K.lineas, { numero: true, min: 1, max: 10 })],
+      qr: (i) => [campoTexto(i, 'valor', K.contenido, { maximo: 700 }),
+        h('div', { class: 'rejilla-campos' }, alineacion(i), campoTexto(i, 'tamano', K.tamanoQr, { numero: true, min: 1, max: 16 }))],
+      codigo_barras: (i) => [campoTexto(i, 'valor', K.contenido, { maximo: 255 }),
+        h('div', { class: 'rejilla-campos' }, campoLista(i, 'simbologia', K.simbologia, ['CODE128', 'CODE39', 'EAN13', 'EAN8', 'UPCA', 'ITF'].map((s) => [s, s]), null),
+          campoLista(i, 'texto', K.textoBarras, Object.entries(K.textosBarras), 'abajo'), alineacion(i))],
+      imagen: camposImagen,
+      cortar: (i) => [casillas(casillaOp(i, 'parcial', K.parcial))],
+      abrir_cajon: (i) => [campoLista(i, 'pin', K.pin, [['2', 'Pin 2'], ['5', 'Pin 5']], '2')],
+      raw: () => [h('p', { class: 'tenue pequeno' }, K.raw)],
+    };
+    // Resumen de una línea para la operación plegada.
+    const resumen = (op) => {
+      const t = op.valor ?? (op.izquierda !== undefined ? `${op.izquierda} · ${op.derecha ?? ''}` : null)
+        ?? (op.columnas ? op.columnas.map((c) => c.texto).join(' | ') : null) ?? op.recurso ?? op.caracter ?? '';
+      return String(t).replace(/\s+/g, ' ').slice(0, 48);
+    };
+    const NUEVAS = {
+      texto: () => ({ tipo: 'texto', valor: K.nuevo.texto }),
+      separador: () => ({ tipo: 'separador' }),
+      par: () => ({ tipo: 'par', izquierda: K.nuevo.izquierda, derecha: K.nuevo.derecha }),
+      fila: () => ({ tipo: 'fila', columnas: [{ texto: `${K.nuevo.columna} 1` }, { texto: `${K.nuevo.columna} 2`, alineacion: 'derecha' }] }),
+      salto: () => ({ tipo: 'salto', lineas: 1 }),
+      qr: () => ({ tipo: 'qr', valor: K.nuevo.qr, alineacion: 'centro' }),
+      codigo_barras: () => ({ tipo: 'codigo_barras', valor: K.nuevo.barras, simbologia: 'CODE128', alineacion: 'centro' }),
+      imagen: () => ({ tipo: 'imagen', recurso: recursos[0].nombre, alineacion: 'centro' }),
+      cortar: () => ({ tipo: 'cortar' }),
+      abrir_cajon: () => ({ tipo: 'abrir_cajon', pin: 2 }),
+    };
+
+    async function pintarConstructor(enfocar) {
+      if (recursos === null) { try { recursos = await api.get('/recursos'); } catch { recursos = []; } }
+      if (!doc) {
+        const irJson = UI.boton({ texto: K.irJson, chico: true });
+        irJson.addEventListener('click', () => modos.elegir('json'));
+        vaciar(constructor, UI.nota({ tipo: 'aviso', titulo: K.sinDocumento, texto: K.sinDocumentoTexto, acciones: irJson }));
+        return;
+      }
+      const ops = Array.isArray(doc.operaciones) ? doc.operaciones : (doc.operaciones = []);
+      const referencia = UI.entrada({ maxlength: 64 });
+      referencia.value = doc.referencia ?? '';
+      referencia.addEventListener('input', () => { if (referencia.value) doc.referencia = referencia.value; else delete doc.referencia; cambiado(); });
+      const copias = UI.entrada({ tipo: 'number', min: 1, max: 5 });
+      copias.value = doc.copias ?? 1;
+      copias.addEventListener('input', () => { if (copias.value === '' || copias.value === '1') delete doc.copias; else doc.copias = Number(copias.value); cambiado(); });
+
+      const mover = (i, d, b) => {
+        [ops[i], ops[i + d]] = [ops[i + d], ops[i]];
+        const a = abiertas.has(i), z = abiertas.has(i + d);
+        abiertas.delete(i); abiertas.delete(i + d);
+        if (a) abiertas.add(i + d);
+        if (z) abiertas.add(i);
+        cambiado();
+        pintarConstructor(`pr-op-${i + d}-${b}`);
+      };
+      const tarjetas = ops.map((op, i) => {
+        const nombre = K.tipos[op.tipo] || op.tipo;
+        const subir = UI.boton({ icono: 'abajo', etiqueta: K.subir(i + 1), variante: 'texto', chico: true, id: `pr-op-${i}-subir` });
+        const bajar = UI.boton({ icono: 'abajo', etiqueta: K.bajar(i + 1), variante: 'texto', chico: true, id: `pr-op-${i}-bajar` });
+        const quitar = UI.boton({ icono: 'papelera', etiqueta: K.eliminar(i + 1), variante: 'texto', chico: true });
+        subir.classList.add('girar');
+        subir.disabled = i === 0; bajar.disabled = i === ops.length - 1;
+        subir.addEventListener('click', () => mover(i, -1, 'subir'));
+        bajar.addEventListener('click', () => mover(i, 1, 'bajar'));
+        quitar.addEventListener('click', () => {
+          ops.splice(i, 1);
+          const nuevas = [...abiertas].filter((k) => k !== i).map((k) => (k > i ? k - 1 : k));
+          abiertas.clear(); nuevas.forEach((k) => abiertas.add(k));
+          cambiado();
+          pintarConstructor(ops.length ? `pr-op-${Math.min(i, ops.length - 1)}-resumen` : 'pr-agregar-tipo');
+        });
+        const campos = (CAMPOS[op.tipo] || (() => [h('p', { class: 'tenue pequeno' }, K.sinCampos)]))(i);
+        const det = h('details', { class: 'operacion', open: abiertas.has(i) },
+          h('summary', { id: `pr-op-${i}-resumen` }, h('span', { class: 'operacion-numero numeros' }, String(i + 1)), h('strong', {}, nombre),
+            h('span', { class: 'tenue operacion-resumen' }, resumen(op))),
+          h('div', { class: 'pila operacion-cuerpo' }, campos, h('div', { class: 'fila operacion-mover' }, subir, bajar, quitar)));
+        det.addEventListener('toggle', () => { if (det.open) abiertas.add(i); else abiertas.delete(i); });
+        return det;
+      });
+
+      const tipo = UI.selector({ opciones: Object.entries(NUEVAS).filter(([t]) => t !== 'imagen' || recursos.length).map(([t]) => [t, K.tipos[t]]), valor: 'texto' });
+      const cTipo = UI.campo({ id: 'pr-agregar-tipo', etiqueta: K.agregarEtiqueta, control: tipo });
+      const bAgregar = UI.boton({ texto: K.agregar, icono: 'mas' });
+      bAgregar.addEventListener('click', () => {
+        ops.push(NUEVAS[tipo.value]());
+        abiertas.add(ops.length - 1);
+        cambiado();
+        pintarConstructor(`pr-op-${ops.length - 1}-resumen`);
+      });
+      vaciar(constructor,
+        h('div', { class: 'rejilla-campos' }, UI.campo({ id: 'pr-referencia', etiqueta: K.referencia, control: referencia, ayuda: K.referenciaAyuda }),
+          UI.campo({ id: 'pr-copias', etiqueta: K.copias, control: copias })),
+        h('p', { class: 'tenue pequeno' }, K.operaciones(ops.length)),
+        h('div', { class: 'operaciones' }, tarjetas),
+        h('div', { class: 'agregar-operacion' }, cTipo, bAgregar));
+      if (enfocar) {
+        const el = document.getElementById(enfocar);
+        if (el) { el.focus(); el.scrollIntoView({ block: 'nearest' }); }
+      }
+    }
+
     const modos = UI.pestanas([
       { id: 'plantillas', titulo: TPr.modos.plantillas, contenido: () => h('div', { class: 'pila' }, listaPlantillas, falta) },
+      { id: 'constructor', titulo: TPr.modos.constructor, contenido: () => constructor },
       { id: 'json', titulo: TPr.modos.json, contenido: () => h('div', { class: 'campo' },
         h('label', { for: 'pr-json' }, TPr.jsonEtiqueta), editor, h('span', { class: 'ayuda', id: 'pr-json-ayuda' }, TPr.jsonAyuda)) },
-    ], { etiqueta: TPr.modos.etiqueta, inicial: consulta.get('modo') === 'json' ? 1 : 0 });
+    ], { etiqueta: TPr.modos.etiqueta, inicial: consulta.get('modo') || 'plantillas',
+      alCambiar: (id) => { if (id === 'constructor') pintarConstructor(); } });
 
     bEnviar.addEventListener('click', async () => {
       if (!doc) return;
