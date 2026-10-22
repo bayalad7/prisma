@@ -19,6 +19,7 @@ El panel explica los niveles en lenguaje llano; entre paréntesis, el nombre té
 - **Desactivar** y **Eliminar** piden confirmación y dicen qué deja de funcionar.
 - **Permisos especiales** (`abrir_cajon`: abrir el cajón de dinero; `raw`: enviar comandos directos a la impresora) están apagados hasta que los marques para esa aplicación.
 - **Código para integrar** muestra el ejemplo con el SDK (etiqueta `<script>`), con `fetch` y con `curl`, para la impresora que elijas entre las permitidas.
+- **Comprobar permisos** abre *¿Por qué mi app no puede imprimir?* (`/admin/pruebas/permisos`) con esa aplicación: describes desde dónde imprime (su página, otra página o un servidor sin navegador), si envía la llave, si firma, la impresora y si usa operaciones sensibles, y el panel recorre sin imprimir los mismos pasos que `/v1/imprimir` (origen → llave → firma → impresora → operaciones sensibles → impresora activa). Dice en qué paso fallaría, con el código y el estado HTTP que respondería la API, cómo resolverlo y a qué pantalla ir. No pide ni muestra la llave (supone que envía la correcta) y no registra solicitudes. Una prueba compara su resultado con el de la API en cada combinación de niveles, orígenes, llaves y firmas.
 - Los errores del formulario (sin nombre, una página web mal escrita, el nivel 1 sin páginas, una página que ya pertenece a otra aplicación) aparecen junto al campo.
 
 ## Solicitudes de origen

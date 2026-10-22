@@ -32,12 +32,14 @@ flowchart TD
 - `CREDENCIALES_REQUERIDAS` sale en el paso de firma: si no hubo origen ni llave, solo un documento firmado puede identificar al cliente.
 - El detalle de la identificación está en [07-orden-autorizacion-detalle.md](07-orden-autorizacion-detalle.md). Los errores de impresión (503, 504) están en [23-diagnostico-problemas.md](23-diagnostico-problemas.md).
 - Todos los códigos: [referencia/codigos-de-error.md](../referencia/codigos-de-error.md).
+- El panel recorre este mismo orden, sin imprimir, en *¿Por qué mi app no puede imprimir?* (`seguridad.Comprobar`); `TestComprobadorCoincideConLaAPI` exige que dé el mismo código que la API.
 
 **Fuentes en el código:**
 
 - internal/servidor/api.go (`autorizarDocumento`, `imprimir`, `responderSiRepetido`)
 - internal/servidor/servidor.go (`limitarIP`, `ResponderError`)
 - internal/seguridad/autorizacion.go
+- internal/seguridad/comprobar.go (`Comprobar`) e internal/admin/pruebas.go (`comprobarPermisos`)
 - internal/contrato/validar.go (`LeerSobre`, `Decodificar`)
 
-**Última verificación:** PRISMA 0.1.0 (rama `develop`, commit `5f67e19`), 22 de octubre de 2026.
+**Última verificación:** PRISMA 0.2.0 en desarrollo (rama `develop`), 22 de octubre de 2026.
