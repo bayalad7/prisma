@@ -2,6 +2,7 @@ package admin
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -24,6 +25,9 @@ var patronAlias = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{0,31}$`)
 // ClientePanel identifica en el historial los trabajos que imprime el propio panel.
 const ClientePanel = "cli_panel"
 
+// destinoVirtual es el destino de las impresoras virtuales: los tickets quedan en la memoria del puente.
+const destinoVirtual = "memoria"
+
 type impresoraJSON struct {
 	Alias                     string      `json:"alias"`
 	Nombre                    string      `json:"nombre"`
@@ -43,6 +47,12 @@ type impresoraJSON struct {
 	ConfirmarImpresion        bool        `json:"confirmar_impresion"`
 	Baudios                   int         `json:"baudios"`
 	Activa                    bool        `json:"activa"`
+	Virtual                   bool        `json:"virtual"`
+	Simulacion                string      `json:"simulacion"`
+	SimulacionRetrasoMS       int         `json:"simulacion_retraso_ms"`
+	SimulacionFallaPct        int         `json:"simulacion_falla_pct"`
+	TicketsEnMemoria          int         `json:"tickets_en_memoria"`
+	TicketsRecibidos          int         `json:"tickets_recibidos"` // los que hay ahora en su rollo
 	Estado                    cola.Estado `json:"estado,omitempty"`
 	Pendientes                int         `json:"pendientes"`
 	UltimoError               string      `json:"ultimo_error,omitempty"`
@@ -56,6 +66,11 @@ func (a *Admin) aJSON(imp almacen.Impresora) impresoraJSON {
 		SoportaQRNativo: imp.SoportaQRNativo, SoportaCorte: imp.SoportaCorte, SoportaCajon: imp.SoportaCajon,
 		SoportaImagen: imp.SoportaImagen, SoportaCodigoBarrasNativo: imp.SoportaCodigoBarrasNativo,
 		ConfirmarImpresion: imp.ConfirmarImpresion, Baudios: imp.Baudios, Activa: imp.Activa, Estado: cola.Desconocido,
+		Virtual: imp.Tipo == almacen.ConexionVirtual, Simulacion: imp.Simulacion, SimulacionRetrasoMS: imp.SimulacionRetrasoMS,
+		SimulacionFallaPct: imp.SimulacionFallaPct, TicketsEnMemoria: imp.TicketsEnMemoria,
+	}
+	if j.Virtual {
+		j.TicketsRecibidos = len(conector.RollosVirtuales.Listar(imp.Alias))
 	}
 	if !imp.Activa {
 		j.Estado = "inactiva"
@@ -75,6 +90,11 @@ func (j impresoraJSON) aImpresora() (almacen.Impresora, error) {
 		SoportaQRNativo: j.SoportaQRNativo, SoportaCorte: j.SoportaCorte, SoportaCajon: j.SoportaCajon,
 		SoportaImagen: j.SoportaImagen, SoportaCodigoBarrasNativo: j.SoportaCodigoBarrasNativo,
 		ConfirmarImpresion: j.ConfirmarImpresion, Baudios: j.Baudios, Activa: j.Activa,
+		Simulacion: j.Simulacion, SimulacionRetrasoMS: j.SimulacionRetrasoMS, SimulacionFallaPct: j.SimulacionFallaPct,
+		TicketsEnMemoria: j.TicketsEnMemoria,
+	}
+	if imp.Tipo == almacen.ConexionVirtual {
+		imp.Destino = destinoVirtual // vive dentro del puente: no tiene dirección
 	}
 	if imp.Nombre == "" {
 		imp.Nombre = imp.Alias
@@ -82,8 +102,8 @@ func (j impresoraJSON) aImpresora() (almacen.Impresora, error) {
 	switch {
 	case !patronAlias.MatchString(imp.Alias):
 		return imp, invalido("El alias solo admite minúsculas, dígitos, - y _ (hasta 32 caracteres), por ejemplo «caja».")
-	case !slices.Contains([]string{almacen.ConexionRed, almacen.ConexionUSB, almacen.ConexionBluetooth, almacen.ConexionArchivo}, imp.Tipo):
-		return imp, invalido("Elige el tipo de conexión: red, USB, Bluetooth o archivo.")
+	case !slices.Contains([]string{almacen.ConexionRed, almacen.ConexionUSB, almacen.ConexionBluetooth, almacen.ConexionArchivo, almacen.ConexionVirtual}, imp.Tipo):
+		return imp, invalido("Elige el tipo de conexión: red, USB, Bluetooth, archivo o virtual.")
 	case imp.Destino == "":
 		return imp, invalido("Falta el destino: la IP, el nombre de la impresora, el puerto serie o la carpeta.")
 	case imp.AnchoMM != 58 && imp.AnchoMM != 80:
@@ -110,6 +130,26 @@ func (j impresoraJSON) aImpresora() (almacen.Impresora, error) {
 	// Solo los conectores de red y Bluetooth pueden leer la respuesta de la impresora.
 	if imp.Tipo != almacen.ConexionRed && imp.Tipo != almacen.ConexionBluetooth {
 		imp.ConfirmarImpresion = false
+	}
+	if imp.Tipo != almacen.ConexionVirtual {
+		imp.Simulacion, imp.SimulacionRetrasoMS, imp.SimulacionFallaPct, imp.TicketsEnMemoria = almacen.SimulacionNormal, 3000, 30, 20
+		return imp, nil
+	}
+	if imp.Simulacion == "" {
+		imp.Simulacion = almacen.SimulacionNormal
+	}
+	if imp.TicketsEnMemoria == 0 {
+		imp.TicketsEnMemoria = 20
+	}
+	switch {
+	case !slices.Contains([]string{almacen.SimulacionNormal, almacen.SimulacionFueraDeLinea, almacen.SimulacionLenta, almacen.SimulacionFallaAleatoria}, imp.Simulacion):
+		return imp, invalido("Elige qué simula la impresora virtual: normal, fuera de línea, lenta o falla aleatoria.")
+	case imp.SimulacionRetrasoMS < 0 || imp.SimulacionRetrasoMS > 30000:
+		return imp, invalido("El retraso de la impresora lenta va de 0 a 30 000 ms (30 segundos).")
+	case imp.SimulacionFallaPct < 0 || imp.SimulacionFallaPct > 100:
+		return imp, invalido("El porcentaje de fallas va de 0 a 100.")
+	case imp.TicketsEnMemoria < 1 || imp.TicketsEnMemoria > 200:
+		return imp, invalido("La impresora virtual recuerda de 1 a 200 tickets.")
 	}
 	return imp, nil
 }
@@ -162,7 +202,10 @@ func (a *Admin) registrar(imp almacen.Impresora) {
 }
 
 func (a *Admin) impresora(w http.ResponseWriter, r *http.Request) (*almacen.Impresora, bool) {
-	alias := r.PathValue("alias")
+	return a.impresoraPorAlias(w, r, r.PathValue("alias"))
+}
+
+func (a *Admin) impresoraPorAlias(w http.ResponseWriter, r *http.Request, alias string) (*almacen.Impresora, bool) {
 	imp, err := a.op.Almacen.Impresoras.Obtener(r.Context(), alias)
 	if errors.Is(err, almacen.ErrNoEncontrado) {
 		err = &conector.Error{Codigo: conector.ErrImpresoraNoEncontrada, Mensaje: fmt.Sprintf("No existe la impresora «%s».", alias),
@@ -189,6 +232,9 @@ func (a *Admin) actualizarImpresora(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		a.error(w, r, err)
 		return
+	}
+	if previa.Tipo == almacen.ConexionVirtual && imp.Tipo != almacen.ConexionVirtual {
+		defer conector.RollosVirtuales.Vaciar(imp.Alias)
 	}
 	if imp.Alias != previa.Alias {
 		a.error(w, r, invalido("El alias no se puede cambiar: las aplicaciones ya lo usan. Crea otra impresora si necesitas otro alias."))
@@ -218,6 +264,7 @@ func (a *Admin) eliminarImpresora(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.op.Servidor.QuitarImpresora(imp.Alias)
+	conector.RollosVirtuales.Vaciar(imp.Alias)
 	a.op.Log.Info("impresora eliminada desde el panel", "alias", imp.Alias)
 	responder(w, ok)
 }
@@ -281,7 +328,11 @@ func (a *Admin) detectar(w http.ResponseWriter, r *http.Request) {
 
 // impresoraParaImprimir obtiene la impresora del camino y exige que esté activa.
 func (a *Admin) impresoraParaImprimir(w http.ResponseWriter, r *http.Request) (*almacen.Impresora, bool) {
-	imp, ok2 := a.impresora(w, r)
+	return a.impresoraActiva(w, r, r.PathValue("alias"))
+}
+
+func (a *Admin) impresoraActiva(w http.ResponseWriter, r *http.Request, alias string) (*almacen.Impresora, bool) {
+	imp, ok2 := a.impresoraPorAlias(w, r, alias)
 	if ok2 && !imp.Activa {
 		a.error(w, r, rechazo(http.StatusConflict, "IMPRESORA_INACTIVA", "La impresora está desactivada.", "Actívala para imprimir en ella."))
 		return nil, false
@@ -289,18 +340,24 @@ func (a *Admin) impresoraParaImprimir(w http.ResponseWriter, r *http.Request) (*
 	return imp, ok2
 }
 
-// imprimirPrueba encola bytes generados por el panel, guarda el trabajo y espera el resultado.
-func (a *Admin) imprimirPrueba(w http.ResponseWriter, r *http.Request, imp *almacen.Impresora, referencia string, datos []byte) {
+// imprimirPrueba encola bytes generados por el panel, guarda el trabajo, espera el resultado y
+// responde como /v1/imprimir (más la imagen del ticket); devuelve si se imprimió. advs son las
+// advertencias del render.
+func (a *Admin) imprimirPrueba(w http.ResponseWriter, r *http.Request, imp *almacen.Impresora, referencia string, datos []byte, advs []escpos.Advertencia) bool {
 	if err := a.op.Servidor.AsegurarRegistrada(*imp); err != nil {
 		a.error(w, r, err)
-		return
+		return false
 	}
 	ctx := r.Context()
 	id := servidor.NuevoTrabajoID()
-	t := &almacen.Trabajo{ID: id, DocumentoID: id, ClienteID: ClientePanel, ImpresoraAlias: imp.Alias, Referencia: referencia}
+	t := &almacen.Trabajo{ID: id, DocumentoID: id, ClienteID: ClientePanel, ImpresoraAlias: imp.Alias,
+		Virtual: imp.Tipo == almacen.ConexionVirtual, Referencia: referencia}
+	for _, adv := range advs {
+		t.Advertencias = append(t.Advertencias, adv.Codigo)
+	}
 	if err := a.op.Almacen.Trabajos.Crear(ctx, t); err != nil {
 		a.error(w, r, err)
-		return
+		return false
 	}
 	canal, err := a.op.Cola.Encolar(imp.Alias, id, datos)
 	var res cola.Resultado
@@ -316,24 +373,32 @@ func (a *Admin) imprimirPrueba(w http.ResponseWriter, r *http.Request, imp *alma
 			codigo = "ERROR_INTERNO"
 		}
 	}
-	var advertencias []string
+	advertencias := t.Advertencias
 	if res.Aviso != nil {
-		advertencias = []string{res.Aviso.Codigo}
+		advertencias = append(advertencias, res.Aviso.Codigo)
+		advs = append(advs, escpos.Advertencia{Codigo: res.Aviso.Codigo, Mensaje: res.Aviso.Mensaje})
+	}
+	if advs == nil {
+		advs = []escpos.Advertencia{}
 	}
 	if err := a.op.Almacen.Trabajos.Finalizar(context.WithoutCancel(ctx), id, estado, codigo, advertencias, res.Duracion); err != nil {
 		a.op.Log.Error("no se pudo guardar el resultado del trabajo", "trabajo", id, "error", err.Error())
 	}
-	a.op.Log.Info("trabajo", "trabajo", id, "cliente", ClientePanel, "impresora", imp.Alias, "estado", estado,
+	a.op.Log.Info("trabajo", "trabajo", id, "cliente", ClientePanel, "impresora", imp.Alias, "virtual", t.Virtual, "estado", estado,
 		"codigo_error", codigo, "duracion_ms", res.Duracion.Milliseconds())
 	if !res.OK {
 		servidor.ResponderError(w, r, res.Err, id, a.op.Log)
-		return
+		return false
 	}
-	resp := map[string]any{"ok": true, "trabajo_id": id, "vista": dev.VistaTexto(dev.Simular(datos, *imp), false)}
+	pagina := dev.Simular(datos, *imp)
+	resp := map[string]any{"ok": true, "trabajo_id": id, "impresora": imp.Alias, "duracion_ms": res.Duracion.Milliseconds(),
+		"advertencias": advs, "vista": dev.VistaTexto(pagina, false),
+		"imagen": "data:image/png;base64," + base64.StdEncoding.EncodeToString(dev.RasterPNG(pagina, imp.AnchoMM))}
 	if res.Aviso != nil {
 		resp["aviso"] = res.Aviso.Mensaje
 	}
 	responder(w, resp)
+	return true
 }
 
 func (a *Admin) diagnostico(w http.ResponseWriter, r *http.Request) {
@@ -347,7 +412,16 @@ func (a *Admin) diagnostico(w http.ResponseWriter, r *http.Request) {
 		a.error(w, r, err)
 		return
 	}
-	a.imprimirPrueba(w, r, imp, "DIAGNOSTICO", datos)
+	if a.imprimirPrueba(w, r, imp, "DIAGNOSTICO", datos, nil) {
+		a.marcarPaso(r, almacen.AjustePrimeraPrueba)
+	}
+}
+
+// marcarPaso guarda que se completó un paso de «Primeros pasos» (un error no afecta la respuesta).
+func (a *Admin) marcarPaso(r *http.Request, clave string) {
+	if err := a.op.Almacen.Ajustes.Establecer(context.WithoutCancel(r.Context()), clave, "1"); err != nil {
+		a.op.Log.Warn("no se pudo guardar el paso de primeros pasos", "paso", clave, "error", err.Error())
+	}
 }
 
 // ticketDiagnostico describe la impresora y prueba el ancho, los acentos, la alineación y el QR.
@@ -369,7 +443,7 @@ func ticketDiagnostico(imp almacen.Impresora, ahora time.Time) []contrato.Operac
 		&contrato.Separador{Caracter: "="},
 		par("Alias", imp.Alias),
 		par("Nombre", imp.Nombre),
-		par("Conexión", imp.Tipo+" "+imp.Destino),
+		par("Conexión", conexionDiagnostico(imp)),
 		par("Papel", fmt.Sprintf("%d mm, %d columnas", imp.AnchoMM, imp.Columnas)),
 		par("Página", fmt.Sprintf("%s (ESC t %d)", imp.PaginaCodigos, imp.ComandoPaginaCodigos)),
 		par("Fecha", ahora.Format("02/01/2006 15:04")),
@@ -390,6 +464,27 @@ func ticketDiagnostico(imp almacen.Impresora, ahora time.Time) []contrato.Operac
 	return append(ops, texto("PRISMA · puente de impresión", contrato.Centro, false), &contrato.Cortar{})
 }
 
+// conexionDiagnostico describe la conexión en el ticket de diagnóstico.
+func conexionDiagnostico(imp almacen.Impresora) string {
+	if imp.Tipo == almacen.ConexionVirtual {
+		return "virtual (sin papel)"
+	}
+	return imp.Tipo + " " + imp.Destino
+}
+
+// POST /admin/api/impresoras/{alias}/acentos-correctos: el dueño vio en el ticket de prueba que
+// los acentos salen bien; cuenta como el paso «Revisar acentos» de Primeros pasos, sin imprimir.
+func (a *Admin) acentosCorrectos(w http.ResponseWriter, r *http.Request) {
+	imp, ok2 := a.impresora(w, r)
+	if !ok2 {
+		return
+	}
+	if imp.Tipo != almacen.ConexionVirtual {
+		a.marcarPaso(r, almacen.AjusteAcentosProbados)
+	}
+	responder(w, ok)
+}
+
 func (a *Admin) paginasCodigos(w http.ResponseWriter, r *http.Request) {
 	imp, ok2 := a.impresoraParaImprimir(w, r)
 	if !ok2 {
@@ -400,5 +495,7 @@ func (a *Admin) paginasCodigos(w http.ResponseWriter, r *http.Request) {
 		a.error(w, r, err)
 		return
 	}
-	a.imprimirPrueba(w, r, imp, "PAGINAS", datos)
+	if a.imprimirPrueba(w, r, imp, "PAGINAS", datos, nil) && imp.Tipo != almacen.ConexionVirtual {
+		a.marcarPaso(r, almacen.AjusteAcentosProbados)
+	}
 }

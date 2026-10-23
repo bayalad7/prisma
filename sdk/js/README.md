@@ -3,7 +3,7 @@
 SDK para imprimir tickets en un puente [PRISMA](https://github.com/bayalad7/prisma) desde el navegador o desde Node.js 18+. Sin dependencias, con tipos TypeScript.
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@bayalad7/prisma@0.1/dist/prisma.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/bayalad7/prisma@v0.2.0/sdk/js/dist/prisma.umd.js"></script>
 <script>
   const prisma = new Prisma({ url: "https://192.168.1.10:8443", llave: "pk_..." });
   prisma.imprimir("caja", (doc) => doc
@@ -16,8 +16,9 @@ SDK para imprimir tickets en un puente [PRISMA](https://github.com/bayalad7/pris
 </script>
 ```
 
-> ⏳ Mientras el paquete no esté publicado en npm, esa dirección responde 404. Usa
-> `https://cdn.jsdelivr.net/gh/bayalad7/prisma@develop/sdk/js/dist/prisma.umd.js`.
+> ⏳ El paquete todavía no está en npm. Mientras tanto, usa la dirección de arriba o copia
+> `dist/prisma.mjs` a tu proyecto. Todas las formas de instalarlo están en
+> [docs/integradores/sdk.md](../../docs/integradores/sdk.md#instalación).
 
 ```sh
 npm install @bayalad7/prisma

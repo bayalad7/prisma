@@ -11,7 +11,7 @@ El puente usa HTTPS con un certificado autofirmado: cada equipo que imprime debe
 1. En el equipo que imprime, abre `https://<ip-del-puente>:8443/v1/salud` en una pestaña:
    - si aparece una advertencia de seguridad, es el certificado;
    - si la página no carga, ve a [Puente inalcanzable](#puente-inalcanzable).
-2. Descarga el certificado del panel (*Ajustes → HTTPS → Descargar certificado*) e instálalo como explica [tls.md](../tls.md#confiar-en-el-certificado): Windows, macOS, Linux, Firefox, Android o iOS.
+2. Descarga el certificado del panel (*Ajustes → HTTPS → Descargar certificado*) e instálalo como explica [instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md#confiar-en-el-certificado): Windows, macOS, Linux, Firefox, Android o iOS.
 3. Recarga tu página.
 
 > Aceptar la advertencia con *Continuar de todos modos* **no basta**: el navegador lo recuerda solo para esa pestaña y solo para navegar. Las peticiones `fetch` de tu página siguen fallando.
@@ -53,7 +53,7 @@ Si la página está en la misma red local que el puente (por ejemplo `http://192
 
 ## iPhone, iPad y Safari
 
-- **Certificado:** en iOS no basta con descargarlo. Hay que instalarlo como perfil (*Ajustes → General → VPN y gestión de dispositivos*) **y** activarlo en *Ajustes → General → Información → Ajustes de confianza de certificados*. Sin el segundo paso, Safari sigue sin confiar. Ver [tls.md](../tls.md#confiar-en-el-certificado).
+- **Certificado:** en iOS no basta con descargarlo. Hay que instalarlo como perfil (*Ajustes → General → VPN y gestión de dispositivos*) **y** activarlo en *Ajustes → General → Información → Ajustes de confianza de certificados*. Sin el segundo paso, Safari sigue sin confiar. Ver [instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md#confiar-en-el-certificado).
 - **Contenido mixto:** Safari bloquea sin avisar las llamadas de una página `https://` a un puente `http://`. El SDK lo detecta como `CONTENIDO_MIXTO`. Usa la dirección `https://` del puente.
 - **Misma red Wi-Fi:** el teléfono debe estar en la red del negocio, no en datos móviles ni en una red de invitados aislada. Prueba abriendo `https://<ip-del-puente>:8443/v1/salud` en Safari.
 - **Todos los navegadores de iOS usan el motor de Safari.** Chrome o Firefox en iPhone se comportan igual.
@@ -78,7 +78,7 @@ La impresora o su puerto serie ya están en uso:
 - **Otro dispositivo está conectado a la impresora.** Casi todas las impresoras Bluetooth aceptan una sola conexión a la vez; si un celular o una tablet se conectó (por ejemplo, con la aplicación del fabricante), el equipo del puente no puede.
 - **Otro programa del equipo del puente tiene abierto el puerto COM:** la utilidad del fabricante, otro sistema de punto de venta o un monitor de puerto serie.
 
-El dueño debe desconectar el otro dispositivo o cerrar el otro programa (ver [conectores.md](../conectores.md#impresoras-bluetooth)). Como el trabajo falló, su `id` quedó libre: puedes **reenviar el mismo documento** sin riesgo de que salga dos veces.
+El dueño debe desconectar el otro dispositivo o cerrar el otro programa (ver [instalacion/impresoras.md](../instalacion/impresoras.md#impresoras-bluetooth)). Como el trabajo falló, su `id` quedó libre: puedes **reenviar el mismo documento** sin riesgo de que salga dos veces.
 
 Los otros errores de impresora llegan igual, con `trabajo_id`, y también liberan el `id`:
 
@@ -93,7 +93,7 @@ Los otros errores de impresora llegan igual, con `trabajo_id`, y también libera
 
 Con impresoras de red, el puente da un ticket por impreso cuando lo entregó al sistema, no cuando la impresora lo recibió (así funciona el puerto 9100). Si la impresora se apaga justo mientras recibe un ticket corto, la respuesta es `ok` y el papel no sale.
 
-- **Solución:** el dueño activa *Confirmar impresión* en el perfil de la impresora (ver [conectores.md](../conectores.md#confirmar-impresión)). Con ella, el puente pregunta a la impresora si recibió el ticket y, si no responde, falla con `TIEMPO_AGOTADO` para que reintentes.
+- **Solución:** el dueño activa *Confirmar impresión* en el perfil de la impresora (ver [instalacion/impresoras.md](../instalacion/impresoras.md#confirmar-impresión)). Con ella, el puente pregunta a la impresora si recibió el ticket y, si no responde, falla con `TIEMPO_AGOTADO` para que reintentes.
 - **Advertencia `IMPRESORA_FUERA_DE_LINEA`:** solo aparece con esa opción. Llega en `advertencias` de una respuesta `ok`: la impresora tiene el ticket, pero está con la tapa abierta o sin papel, y lo imprimirá al resolverlo. Muéstraselo a la persona y **no reenvíes** el ticket.
 - **USB y CUPS:** no admiten la confirmación. Con USB por winspool, Windows informa el error si el spooler no puede entregar el trabajo.
 

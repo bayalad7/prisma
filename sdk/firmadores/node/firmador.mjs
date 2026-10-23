@@ -4,7 +4,7 @@
 //   const firmado = firmar(documento, { clienteId: 'cli_…', llavePrivada: pem });
 //
 // Firma con Ed25519 la forma canónica JCS (RFC 8785) del documento sin «firma», como verifica el
-// puente (docs/contrato-documento-v1.md §7).
+// puente (docs/referencia/contrato-documento-v1.md §7).
 import { createPrivateKey, randomUUID, sign } from 'node:crypto';
 
 const VIGENCIA_MAXIMA = 120;

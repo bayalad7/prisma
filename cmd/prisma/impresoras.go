@@ -142,15 +142,21 @@ func nuevoComandoAgregarImpresora(op *opciones) *cobra.Command {
 		Example: "  prisma impresoras agregar --alias caja --tipo red --destino 192.168.1.50 --cajon\n" +
 			"  prisma impresoras agregar --alias cocina --tipo usb --destino \"EPSON TM-T20II Receipt\"\n" +
 			"  prisma impresoras agregar --alias barra --tipo bluetooth --destino COM5 --ancho 58\n" +
-			"  prisma impresoras agregar --alias virtual --tipo red --destino 127.0.0.1:9100",
+			"  prisma impresoras agregar --alias prueba --tipo virtual",
 		Args: cobra.NoArgs,
 		RunE: func(c *cobra.Command, _ []string) error {
 			if !patronAlias.MatchString(imp.Alias) {
 				return fmt.Errorf("alias %q no válido: usa minúsculas, dígitos, - o _ (hasta 32 caracteres)", imp.Alias)
 			}
-			tipos := []string{almacen.ConexionRed, almacen.ConexionUSB, almacen.ConexionBluetooth, almacen.ConexionArchivo}
+			tipos := []string{almacen.ConexionRed, almacen.ConexionUSB, almacen.ConexionBluetooth, almacen.ConexionArchivo, almacen.ConexionVirtual}
 			if !slices.Contains(tipos, imp.Tipo) {
 				return fmt.Errorf("tipo %q no válido; usa %s", imp.Tipo, strings.Join(tipos, ", "))
+			}
+			// La impresora virtual vive dentro del puente: no tiene dirección.
+			if imp.Tipo == almacen.ConexionVirtual {
+				imp.Destino = destinoVirtual
+			} else if imp.Destino == "" {
+				return fmt.Errorf("falta --destino: la IP, el nombre de la impresora, el puerto serie o la carpeta")
 			}
 			if !slices.Contains(escpos.PaginasSoportadas(), strings.ToUpper(imp.PaginaCodigos)) {
 				return fmt.Errorf("página de códigos %q no soportada; usa %s", imp.PaginaCodigos, strings.Join(escpos.PaginasSoportadas(), ", "))
@@ -199,8 +205,8 @@ func nuevoComandoAgregarImpresora(op *opciones) *cobra.Command {
 	f := cmd.Flags()
 	f.StringVar(&imp.Alias, "alias", "", "alias con el que las aplicaciones eligen la impresora (obligatorio)")
 	f.StringVar(&imp.Nombre, "nombre", "", "nombre descriptivo (por defecto, el alias)")
-	f.StringVar(&imp.Tipo, "tipo", "", "red, usb, bluetooth o archivo (obligatorio)")
-	f.StringVar(&imp.Destino, "destino", "", "IP[:puerto], nombre de la impresora o cola, puerto serie o carpeta (obligatorio)")
+	f.StringVar(&imp.Tipo, "tipo", "", "red, usb, bluetooth, archivo o virtual (obligatorio)")
+	f.StringVar(&imp.Destino, "destino", "", "IP[:puerto], nombre de la impresora o cola, puerto serie o carpeta (obligatorio salvo con virtual)")
 	f.IntVar(&ancho, "ancho", 80, "ancho del papel en mm: 58 u 80")
 	f.IntVar(&imp.Columnas, "columnas", 0, "columnas con la fuente A (por defecto según el ancho: 32 o 48)")
 	f.IntVar(&imp.ColumnasFuenteB, "columnas-b", 0, "columnas con la fuente B (por defecto 42 o 64)")
@@ -215,7 +221,7 @@ func nuevoComandoAgregarImpresora(op *opciones) *cobra.Command {
 	f.BoolVar(&sinImagen, "sin-imagen", false, "no imprime imágenes")
 	f.BoolVar(&inactiva, "inactiva", false, "la agrega desactivada")
 	f.BoolVar(&imp.ConfirmarImpresion, "confirmar", false, "consulta el estado tras cada ticket (DLE EOT) y falla si la impresora no responde; solo red y bluetooth")
-	for _, obligatoria := range []string{"alias", "tipo", "destino"} {
+	for _, obligatoria := range []string{"alias", "tipo"} {
 		cmd.MarkFlagRequired(obligatoria)
 	}
 	return cmd
@@ -282,3 +288,6 @@ func nuevoComandoProbarImpresora(op *opciones) *cobra.Command {
 		},
 	}
 }
+
+// destinoVirtual es el destino de las impresoras virtuales: los tickets quedan en la memoria del puente.
+const destinoVirtual = "memoria"

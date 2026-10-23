@@ -1,0 +1,29 @@
+{
+  "axe": {
+    "galeria-claro": [],
+    "galeria-oscuro": [],
+    "panel-diagramas": [],
+    "galeria-celular": []
+  },
+  "desborde": {
+    "galeria-claro": 0,
+    "galeria-oscuro": 0,
+    "panel-diagramas": 0,
+    "galeria-celular": 0
+  },
+  "consola": [],
+  "comprobaciones": [
+    "ok    la galería empieza por «Para el negocio», con las versiones sencillas primero Cómo funciona PRISMA | El viaje de un ticket | Solicitudes de origen | Pantallas del panel",
+    "ok    «Técnicos» muestra los de quien programa y desarrolla 23",
+    "ok    la búsqueda no distingue acentos Orden de autorización y validación",
+    "ok    sin coincidencias lo dice ",
+    "ok    en oscuro se ven las miniaturas oscuras ",
+    "ok    una tarjeta abre el diagrama dibujado ",
+    "ok    la ayuda de Trabajos ofrece sus diagramas, primero el sencillo El viaje de un ticket | Diagnóstico: «no imprime» | Ciclo de vida de un trabajo | Cola por impresora | Idempotencia",
+    "ok    abrir uno lo muestra en el mismo panel ",
+    "ok    un trabajo fallido ofrece su diagrama Ver el diagrama: Diagnóstico: «no imprime»",
+    "ok    el diagrama del error se abre en el panel ",
+    "ok    el comprobador ofrece el diagrama del error y el orden de autorización Ver el diagrama: Identificación del cliente, en detalle | Ver el diagrama: Orden de autorización y validación",
+    "ok    ya no enlaza a GitHub "
+  ]
+}

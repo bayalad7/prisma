@@ -47,6 +47,13 @@ func TestSolicitudesRechazarYEliminar(t *testing.T) {
 		t.Fatalf("todas = %+v", todas)
 	}
 
+	// Deshacer el rechazo la devuelve a pendiente; una pendiente no se «restaura».
+	exigirSinError(t, a.Solicitudes.Restaurar(ctx, "https://mala.com"))
+	if s, _ := a.Solicitudes.Obtener(ctx, "https://mala.com"); s.Estado != SolicitudPendiente || s.Intentos != 2 {
+		t.Fatalf("restaurada: %+v", s)
+	}
+	exigirError(t, a.Solicitudes.Restaurar(ctx, "https://mala.com"), ErrNoEncontrado)
+
 	exigirSinError(t, a.Solicitudes.Eliminar(ctx, "https://mala.com"))
 	exigirError(t, a.Solicitudes.Eliminar(ctx, "https://mala.com"), ErrNoEncontrado)
 	exigirError(t, a.Solicitudes.Rechazar(ctx, "https://nunca.com"), ErrNoEncontrado)

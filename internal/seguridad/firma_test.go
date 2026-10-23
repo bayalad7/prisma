@@ -24,7 +24,7 @@ func leerEjemplo(t *testing.T, ruta string) []byte {
 }
 
 func TestFormaCanonicaDeLaEspecificacion(t *testing.T) {
-	// Es la forma canónica publicada en docs/contrato-documento-v1.md, §7.
+	// Es la forma canónica publicada en docs/referencia/contrato-documento-v1.md, §7.
 	const esperada = `{"cliente_id":"cli_7Hq2MZp4XwR9","emitido":"2026-10-14T18:30:00Z","expira":"2026-10-14T18:31:30Z","id":"780bf0ea-9a33-4add-86f3-9f4f23000fc4","impresora":"caja","operaciones":[{"negrita":true,"tipo":"texto","valor":"Pedido en línea #812"},{"derecha":"$249.00","izquierda":"TOTAL","tipo":"par"},{"tipo":"cortar"}],"referencia":"PED-000812","version":"1"}`
 	c, err := CanonicoSinFirma(leerEjemplo(t, "validos/firmado.json"))
 	if err != nil {

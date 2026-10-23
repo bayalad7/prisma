@@ -124,6 +124,12 @@ func (r *RepoSolicitudes) Rechazar(ctx context.Context, origen string) error {
 	return r.cambiar(ctx, origen, `UPDATE solicitudes_origen SET estado = 'rechazada' WHERE origen = ?`)
 }
 
+// Restaurar devuelve a pendiente una solicitud rechazada (el «Deshacer» del panel). Solo cambia las
+// rechazadas: una aprobada o pendiente no se toca y responde ErrNoEncontrado.
+func (r *RepoSolicitudes) Restaurar(ctx context.Context, origen string) error {
+	return r.cambiar(ctx, origen, `UPDATE solicitudes_origen SET estado = 'pendiente' WHERE origen = ? AND estado = 'rechazada'`)
+}
+
 // Eliminar olvida la solicitud; si el origen vuelve a intentar, aparecerá como pendiente.
 func (r *RepoSolicitudes) Eliminar(ctx context.Context, origen string) error {
 	return r.cambiar(ctx, origen, `DELETE FROM solicitudes_origen WHERE origen = ?`)

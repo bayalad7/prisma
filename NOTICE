@@ -1,0 +1,6 @@
+PRISMA — Puente Remoto de Impresión Sobre Múltiples Arquitecturas
+Copyright 2026 Benjamín Ayala
+
+Este producto se distribuye con la licencia Apache-2.0 (ver LICENSE).
+Incluye software de terceros con sus propias licencias; la lista de
+dependencias y sus versiones está en go.mod.

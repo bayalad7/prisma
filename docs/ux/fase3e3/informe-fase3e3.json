@@ -1,0 +1,33 @@
+{
+  "axe": {
+    "paso1-escritorio": [],
+    "paso2-escritorio": [],
+    "paso3-escritorio": [],
+    "acentos-escritorio": [],
+    "virtual-paso2-celular": [],
+    "virtual-listo-celular": [],
+    "errores-escritorio": []
+  },
+  "desborde": {
+    "paso1-escritorio": 0,
+    "paso2-escritorio": 0,
+    "paso3-escritorio": 0,
+    "acentos-escritorio": 0,
+    "virtual-paso2-celular": 0,
+    "virtual-listo-celular": 0,
+    "errores-escritorio": 0
+  },
+  "consola": [],
+  "comprobaciones": [
+    "ok    marca las impresoras que no son de tickets ",
+    "ok    propone el alias a partir del nombre mostrador-3756",
+    "ok    probar conexión dice que respondió ",
+    "ok    «En ninguno» explica qué hacer sin cerrar ",
+    "ok    termina con «Listo» ",
+    "ok    la página de códigos elegida quedó guardada (CP850) ",
+    "ok    error en línea del nombre ",
+    "ok    error en línea del alias ",
+    "ok    pide elegir la conexión ",
+    "ok    el campo con error queda marcado "
+  ]
+}

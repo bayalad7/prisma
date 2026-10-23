@@ -15,15 +15,7 @@ Además, en todos los niveles:
 
 ## Cuál elegir
 
-```mermaid
-flowchart TD
-    A[¿Tu aplicación tiene backend propio?] -->|No: solo una página o app web| B[¿La red del negocio es de confianza<br/>y el ticket no mueve dinero ni cajón?]
-    A -->|Sí| C[¿El contenido del ticket debe ser<br/>imposible de alterar o repetir?<br/>pedidos pagados, folios, cajón]
-    B -->|Sí: menú, comandas internas| N1[Nivel 1 — Origen]
-    B -->|No, o no estás seguro| N2[Nivel 2 — Llave]
-    C -->|Sí| N3[Nivel 3 — Firma]
-    C -->|No| N2b[Nivel 2 — Llave<br/>desde el backend, sin Origin]
-```
+El árbol de decisión está en [diagramas/27-elegir-nivel.md](../diagramas/27-elegir-nivel.md).
 
 - **Nivel 1:** una carta digital que manda comandas a cocina, en una red sin invitados.
 - **Nivel 2:** la opción por defecto. Sirve tanto en una página como en un backend o en una app de escritorio. Desde un servidor (sin navegador) basta la llave.
@@ -31,31 +23,7 @@ flowchart TD
 
 ## Cómo decide el puente
 
-Cada petición pasa por estas comprobaciones, en orden. Se detiene en la primera que falla:
-
-```mermaid
-flowchart TD
-    P[Petición a /v1/imprimir] --> O{¿Trae Origin?}
-    O -->|Sí| OA{¿El origen pertenece a<br/>una aplicación activa?}
-    OA -->|No| R1[403 ORIGEN_NO_AUTORIZADO<br/>y queda como solicitud pendiente]
-    OA -->|Sí| L
-    O -->|No: curl o un servidor| L{¿Trae llave pk_?}
-    L -->|Sí| LV{¿Es válida y de<br/>esa aplicación?}
-    LV -->|No| R2[401 LLAVE_INVALIDA]
-    LV -->|Sí| F
-    L -->|No| LN{¿La aplicación la exige?<br/>nivel 2, o nivel 3 que la exige}
-    LN -->|Sí| R3[401 LLAVE_REQUERIDA]
-    LN -->|No| F{¿Nivel 3?}
-    F -->|Sí| FV{¿Firma válida, vigente<br/>y del mismo cliente_id?}
-    FV -->|No| R4[401 FIRMA_REQUERIDA · FIRMA_INVALIDA · FIRMA_EXPIRADA]
-    FV -->|Sí| I
-    F -->|No| I{¿Mismo id en<br/>los últimos 10 min?}
-    I -->|Mismo contenido| D[200 duplicado: true<br/>no vuelve a imprimir]
-    I -->|Otro contenido| R5[409 ID_REUTILIZADO]
-    I -->|No| PE{¿Impresora y operaciones<br/>permitidas?}
-    PE -->|No| R6[403 IMPRESORA_NO_PERMITIDA · OPERACION_NO_PERMITIDA]
-    PE -->|Sí| OK[Valida el documento, lo encola e imprime]
-```
+Cada petición pasa por estas comprobaciones, en orden, y se detiene en la primera que falla: límite por IP, origen, llave, firma (nivel 3), idempotencia (mismo `id` en los últimos 10 minutos) y permisos sobre la impresora y las operaciones. El árbol completo, con el código de cada rechazo, está en [diagramas/07-orden-autorizacion.md](../diagramas/07-orden-autorizacion.md), y el detalle en [referencia/api-v1.md](../referencia/api-v1.md#orden-de-las-comprobaciones).
 
 Si una petición no trae ni origen ni llave, el puente solo la acepta si trae un documento firmado: identifica a la aplicación por el `cliente_id` de la firma.
 

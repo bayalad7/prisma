@@ -1,6 +1,6 @@
 # Paquetes internos
 
-Cada paquete tiene su comentario de paquete (`go doc ./internal/<paquete>`). El flujo completo de un documento y las dependencias entre paquetes están en [docs/arquitectura.md](../docs/arquitectura.md).
+Cada paquete tiene su comentario de paquete (`go doc ./internal/<paquete>`). El flujo completo de un documento y las dependencias entre paquetes están en [docs/arquitectura/](../docs/arquitectura/README.md).
 
 | Paquete | Responsabilidad |
 |---|---|
@@ -19,4 +19,4 @@ Cada paquete tiene su comentario de paquete (`go doc ./internal/<paquete>`). El 
 | [`dev`](dev/) | Herramientas de desarrollo: decodificador, simulador, previsualización e impresora virtual. |
 | [`version`](version/) | Versión, commit y fecha del binario (se inyectan al compilar). |
 
-El punto de entrada y la CLI están en [`cmd/prisma`](../cmd/prisma/); los comandos se describen en [docs/cli.md](../docs/cli.md).
+El punto de entrada y la CLI están en [`cmd/prisma`](../cmd/prisma/); los comandos se describen en [docs/referencia/cli.md](../docs/referencia/cli.md).

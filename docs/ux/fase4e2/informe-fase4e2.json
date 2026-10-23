@@ -1,0 +1,34 @@
+{
+  "axe": {
+    "busqueda-escritorio": [],
+    "primeros-pasos-escritorio": [],
+    "solucion-escritorio": [],
+    "busqueda-celular": [],
+    "conceptos-celular": []
+  },
+  "desborde": {
+    "busqueda-escritorio": 0,
+    "primeros-pasos-escritorio": 0,
+    "solucion-escritorio": 0,
+    "busqueda-celular": 0,
+    "conceptos-celular": 0
+  },
+  "consola": [],
+  "comprobaciones": [
+    "ok    el manual empieza por «Primeros pasos» ",
+    "ok    buscar sin acentos encuentra la sección ",
+    "ok    resalta las palabras en el extracto ",
+    "ok    la búsqueda queda en la dirección ",
+    "ok    un resultado lleva a su sección https://127.0.0.1:18443/admin/ayuda/administracion/problemas-comunes.md#olvid%C3%A9-la-contrase%C3%B1a-del-panel",
+    "ok    «atrás» vuelve a la búsqueda con sus resultados ",
+    "ok    sin resultados lo dice ",
+    "ok    «Primeros pasos» se dibuja 10 imágenes",
+    "ok    «Conceptos básicos» se dibuja 0 imágenes",
+    "ok    «Tareas frecuentes» se dibuja 0 imágenes",
+    "ok    «Solución de problemas» se dibuja 0 imágenes",
+    "ok    «Preguntas frecuentes» se dibuja 0 imágenes",
+    "ok    las 10 capturas de Primeros pasos se cargan ",
+    "ok    el buscador de una página lleva a los resultados ",
+    "ok    celular: abrir con ?q= muestra los resultados "
+  ]
+}

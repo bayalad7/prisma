@@ -1,0 +1,34 @@
+{
+  "axe": {
+    "plantilla-escritorio": [],
+    "json-error-escritorio": [],
+    "enviado-escritorio": [],
+    "codigo-escritorio": [],
+    "plantilla-celular": []
+  },
+  "desborde": {
+    "plantilla-escritorio": 0,
+    "json-error-escritorio": 0,
+    "enviado-escritorio": 0,
+    "codigo-escritorio": 0,
+    "plantilla-celular": 0
+  },
+  "consola": [],
+  "comprobaciones": [
+    "ok    escritorio: con una virtual empieza con la venta y su vista previa ",
+    "ok    escritorio: «Enviar a» nombra la impresora virtual ",
+    "ok    plantilla con imagen faltante: aviso y error explicado ",
+    "ok    cambiar a JSON conserva el documento ",
+    "ok    un tipo inválido se señala con la operación El documento contiene un tipo de operación que no existe en la versión 1.\n\nUsa texto, separador, fila, par, salto, qr, codigo_barras, imagen, cortar, abrir_cajon o raw.\n\nOperación 1 (textoo) · tipo: debe ser uno de: texto, separador, fila, par, salto, qr, codigo_barras, imagen, cortar, abrir_cajon, raw",
+    "ok    error de sintaxis con renglón y columna El JSON no es válido en el renglón 3, columna 3: Expected ',' or '}' after property value",
+    "ok    volver a JSON conserva lo escrito ",
+    "ok    enviar a la virtual: resultado y respuesta de la API ",
+    "ok    la respuesta trae trabajo_id y advertencias ",
+    "ok    copiar como código: SDK con la impresora y las operaciones ",
+    "ok    copiar como código: curl con id nuevo ",
+    "ok    cambiar de impresora cambia «Enviar a» y el documento ",
+    "ok    impresora física que no responde: error explicado ",
+    "ok    celular: con una virtual empieza con la venta y su vista previa ",
+    "ok    celular: «Enviar a» nombra la impresora virtual "
+  ]
+}

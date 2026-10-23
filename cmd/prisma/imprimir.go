@@ -15,6 +15,7 @@ import (
 	"github.com/bayalad7/prisma/internal/cola"
 	"github.com/bayalad7/prisma/internal/conector"
 	"github.com/bayalad7/prisma/internal/contrato"
+	"github.com/bayalad7/prisma/internal/dev"
 	"github.com/bayalad7/prisma/internal/escpos"
 )
 
@@ -79,7 +80,7 @@ func imprimir(ctx context.Context, c *cobra.Command, alm *almacen.Almacen, ruta,
 	b := make([]byte, 6)
 	rand.Read(b)
 	t := &almacen.Trabajo{ID: "trb_" + hex.EncodeToString(b), DocumentoID: doc.ID, ClienteID: clienteConsola,
-		ImpresoraAlias: alias, Referencia: doc.Referencia}
+		ImpresoraAlias: alias, Virtual: imp.Tipo == almacen.ConexionVirtual, Referencia: doc.Referencia}
 	if err := alm.Trabajos.Crear(ctx, t); err != nil {
 		return err
 	}
@@ -110,5 +111,10 @@ func imprimir(ctx context.Context, c *cobra.Command, alm *almacen.Almacen, ruta,
 		return r.Err
 	}
 	fmt.Fprintf(w, "Impreso en %s (trabajo %s).\n", r.Duracion.Round(time.Millisecond), t.ID)
+	// El rollo de una impresora virtual vive en la memoria de este proceso, que termina aquí: el
+	// ticket se muestra en la terminal. Lo que llega por la API del puente se ve en el panel.
+	if imp.Tipo == almacen.ConexionVirtual {
+		fmt.Fprintf(w, "\n%q es una impresora virtual; así se vería el ticket:\n%s", alias, dev.VistaTexto(dev.Simular(bytesTicket, *imp), false))
+	}
 	return nil
 }

@@ -1,0 +1,33 @@
+{
+  "axe": {
+    "diagrama-claro": [],
+    "diagrama-oscuro": [],
+    "inclusion": [],
+    "diagrama-celular": [],
+    "grande-celular": []
+  },
+  "desborde": {
+    "diagrama-claro": 0,
+    "diagrama-oscuro": 0,
+    "inclusion": 0,
+    "diagrama-celular": 0,
+    "grande-celular": 0
+  },
+  "consola": [],
+  "comprobaciones": [
+    "ok    la página del diagrama lo muestra dibujado ",
+    "ok    sin front-matter a la vista y con «Fuentes en el código» plegado ",
+    "ok    dice para quién es ",
+    "ok    acercar, mover con el teclado y volver al tamaño original translate(0px, 0px) scale(1.25) | translate(40px, 0px) scale(1.5625) | translate(0px, 0px) scale(1)",
+    "ok    «Ver en grande» ocupa la ventana ",
+    "ok    Escape vuelve al tamaño normal ",
+    "ok    «Descargar SVG» baja el archivo {\"s\":200,\"t\":\"image/svg+xml\",\"d\":\"attachment; filename=\\\"07-orden-autorizacion.claro.svg\\\"\"}",
+    "ok    ofrece copiar el código Mermaid ",
+    "ok    en tema oscuro usa la variante oscura ",
+    "ok    los 27 diagramas se dibujan en su página ",
+    "ok    {{diagrama:…}} pone el visor en la guía ",
+    "ok    el panel de ayuda muestra el diagrama ",
+    "ok    si la imagen no carga, muestra el código Mermaid ",
+    "ok    celular: el diagrama cabe a lo ancho "
+  ]
+}

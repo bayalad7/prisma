@@ -59,6 +59,7 @@ type impresoraVisible struct {
 	Nombre  string      `json:"nombre"`
 	AnchoMM int         `json:"ancho_mm"`
 	Estado  cola.Estado `json:"estado"`
+	Virtual bool        `json:"virtual"` // no imprime en papel: el ticket se ve en el panel del puente
 }
 
 // GET /v1/impresoras: solo las impresoras activas que el cliente puede usar.
@@ -95,7 +96,8 @@ func (s *Servidor) impresoras(w http.ResponseWriter, r *http.Request) {
 		if info, ok := s.op.Cola.EstadoDe(imp.Alias); ok {
 			estado = info.Estado
 		}
-		visibles = append(visibles, impresoraVisible{Alias: imp.Alias, Nombre: imp.Nombre, AnchoMM: imp.AnchoMM, Estado: estado})
+		visibles = append(visibles, impresoraVisible{Alias: imp.Alias, Nombre: imp.Nombre, AnchoMM: imp.AnchoMM, Estado: estado,
+			Virtual: imp.Tipo == almacen.ConexionVirtual})
 	}
 	responderJSON(w, http.StatusOK, visibles)
 }
@@ -270,7 +272,7 @@ func (s *Servidor) imprimir(w http.ResponseWriter, r *http.Request) {
 		codigos = append(codigos, a.Codigo)
 	}
 	t := &almacen.Trabajo{ID: trabajoID, DocumentoID: doc.ID, ClienteID: cli.ID, ImpresoraAlias: imp.Alias,
-		Referencia: doc.Referencia, Advertencias: codigos}
+		Virtual: imp.Tipo == almacen.ConexionVirtual, Referencia: doc.Referencia, Advertencias: codigos}
 	if err := s.op.Almacen.Trabajos.Crear(ctx, t); err != nil {
 		s.op.Almacen.IDsRecientes.Liberar(context.WithoutCancel(ctx), cli.ID, doc.ID, trabajoID)
 		s.responderError(w, r, err)
@@ -332,7 +334,7 @@ func (s *Servidor) finalizar(t *almacen.Trabajo, res cola.Resultado, codigos []s
 	if err := s.op.Almacen.Trabajos.Finalizar(ctx, t.ID, estado, codigo, codigos, res.Duracion); err != nil {
 		s.op.Log.Error("no se pudo guardar el resultado del trabajo", "trabajo", t.ID, "error", err.Error())
 	}
-	s.op.Log.Info("trabajo", "trabajo", t.ID, "cliente", t.ClienteID, "impresora", t.ImpresoraAlias,
+	s.op.Log.Info("trabajo", "trabajo", t.ID, "cliente", t.ClienteID, "impresora", t.ImpresoraAlias, "virtual", t.Virtual,
 		"estado", estado, "codigo_error", codigo, "duracion_ms", res.Duracion.Milliseconds())
 }
 

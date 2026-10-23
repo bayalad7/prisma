@@ -11,6 +11,8 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -23,8 +25,15 @@ import (
 	"github.com/bayalad7/prisma/internal/servidor"
 )
 
-//go:embed web/index.html web/panel.css web/panel.js
+//go:embed web/index.html web/panel.css web/panel.js web/textos.js web/sistema.js web/manual.js web/iconos.svg web/estilos.html web/estilos.js
 var archivosWeb embed.FS
+
+// archivosDiagramas son los diagramas de docs/diagramas/ dibujados para el panel (SVG claro y oscuro,
+// con gzip) y su manifiesto. Los genera scripts/docs/generar-diagramas; TestDiagramasVigentes exige
+// que estén al día con los bloques mermaid (ADR 0018).
+//
+//go:embed ayuda/diagramas
+var archivosDiagramas embed.FS
 
 // Opciones del panel.
 type Opciones struct {
@@ -83,6 +92,12 @@ func (a *Admin) Handler() http.Handler {
 	privada("POST /admin/api/impresoras/{alias}/probar", a.probarImpresora)
 	privada("POST /admin/api/impresoras/{alias}/diagnostico", a.diagnostico)
 	privada("POST /admin/api/impresoras/{alias}/paginas-codigos", a.paginasCodigos)
+	privada("POST /admin/api/impresoras/{alias}/acentos-correctos", a.acentosCorrectos)
+	privada("GET /admin/api/impresoras/{alias}/rollo", a.listarRollo)
+	privada("DELETE /admin/api/impresoras/{alias}/rollo", a.vaciarRollo)
+	privada("GET /admin/api/impresoras/{alias}/rollo/{trabajo}/imagen", a.imagenTicket)
+	privada("GET /admin/api/impresoras/{alias}/rollo/{trabajo}/bin", a.binTicket)
+	privada("GET /admin/api/impresoras/{alias}/rollo/{trabajo}/traza", a.trazaTicket)
 
 	privada("GET /admin/api/clientes", a.listarClientes)
 	privada("POST /admin/api/clientes", a.crearCliente)
@@ -95,6 +110,7 @@ func (a *Admin) Handler() http.Handler {
 	privada("GET /admin/api/solicitudes", a.listarSolicitudes)
 	privada("POST /admin/api/solicitudes/aprobar", a.aprobarSolicitud)
 	privada("POST /admin/api/solicitudes/rechazar", a.rechazarSolicitud)
+	privada("POST /admin/api/solicitudes/restaurar", a.restaurarSolicitud)
 	privada("POST /admin/api/solicitudes/olvidar", a.olvidarSolicitud)
 
 	privada("GET /admin/api/trabajos", a.listarTrabajos)
@@ -104,6 +120,15 @@ func (a *Admin) Handler() http.Handler {
 	privada("POST /admin/api/recursos/vista-previa", a.vistaPreviaRecurso)
 	privada("GET /admin/api/recursos/{nombre}/imagen", a.imagenRecurso)
 	privada("DELETE /admin/api/recursos/{nombre}", a.eliminarRecurso)
+
+	privada("GET /admin/api/pruebas/plantillas", a.plantillas)
+	privada("POST /admin/api/pruebas/vista-previa", a.vistaPreviaPrueba)
+	privada("POST /admin/api/pruebas/imprimir", a.imprimirDocumentoPrueba)
+	privada("POST /admin/api/pruebas/permisos", a.comprobarPermisos)
+
+	privada("GET /admin/api/manual", a.listarManual)
+	privada("GET /admin/api/manual/buscar", a.buscarManual)
+	privada("GET /admin/api/diagramas", a.listarDiagramas)
 
 	privada("GET /admin/api/ajustes", a.leerAjustes)
 	privada("PUT /admin/api/ajustes", a.guardarAjustes)
@@ -130,8 +155,12 @@ func (a *Admin) Handler() http.Handler {
 			http.Redirect(w, r, "/admin/", http.StatusMovedPermanently)
 		case strings.HasPrefix(r.URL.Path, "/admin/api/"):
 			api.ServeHTTP(w, r)
+		case strings.HasPrefix(r.URL.Path, "/admin/manual/"):
+			a.conSesion(a.servirManual, false)(w, r)
+		case strings.HasPrefix(r.URL.Path, "/admin/diagramas/"):
+			a.conSesion(a.servirDiagrama, false)(w, r)
 		default:
-			servirEstatico(w, r, estaticos)
+			servirEstatico(w, r, estaticos, a.op.Config.Dev.ModoDesarrollo)
 		}
 	})
 }
@@ -140,14 +169,36 @@ var tiposEstaticos = map[string]string{
 	"index.html": "text/html; charset=utf-8",
 	"panel.css":  "text/css; charset=utf-8",
 	"panel.js":   "text/javascript; charset=utf-8",
+	"textos.js":  "text/javascript; charset=utf-8",
+	"sistema.js": "text/javascript; charset=utf-8",
+	"manual.js":  "text/javascript; charset=utf-8",
+	"iconos.svg": "image/svg+xml",
 }
 
-func servirEstatico(w http.ResponseWriter, r *http.Request, estaticos fs.FS) {
+// paginasDesarrollo: la galería del sistema de diseño (/admin/estilos) solo existe con
+// modo_desarrollo; en producción responde 404.
+var paginasDesarrollo = map[string]struct{ archivo, tipo string }{
+	"estilos":    {"estilos.html", "text/html; charset=utf-8"},
+	"estilos.js": {"estilos.js", "text/javascript; charset=utf-8"},
+}
+
+// vistasPanel son las rutas de las pantallas del panel: todas sirven index.html y panel.js dibuja
+// la pantalla según la ruta (deben coincidir con SECCIONES de panel.js).
+var vistasPanel = []string{"impresoras", "solicitudes", "trabajos", "pruebas", "aplicaciones", "imagenes", "ajustes", "ayuda"}
+
+// subvistas son pantallas dentro de una sección: el comprobador de permisos, el rollo en vivo de
+// una impresora virtual (/admin/pruebas/rollo/{alias}) y cada página del manual (/admin/ayuda/{ruta}).
+var subvistas = regexp.MustCompile(`^(pruebas/(permisos|rollo/[a-z0-9][a-z0-9_-]{0,31})|ayuda/([a-z]+/[A-Za-z0-9-]+\.md|no-imprime|diagramas))$`)
+
+func servirEstatico(w http.ResponseWriter, r *http.Request, estaticos fs.FS, desarrollo bool) {
 	nombre := strings.TrimPrefix(r.URL.Path, "/admin/")
-	if nombre == "" {
+	if nombre == "" || slices.Contains(vistasPanel, nombre) || subvistas.MatchString(nombre) {
 		nombre = "index.html"
 	}
 	tipo, ok := tiposEstaticos[nombre]
+	if p, existe := paginasDesarrollo[nombre]; existe && desarrollo {
+		nombre, tipo, ok = p.archivo, p.tipo, true
+	}
 	if !ok || (r.Method != http.MethodGet && r.Method != http.MethodHead) {
 		http.NotFound(w, r)
 		return

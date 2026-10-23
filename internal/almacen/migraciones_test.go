@@ -2,6 +2,7 @@ package almacen
 
 import (
 	"database/sql"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -158,4 +159,45 @@ func TestMigracion0002ConservaReferencias(t *testing.T) {
 	if nivel != 3 || activo != 1 {
 		t.Fatalf("cliente de nivel 3: nivel %d, activo %d", nivel, activo)
 	}
+}
+
+// TestMigracion0005ConservaImpresoras: la reconstrucción de impresoras (tipo virtual) conserva los
+// id, los permisos de los clientes y la confirmación de impresión de una base de 0.1.0.
+func TestMigracion0005ConservaImpresoras(t *testing.T) {
+	db := memoriaSinMigrar(t)
+	todas, _ := cargarMigraciones(migracionesFS)
+	hasta4 := fstest.MapFS{}
+	for _, m := range todas[:4] {
+		hasta4[fmt.Sprintf("migraciones/%04d_%s.sql", m.version, m.nombre)] = &fstest.MapFile{Data: []byte(m.sql)}
+	}
+	exigirSinError(t, migrar(ctx, db, hasta4))
+	for _, q := range []string{
+		`INSERT INTO impresoras (id, alias, nombre, tipo, destino, ancho_mm, columnas, columnas_fuente_b, ancho_px,
+			pagina_codigos, comando_pagina_codigos, confirmar_impresion, creada, actualizada)
+			VALUES (7, 'caja', 'c', 'red', '192.168.1.50:9100', 80, 48, 64, 576, 'CP858', 19, 1, 0, 0)`,
+		`INSERT INTO clientes (id, nombre, nivel, llave_publica, creado, actualizado)
+			VALUES ('cli_firma0001', 'Firma', 3, randomblob(32), 0, 0)`,
+		`INSERT INTO clientes_impresoras VALUES ('cli_firma0001', 7)`,
+		`INSERT INTO trabajos (id, documento_id, cliente_id, impresora_alias, estado, creado)
+			VALUES ('trb_1', 'd', 'cli_firma0001', 'caja', 'completado', 0)`,
+	} {
+		_, err := db.ExecContext(ctx, q)
+		exigirSinError(t, err)
+	}
+
+	exigirSinError(t, migrar(ctx, db, migracionesFS))
+	var id, confirmar, permisos, virtualTrabajo, fk int
+	var simulacion string
+	exigirSinError(t, db.QueryRowContext(ctx, `SELECT id, confirmar_impresion, simulacion FROM impresoras WHERE alias = 'caja'`).Scan(&id, &confirmar, &simulacion))
+	db.QueryRowContext(ctx, `SELECT count(*) FROM clientes_impresoras WHERE impresora_id = 7`).Scan(&permisos)
+	db.QueryRowContext(ctx, `SELECT virtual FROM trabajos WHERE id = 'trb_1'`).Scan(&virtualTrabajo)
+	db.QueryRowContext(ctx, `PRAGMA foreign_keys`).Scan(&fk)
+	if id != 7 || confirmar != 1 || simulacion != SimulacionNormal || permisos != 1 || virtualTrabajo != 0 || fk != 1 {
+		t.Fatalf("id %d, confirmar %d, simulación %q, permisos %d, trabajo virtual %d, claves foráneas %d",
+			id, confirmar, simulacion, permisos, virtualTrabajo, fk)
+	}
+	_, err := db.ExecContext(ctx, `INSERT INTO impresoras (alias, nombre, tipo, destino, ancho_mm, columnas, columnas_fuente_b,
+		ancho_px, pagina_codigos, comando_pagina_codigos, simulacion, creada, actualizada)
+		VALUES ('prueba', 'p', 'virtual', 'memoria', 80, 48, 64, 576, 'CP858', 19, 'falla_aleatoria', 0, 0)`)
+	exigirSinError(t, err)
 }

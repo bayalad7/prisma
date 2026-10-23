@@ -106,7 +106,7 @@ func (s *Serie) traducir(err error) error {
 				"Cierra el programa que lo usa (otra aplicación de impresión o un monitor serie).", err)
 		case serial.PortNotFound:
 			return nuevoError(ErrImpresoraNoEncontrada, fmt.Sprintf("No existe el puerto %s.", s.Puerto),
-				"Empareja la impresora y usa el puerto que asignó el sistema (ver docs/conectores.md).", err)
+				"Empareja la impresora y usa el puerto que asignó el sistema (ver docs/instalacion/impresoras.md).", err)
 		case serial.PermissionDenied:
 			return nuevoError(ErrPermisoDenegado, fmt.Sprintf("No hay permiso para abrir %s.", s.Puerto),
 				"En Linux agrega el usuario del servicio al grupo dialout.", err)
@@ -116,7 +116,7 @@ func (s *Serie) traducir(err error) error {
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
 		return nuevoError(ErrImpresoraNoEncontrada, fmt.Sprintf("No existe el puerto %s.", s.Puerto),
-			"Empareja la impresora y usa el puerto que asignó el sistema (ver docs/conectores.md).", err)
+			"Empareja la impresora y usa el puerto que asignó el sistema (ver docs/instalacion/impresoras.md).", err)
 	case errors.Is(err, fs.ErrPermission):
 		return nuevoError(ErrPermisoDenegado, fmt.Sprintf("No hay permiso para abrir %s.", s.Puerto),
 			"En Linux agrega el usuario del servicio al grupo dialout.", err)

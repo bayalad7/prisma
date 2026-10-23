@@ -1,0 +1,132 @@
+{
+  "grupos": [
+    {
+      "id": "empezar",
+      "titulo": "Empezar",
+      "documentos": [
+        "administracion/primeros-pasos.md",
+        "administracion/conceptos.md",
+        "administracion/README.md",
+        "administracion/preguntas-frecuentes.md"
+      ]
+    },
+    {
+      "id": "panel",
+      "titulo": "Usar el panel",
+      "documentos": [
+        "administracion/tareas-frecuentes.md",
+        "administracion/inicio.md",
+        "administracion/impresoras.md",
+        "administracion/aplicaciones-y-solicitudes.md",
+        "administracion/trabajos.md",
+        "administracion/probar-impresion.md",
+        "administracion/probar-sin-impresora.md",
+        "administracion/imagenes.md",
+        "administracion/ajustes.md"
+      ]
+    },
+    {
+      "id": "problemas",
+      "titulo": "Solución de problemas",
+      "documentos": [
+        "administracion/solucion-de-problemas.md",
+        "administracion/problemas-comunes.md",
+        "instalacion/problemas-comunes.md",
+        "integradores/problemas-comunes.md"
+      ]
+    },
+    {
+      "id": "instalacion",
+      "titulo": "Instalación",
+      "documentos": [
+        "instalacion/README.md",
+        "instalacion/windows.md",
+        "instalacion/macos.md",
+        "instalacion/linux-raspberry-pi.md",
+        "instalacion/impresoras.md",
+        "instalacion/https-y-certificados.md",
+        "instalacion/instalacion-manual.md"
+      ]
+    },
+    {
+      "id": "operacion",
+      "titulo": "Operación",
+      "documentos": [
+        "operacion/README.md",
+        "operacion/respaldo-y-restauracion.md",
+        "operacion/actualizacion.md",
+        "operacion/bitacoras.md",
+        "operacion/monitoreo.md",
+        "operacion/recuperacion.md"
+      ]
+    },
+    {
+      "id": "integradores",
+      "titulo": "Para quien programa",
+      "documentos": [
+        "integradores/README.md",
+        "integradores/inicio-rapido.md",
+        "integradores/niveles-de-seguridad.md",
+        "integradores/sdk.md",
+        "integradores/firmar-documentos.md"
+      ]
+    },
+    {
+      "id": "seguridad",
+      "titulo": "Seguridad",
+      "documentos": [
+        "seguridad/README.md",
+        "seguridad/politicas.md",
+        "seguridad/modelo-de-amenazas.md"
+      ]
+    },
+    {
+      "id": "referencia",
+      "titulo": "Referencia",
+      "documentos": [
+        "referencia/glosario.md",
+        "referencia/codigos-de-error.md",
+        "referencia/cli.md",
+        "referencia/configuracion.md",
+        "referencia/api-v1.md",
+        "referencia/contrato-documento-v1.md"
+      ]
+    },
+    {
+      "id": "como-funciona",
+      "titulo": "Cómo funciona",
+      "documentos": [
+        "diagramas/README.md",
+        "diagramas/30-como-funciona.md",
+        "diagramas/31-viaje-de-un-ticket.md",
+        "diagramas/01-contexto.md",
+        "diagramas/02-componentes.md",
+        "diagramas/03-flujo-impresion.md",
+        "diagramas/04-secuencia-nivel-1.md",
+        "diagramas/05-secuencia-nivel-2.md",
+        "diagramas/06-secuencia-nivel-3.md",
+        "diagramas/07-orden-autorizacion-detalle.md",
+        "diagramas/07-orden-autorizacion.md",
+        "diagramas/08-ciclo-vida-trabajo.md",
+        "diagramas/09-cola-por-impresora.md",
+        "diagramas/10-solicitudes-origen.md",
+        "diagramas/11-modelo-datos.md",
+        "diagramas/12-modos-tls.md",
+        "diagramas/14-arranque-servicio.md",
+        "diagramas/15-panel-navegacion.md",
+        "diagramas/16-panel-sesion.md",
+        "diagramas/17-deteccion-impresoras.md",
+        "diagramas/18-conectores.md",
+        "diagramas/19-despliegue.md",
+        "diagramas/20-ci-release.md",
+        "diagramas/23-diagnostico-problemas.md",
+        "diagramas/24-idempotencia.md",
+        "diagramas/25-confirmar-impresion.md",
+        "diagramas/26-estados-impresora.md",
+        "diagramas/27-elegir-nivel.md",
+        "diagramas/28-actualizacion.md",
+        "diagramas/29-impresora-virtual.md"
+      ]
+    }
+  ]
+}

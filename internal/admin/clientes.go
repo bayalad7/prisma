@@ -508,6 +508,11 @@ func (a *Admin) rechazarSolicitud(w http.ResponseWriter, r *http.Request) {
 	a.cambiarSolicitud(w, r, a.op.Almacen.Solicitudes.Rechazar)
 }
 
+// restaurarSolicitud deshace un rechazo: la solicitud vuelve a pendientes.
+func (a *Admin) restaurarSolicitud(w http.ResponseWriter, r *http.Request) {
+	a.cambiarSolicitud(w, r, a.op.Almacen.Solicitudes.Restaurar)
+}
+
 func (a *Admin) olvidarSolicitud(w http.ResponseWriter, r *http.Request) {
 	a.cambiarSolicitud(w, r, a.op.Almacen.Solicitudes.Eliminar)
 }

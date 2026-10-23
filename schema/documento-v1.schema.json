@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://prisma.local/schema/documento-v1.schema.json",
   "title": "PRISMA — documento v1",
-  "description": "Documento que una aplicación envía a un puente PRISMA para imprimir un ticket. Especificación completa en docs/contrato-documento-v1.md. Algunas reglas (dígito verificador, reparto de columnas, tamaño del cuerpo, vigencia de la firma) solo puede comprobarlas el puente.",
+  "description": "Documento que una aplicación envía a un puente PRISMA para imprimir un ticket. Especificación completa en docs/referencia/contrato-documento-v1.md. Algunas reglas (dígito verificador, reparto de columnas, tamaño del cuerpo, vigencia de la firma) solo puede comprobarlas el puente.",
   "type": "object",
   "additionalProperties": false,
   "required": ["version", "id", "impresora", "operaciones"],

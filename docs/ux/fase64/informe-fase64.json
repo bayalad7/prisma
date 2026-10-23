@@ -1,0 +1,27 @@
+{
+  "axe": {
+    "todo-bien-escritorio": [],
+    "origen-escritorio": [],
+    "comprobador-celular": []
+  },
+  "desborde": {
+    "todo-bien-escritorio": 0,
+    "origen-escritorio": 0,
+    "comprobador-celular": 0
+  },
+  "consola": [],
+  "comprobaciones": [
+    "ok    «Comprobar permisos» abre el comprobador con la aplicación ",
+    "ok    su caso típico puede imprimir Puede imprimir: la API aceptaría el ticket de «Mi app en desarrollo» en «barra».",
+    "ok    sin llave: 401 LLAVE_REQUERIDA y los pasos siguientes no se revisan ",
+    "ok    origen desconocido: 403 ORIGEN_NO_AUTORIZADO, sin decir que quedó pendiente ",
+    "ok    el comprobador no registra la solicitud ",
+    "ok    al cambiar de aplicación propone su página y una impresora permitida Puede imprimir: la API aceptaría el ticket de «Menú digital» en «cocina».",
+    "ok    impresora no permitida: 403 IMPRESORA_NO_PERMITIDA ",
+    "ok    abrir_cajon permitido a «Punto de venta web» Puede imprimir: la API aceptaría el ticket de «Punto de venta web» en «caja».",
+    "ok    raw sin permiso: OPERACION_NO_PERMITIDA ",
+    "ok    origen de otra aplicación con su llave: LLAVE_INVALIDA La API respondería 401 LLAVE_INVALIDA\n\nCómo resolverlo: Revisa la llave de cliente o pide una nueva al dueño del puente.\n\nEditar la aplicación",
+    "ok    sin llave en el origen de otra: imprimiría como esa otra La API respondería 401 LLAVE_REQUERIDA\n\nCómo resolverlo: Agrega el encabezado Authorization: Bearer pk_… con la llave que entregó el panel.\n\nEditar la aplicación",
+    "ok    «Probar impresión» lleva al comprobador "
+  ]
+}

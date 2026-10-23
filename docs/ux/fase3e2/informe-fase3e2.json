@@ -1,0 +1,29 @@
+{
+  "axe": {
+    "nuevo-inicio-escritorio": [],
+    "nuevo-prueba-escritorio": [],
+    "nuevo-inicio-celular": [],
+    "demo-inicio-escritorio": [],
+    "demo-inicio-celular": [],
+    "demo-inicio-escritorio-oscuro": []
+  },
+  "desborde": {
+    "nuevo-inicio-escritorio": 0,
+    "nuevo-prueba-escritorio": 0,
+    "nuevo-inicio-celular": 0,
+    "demo-inicio-escritorio": 0,
+    "demo-inicio-celular": 0,
+    "demo-inicio-escritorio-oscuro": 0
+  },
+  "consola": [],
+  "comprobaciones": [
+    "ok    recién instalado: 1 de 4 pasos 1 de 4 pasos completados",
+    "ok    crear la virtual lleva a Impresoras https://127.0.0.1:8444/admin/impresoras",
+    "ok    con impresora: 2 de 5 pasos (sugiere la física) 2 de 5 pasos completados",
+    "ok    tras la prueba: 3 de 5 pasos 3 de 5 pasos completados",
+    "ok    ocultar deja el botón para retomarlos ",
+    "ok    siguen ocultos al recargar ",
+    "ok    muestra cuántas cosas revisar ",
+    "ok    «Revisar» de la impresora lleva a Impresoras "
+  ]
+}

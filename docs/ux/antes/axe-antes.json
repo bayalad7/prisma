@@ -1,0 +1,80 @@
+{
+  "10-entrar-escritorio": [],
+  "12-inicio-escritorio": [],
+  "20-impresoras-escritorio": [],
+  "22-diagnostico-escritorio": [
+    {
+      "id": "scrollable-region-focusable",
+      "impacto": "serious",
+      "ayuda": "Scrollable region must have keyboard access",
+      "nodos": 1,
+      "ejemplos": [
+        "pre"
+      ]
+    }
+  ],
+  "25-asistente-paso1-escritorio": [],
+  "26-asistente-paso2-escritorio": [],
+  "40-aplicaciones-escritorio": [],
+  "42-aplicacion-nueva-escritorio": [],
+  "44-llave-nueva-escritorio": [
+    {
+      "id": "scrollable-region-focusable",
+      "impacto": "serious",
+      "ayuda": "Scrollable region must have keyboard access",
+      "nodos": 1,
+      "ejemplos": [
+        "pre"
+      ]
+    }
+  ],
+  "50-solicitudes-escritorio": [],
+  "60-trabajos-escritorio": [],
+  "70-imagenes-escritorio": [],
+  "80-ajustes-escritorio": [],
+  "90-ayuda-escritorio": [],
+  "10-entrar-celular": [],
+  "12-inicio-celular": [
+    {
+      "id": "scrollable-region-focusable",
+      "impacto": "serious",
+      "ayuda": "Scrollable region must have keyboard access",
+      "nodos": 1,
+      "ejemplos": [
+        ".tabla-caja"
+      ]
+    }
+  ],
+  "20-impresoras-celular": [],
+  "22-diagnostico-celular": [
+    {
+      "id": "scrollable-region-focusable",
+      "impacto": "serious",
+      "ayuda": "Scrollable region must have keyboard access",
+      "nodos": 1,
+      "ejemplos": [
+        "pre"
+      ]
+    }
+  ],
+  "25-asistente-paso1-celular": [],
+  "26-asistente-paso2-celular": [],
+  "40-aplicaciones-celular": [],
+  "42-aplicacion-nueva-celular": [],
+  "44-llave-nueva-celular": [
+    {
+      "id": "scrollable-region-focusable",
+      "impacto": "serious",
+      "ayuda": "Scrollable region must have keyboard access",
+      "nodos": 1,
+      "ejemplos": [
+        "pre"
+      ]
+    }
+  ],
+  "50-solicitudes-celular": [],
+  "60-trabajos-celular": [],
+  "70-imagenes-celular": [],
+  "80-ajustes-celular": [],
+  "90-ayuda-celular": []
+}

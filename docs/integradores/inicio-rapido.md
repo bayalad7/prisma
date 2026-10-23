@@ -6,9 +6,9 @@ Al terminar tendrás una página HTML, sin backend ni compilación, que imprime 
 
 1. **Un puente PRISMA en marcha** en la red, con una impresora configurada.
    - Si el negocio ya tiene uno, pide al dueño su IP y el alias de la impresora.
-   - Si no, instálalo en tu propia PC ([instalacion.md](../instalacion.md)) o compílalo y ejecútalo desde el código ([primeros-pasos.md](../primeros-pasos.md)).
+   - Si no, instálalo en tu propia PC ([instalacion/](../instalacion/README.md)) o compílalo y ejecútalo desde el código ([primeros-pasos.md](../desarrollo/primeros-pasos.md)).
    - Para probar sin hardware, usa la impresora virtual: ejecuta `prisma dev impresora-virtual --puerto 9100` en el mismo equipo del puente y, en el panel, *Impresoras → Agregar* con alias `caja`, tipo **Red** y destino `127.0.0.1:9100`. Cada ticket aparece en esa terminal. También sirve una impresora de tipo *Archivo*, que guarda cada ticket en una carpeta.
-2. **Un equipo de esa misma red que confíe en el certificado del puente.** Para comprobarlo, abre `https://<ip-del-puente>:8443/v1/salud` en ese equipo: debe responder `{"ok":true,…}` sin advertencia de seguridad. Si aparece una advertencia, instala el certificado como explica [tls.md](../tls.md#confiar-en-el-certificado).
+2. **Un equipo de esa misma red que confíe en el certificado del puente.** Para comprobarlo, abre `https://<ip-del-puente>:8443/v1/salud` en ese equipo: debe responder `{"ok":true,…}` sin advertencia de seguridad. Si aparece una advertencia, instala el certificado como explica [instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md#confiar-en-el-certificado).
 3. **Node.js**, solo para servir la página con `npx serve`. Sirve cualquier otro servidor estático.
 
 ## 1. Escribe la página
@@ -19,7 +19,7 @@ Guarda esto como `index.html` en una carpeta vacía:
 <!doctype html>
 <meta charset="utf-8">
 <button id="imprimir">Imprimir</button>
-<script src="https://cdn.jsdelivr.net/gh/bayalad7/prisma@develop/sdk/js/dist/prisma.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/bayalad7/prisma@v0.2.0/sdk/js/dist/prisma.umd.js"></script>
 <script>
   const prisma = new Prisma({ url: "https://192.168.1.10:8443", llave: "pk_..." });
   document.getElementById("imprimir").onclick = () => prisma
@@ -31,7 +31,7 @@ Guarda esto como `index.html` en una carpeta vacía:
 
 Cambia `192.168.1.10` por la IP del puente y `"caja"` por el alias de tu impresora: es el que aparece en el panel, en *Impresoras* (también lo lista `await prisma.impresoras()` una vez que tengas la llave). Por ahora deja `pk_...` tal cual: la llave real llega en el paso 3.
 
-> ⏳ Mientras no haya una versión publicada en npm, el SDK se sirve desde la rama `develop` del repositorio. Cuando exista, cambia la dirección por `https://cdn.jsdelivr.net/npm/@bayalad7/prisma@0.1/dist/prisma.umd.js` (fija la versión y no cambia sin aviso).
+> La dirección fija la versión del SDK (`@v0.1.0`), así que tu página no cambia sin aviso. Para actualizar, cambia el número por el de una versión más nueva. Todas las formas de instalarlo están en [sdk.md](sdk.md#instalación).
 
 ## 2. Sírvela
 
@@ -50,7 +50,7 @@ Si en cambio ves **«No se pudo conectar con el puente en https://…»**, el na
 
 ## 3. Pide la autorización
 
-> Si eres tú quien abre el panel por primera vez desde otro equipo, te pedirá un código de configuración que se obtiene en el equipo del puente. Ver [panel.md, Primer acceso](../panel.md#primer-acceso).
+> Si eres tú quien abre el panel por primera vez desde otro equipo, te pedirá un código de configuración que se obtiene en el equipo del puente. Ver [panel.md, Primer acceso](../administracion/README.md#primer-acceso).
 
 En el panel del puente (`https://<ip-del-puente>:8443/admin`), el dueño:
 
@@ -78,7 +78,7 @@ await prisma.imprimir("caja", (doc) => doc
 - Cada ticket lleva un id nuevo. Si falla la red, el SDK reintenta con el **mismo** id, y el puente no imprime dos veces.
 - Para ver cómo saldrá sin gastar papel: `const html = await prisma.previsualizar("caja", (doc) => …)`.
 
-Todas las operaciones (filas, códigos de barras, imágenes, cajón…) están en [referencia-sdk.md](referencia-sdk.md).
+Todas las operaciones (filas, códigos de barras, imágenes, cajón…) están en [integradores/sdk.md](sdk.md).
 
 ## Siguientes pasos
 

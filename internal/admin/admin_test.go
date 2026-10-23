@@ -25,6 +25,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"testing"
@@ -50,6 +51,26 @@ type banco struct {
 
 	mu    sync.Mutex
 	ahora time.Time
+
+	bitacora *bitacoraPrueba // lo que el puente y el panel escriben en la bitácora
+}
+
+// bitacoraPrueba guarda la bitácora en memoria; la cola y los manejadores escriben a la vez.
+type bitacoraPrueba struct {
+	mu  sync.Mutex
+	buf bytes.Buffer
+}
+
+func (b *bitacoraPrueba) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.Write(p)
+}
+
+func (b *bitacoraPrueba) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.String()
 }
 
 func (b *banco) reloj() time.Time {
@@ -76,10 +97,12 @@ func nuevoBanco(t *testing.T) *banco {
 	t.Cleanup(q.Cerrar)
 	cfg := config.PorDefecto()
 	cfg.Datos.Ruta = t.TempDir()
-	srv := servidor.Nuevo(servidor.Opciones{Almacen: alm, Cola: q, Limites: config.Limites{}, Version: "prueba", TiempoRespuesta: 10 * time.Second})
-	b := &banco{t: t, alm: alm, srv: srv, ahora: time.Date(2026, 10, 19, 12, 0, 0, 0, time.Local)}
+	bitacora := &bitacoraPrueba{}
+	log := slog.New(slog.NewJSONHandler(bitacora, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	srv := servidor.Nuevo(servidor.Opciones{Almacen: alm, Cola: q, Limites: config.Limites{}, Version: "prueba", TiempoRespuesta: 10 * time.Second, Log: log})
+	b := &banco{t: t, alm: alm, srv: srv, ahora: time.Date(2026, 10, 19, 12, 0, 0, 0, time.Local), bitacora: bitacora}
 	b.aviso = &actualizacion.Aviso{}
-	b.adm = Nuevo(Opciones{Almacen: alm, Servidor: srv, Cola: q, Config: cfg, Version: "prueba", Ahora: b.reloj, Aviso: b.aviso})
+	b.adm = Nuevo(Opciones{Almacen: alm, Servidor: srv, Cola: q, Config: cfg, Version: "prueba", Ahora: b.reloj, Aviso: b.aviso, Log: log})
 	srv.MontarPanel(b.adm.Handler())
 	b.h = srv.Handler()
 	return b
@@ -337,6 +360,19 @@ func TestSesionCSRFYVencimiento(t *testing.T) {
 	b.avanzar(inactividadMaxima + time.Second)
 	s.exigirError("GET", "/admin/api/resumen", nil, 401, "SESION_REQUERIDA")
 
+	// Las peticiones automáticas del panel (el rollo en vivo) comprueban la sesión sin renovarla:
+	// una pantalla abierta no impide el cierre por inactividad.
+	s = b.configurado()
+	sondeo := func(r *http.Request) { r.Header.Set(cabeceraSondeo, "1") }
+	b.avanzar(20 * time.Minute)
+	if r := s.pedir("GET", "/admin/api/resumen", nil, sondeo); r.Code != 200 {
+		t.Fatalf("el sondeo con la sesión vigente debe responder: %d %s", r.Code, r.Body.String())
+	}
+	b.avanzar(20 * time.Minute)
+	if r := s.pedir("GET", "/admin/api/resumen", nil, sondeo); r.codigo() != "SESION_REQUERIDA" {
+		t.Fatalf("el sondeo no debe renovar la sesión: %d %s", r.Code, r.Body.String())
+	}
+
 	// Restablecer la contraseña desde la CLI cierra las sesiones abiertas.
 	s = b.configurado()
 	hash, _ := seguridad.HashContrasena("otra contraseña larga")
@@ -572,6 +608,11 @@ func TestClientesNivelesYLlaves(t *testing.T) {
 	if pedidos["huella_publica"] != seguridad.HuellaLlavePublica(publica) || r.datos["llave"] != nil {
 		t.Fatalf("nivel 3: %v", r.datos)
 	}
+	// Sin llave, el panel solo puede darle a su backend el id para firmar: con la forma que exigen
+	// los firmadores (cli_ y de 8 a 40 letras o números).
+	if id, _ := pedidos["id"].(string); !regexp.MustCompile(`^cli_[A-Za-z0-9]{16}$`).MatchString(id) {
+		t.Fatalf("nivel 3: el id de la aplicación debe venir en la respuesta: %v", pedidos["id"])
+	}
 	s.exigirError("POST", "/admin/api/clientes", map[string]any{"nombre": "X", "nivel": 2, "operaciones_sensibles": []string{"formatear"}}, 400, "DATOS_INVALIDOS")
 
 	// Pasar a nivel 2 genera la llave; regenerarla invalida la anterior; revocarla la quita.
@@ -623,6 +664,13 @@ func TestSolicitudesAprobarConAplicacionNuevaRechazarYOlvidar(t *testing.T) {
 	json.Unmarshal(s.exigir("GET", "/admin/api/solicitudes", nil, 200).Body.Bytes(), &lista)
 	if len(lista) != 1 || lista[0].Origen != "https://b.example" || lista[0].Estado != "rechazada" {
 		t.Fatalf("solicitudes: %+v", lista)
+	}
+	// «Deshacer» el rechazo: vuelve a pendientes, y solo una vez.
+	s.exigir("POST", "/admin/api/solicitudes/restaurar", map[string]any{"origen": "https://b.example"}, 200)
+	s.exigirError("POST", "/admin/api/solicitudes/restaurar", map[string]any{"origen": "https://b.example"}, 404, "SOLICITUD_NO_ENCONTRADA")
+	json.Unmarshal(s.exigir("GET", "/admin/api/solicitudes", nil, 200).Body.Bytes(), &lista)
+	if len(lista) != 1 || lista[0].Estado != "pendiente" {
+		t.Fatalf("restaurada: %+v", lista)
 	}
 }
 

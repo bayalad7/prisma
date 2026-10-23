@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -51,12 +52,18 @@ type Servidor struct {
 	aut        *seguridad.Autorizador
 	porIP      *seguridad.Limitador
 	porCliente *seguridad.Limitador
+	porPanel   *seguridad.Limitador
 
 	mu          sync.Mutex
 	registradas map[string]time.Time // alias → versión del perfil registrada en la cola
 	panel       http.Handler
 	iniciado    time.Time
 }
+
+// LimitePanelPorMinuto es el límite por IP del panel (/admin), aparte del de la API: abrir el panel
+// cuesta una decena de peticiones y no debe restarle a una aplicación que imprime desde el mismo
+// equipo, ni al revés. Es fijo; el inicio de sesión tiene además su propio bloqueo por intentos.
+const LimitePanelPorMinuto = 600
 
 // Ajustes de la base de datos que usa el servidor. Mandan sobre los valores de config.toml.
 const (
@@ -78,12 +85,13 @@ func Nuevo(op Opciones) *Servidor {
 	return &Servidor{
 		op: op, aut: seguridad.NuevoAutorizador(op.Almacen),
 		porIP: seguridad.NuevoLimitador(op.Limites.PorIP), porCliente: seguridad.NuevoLimitador(op.Limites.PorCliente),
+		porPanel:    seguridad.NuevoLimitador(LimitePanelPorMinuto),
 		registradas: map[string]time.Time{}, iniciado: time.Now(),
 	}
 }
 
-// MontarPanel sirve el panel de administración en /admin con las mismas protecciones (límite por
-// IP, cabeceras y bitácora) que la API.
+// MontarPanel sirve el panel de administración en /admin con las mismas protecciones (cabeceras y
+// bitácora) que la API y su propio límite por IP (LimitePanelPorMinuto).
 func (s *Servidor) MontarPanel(h http.Handler) { s.panel = h }
 
 // Iniciado es el momento en que arrancó el servidor.
@@ -116,6 +124,14 @@ func (s *Servidor) Autorizador() *seguridad.Autorizador { return s.aut }
 // Limitadores permite ajustar el reloj de los límites en las pruebas.
 func (s *Servidor) Limitadores() (porIP, porCliente *seguridad.Limitador) {
 	return s.porIP, s.porCliente
+}
+
+// LimitadorPanel permite ajustar el límite del panel en las pruebas.
+func (s *Servidor) LimitadorPanel() *seguridad.Limitador { return s.porPanel }
+
+// esPanel dice si la petición es del panel de administración montado en /admin.
+func (s *Servidor) esPanel(r *http.Request) bool {
+	return s.panel != nil && (r.URL.Path == "/admin" || strings.HasPrefix(r.URL.Path, "/admin/"))
 }
 
 // RegistrarImpresoras agrega a la cola todas las impresoras activas (al arrancar).
@@ -188,17 +204,37 @@ func (s *Servidor) SincronizarImpresoras(ctx context.Context) error {
 // ruta asocia métodos con manejadores para una misma ruta.
 type ruta map[string]http.HandlerFunc
 
-// Handler devuelve el manejador HTTP completo: cabeceras de seguridad, límite por IP, bitácora
-// y las rutas de la API.
-func (s *Servidor) Handler() http.Handler {
-	rutas := map[string]ruta{
+// rutas son las de la API pública v1. docs/referencia/openapi.yaml debe listar las mismas (lo
+// comprueba la prueba de docs/).
+func (s *Servidor) rutas() map[string]ruta {
+	return map[string]ruta{
 		"/v1/salud":         {http.MethodGet: s.salud},
 		"/v1/impresoras":    {http.MethodGet: s.impresoras},
 		"/v1/imprimir":      {http.MethodPost: s.imprimir},
 		"/v1/previsualizar": {http.MethodPost: s.previsualizar},
 	}
+}
+
+// RutasPublicas devuelve cada ruta de la API v1 con sus métodos, sin OPTIONS (el preflight de CORS
+// lo atienden todas).
+func RutasPublicas() map[string][]string {
+	var s *Servidor // los métodos solo se nombran, no se llaman
+	salida := map[string][]string{}
+	for ruta, metodos := range s.rutas() {
+		for m := range metodos {
+			salida[ruta] = append(salida[ruta], m)
+		}
+		slices.Sort(salida[ruta])
+	}
+	return salida
+}
+
+// Handler devuelve el manejador HTTP completo: cabeceras de seguridad, límite por IP, bitácora
+// y las rutas de la API.
+func (s *Servidor) Handler() http.Handler {
+	rutas := s.rutas()
 	enrutar := func(w http.ResponseWriter, r *http.Request) {
-		if s.panel != nil && (r.URL.Path == "/admin" || strings.HasPrefix(r.URL.Path, "/admin/")) {
+		if s.esPanel(r) {
 			s.panel.ServeHTTP(w, r)
 			return
 		}
@@ -254,13 +290,22 @@ func ipDe(r *http.Request) string {
 	return host
 }
 
-// limitarIP aplica el límite de peticiones por IP antes que cualquier otra cosa.
+// limitarIP aplica el límite de peticiones por IP antes que cualquier otra cosa: el de la API o,
+// para /admin, el del panel. Cada uno lleva su cuenta.
 func (s *Servidor) limitarIP(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if ok, espera := s.porIP.Permitir(ipDe(r)); !ok {
+		panel := s.esPanel(r)
+		limitador := s.porIP
+		if panel {
+			limitador = s.porPanel
+		}
+		if ok, espera := limitador.Permitir(ipDe(r)); !ok {
 			// Sin cabeceras CORS, el navegador lo vería como un error de red y el SDK diría «origen
 			// no autorizado». La respuesta solo lleva el error, así que puede leerla cualquier origen.
-			permitirCORS(w, r.Header.Get("Origin"))
+			// El panel es del mismo origen: no las necesita.
+			if !panel {
+				permitirCORS(w, r.Header.Get("Origin"))
+			}
 			s.demasiadas(w, r, espera)
 			return
 		}

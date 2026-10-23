@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// Códigos de error del contrato (docs/contrato-documento-v1.md, §9).
+// Códigos de error del contrato (docs/referencia/contrato-documento-v1.md, §9).
 const (
 	ErrDocumentoDemasiadoGrande = "DOCUMENTO_DEMASIADO_GRANDE"
 	ErrJSONInvalido             = "JSON_INVALIDO"

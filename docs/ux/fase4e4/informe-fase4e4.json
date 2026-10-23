@@ -1,0 +1,82 @@
+{
+  "axe": {
+    "pregunta-escritorio": [],
+    "solucion-escritorio": [],
+    "pregunta-celular": []
+  },
+  "desborde": {
+    "pregunta-escritorio": 0,
+    "solucion-escritorio": 0,
+    "pregunta-celular": 0
+  },
+  "consola": [],
+  "comprobaciones": [
+    "ok    la Ayuda lleva a «Mi impresora no imprime» ",
+    "ok    los 10 caminos terminan en una solución con su sección del manual ",
+    "ok    sugiere probar con la impresora virtual ",
+    "ok    llega a la solución con el recorrido a la vista ",
+    "ok    «Empezar de nuevo» vuelve a la primera pregunta "
+  ],
+  "caminos": [
+    {
+      "camino": "No → No responde · IMPRESORA_INALCANZABLE · TIEMPO_AGOTADO",
+      "solucion": true,
+      "seccion": "La impresora no imprime",
+      "cuerpo": 0
+    },
+    {
+      "camino": "No → PUERTO_OCUPADO · PERMISO_DENEGADO",
+      "solucion": true,
+      "seccion": "Linux: la impresora USB no responde (permiso denegado)",
+      "cuerpo": 0
+    },
+    {
+      "camino": "No → PUENTE_OCUPADO",
+      "solucion": true,
+      "seccion": "503 PUENTE_OCUPADO",
+      "cuerpo": 0
+    },
+    {
+      "camino": "No → Dice que salió, pero no salió → Sí",
+      "solucion": true,
+      "seccion": "Dice «impreso», pero no salió (impresora de red)",
+      "cuerpo": 0
+    },
+    {
+      "camino": "No → Dice que salió, pero no salió → No, USB en Windows",
+      "solucion": true,
+      "seccion": "Windows dice que imprimió, pero no salió nada",
+      "cuerpo": 0
+    },
+    {
+      "camino": "Sí → Sí",
+      "solucion": true,
+      "seccion": "Elegir en qué impresoras imprime una aplicación",
+      "cuerpo": 0
+    },
+    {
+      "camino": "Sí → No → No: error de red → Aviso de certificado",
+      "solucion": true,
+      "seccion": "Confiar en el certificado",
+      "cuerpo": 0
+    },
+    {
+      "camino": "Sí → No → No: error de red → No carga",
+      "solucion": true,
+      "seccion": "El panel o las aplicaciones no llegan desde otro equipo",
+      "cuerpo": 0
+    },
+    {
+      "camino": "Sí → No → No: error de red → Sí carga",
+      "solucion": true,
+      "seccion": "Origen no autorizado",
+      "cuerpo": 0
+    },
+    {
+      "camino": "Sí → No → Sí, con un error 401 o 403",
+      "solucion": true,
+      "seccion": "¿Por qué mi app no puede imprimir?",
+      "cuerpo": 0
+    }
+  ]
+}

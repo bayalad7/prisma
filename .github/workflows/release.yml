@@ -1,4 +1,4 @@
-# Publica una versión al empujar una etiqueta v1.2.3. Secretos (ver docs/publicar.md):
+# Publica una versión al empujar una etiqueta v1.2.3. Secretos (ver docs/desarrollo/publicar.md):
 #   PRISMA_LLAVE_RELEASES   obligatorio: llave privada Ed25519 (PEM) que firma checksums.txt
 #   NPM_TOKEN               opcional: publica el SDK en npm si su versión aún no existe
 #   WINDOWS_PFX_BASE64, WINDOWS_PFX_CLAVE                    opcional: firma de código de Windows
@@ -32,7 +32,7 @@ jobs:
       - name: La llave pública de las versiones debe estar en el repositorio
         run: |
           test -s empaquetado/llave-releases.pub || {
-            echo "::error::empaquetado/llave-releases.pub está vacío: sin él, «prisma actualizar» no podría verificar esta versión (ver docs/publicar.md)"
+            echo "::error::empaquetado/llave-releases.pub está vacío: sin él, «prisma actualizar» no podría verificar esta versión (ver docs/desarrollo/publicar.md)"
             exit 1
           }
       - name: Compila las 6 plataformas

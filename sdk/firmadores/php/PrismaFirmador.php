@@ -9,7 +9,7 @@ declare(strict_types=1);
  *     $firmado = PrismaFirmador::firmar($documento, 'cli_…', file_get_contents('privada.pem'));
  *
  * Firma con Ed25519 la forma canónica JCS (RFC 8785) del documento sin «firma», como verifica el
- * puente (docs/contrato-documento-v1.md §7). Sin dependencias de Composer.
+ * puente (docs/referencia/contrato-documento-v1.md §7). Sin dependencias de Composer.
  */
 final class PrismaFirmador
 {

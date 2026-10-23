@@ -1,7 +1,7 @@
 // SDK de PRISMA: imprime en un puente PRISMA desde el navegador o desde Node.js 18+.
 // Sin dependencias. Este archivo es la fuente; dist/ se genera con «npm run construir».
 
-export const VERSION_SDK = '0.1.0';
+export const VERSION_SDK = '0.2.0';
 
 const VERSION_DOCUMENTO = '1';
 const MAX_BYTES_DOCUMENTO = 256 * 1024;
@@ -304,7 +304,7 @@ const dimensionesPNG = (b) => {
 
 const SUGERENCIAS = {
   VERSION_NO_SOPORTADA: 'Envía "version": "1" (como cadena).',
-  OPERACION_DESCONOCIDA: 'Revisa el campo tipo; las operaciones están en docs/contrato-documento-v1.md §4.',
+  OPERACION_DESCONOCIDA: 'Revisa el campo tipo; las operaciones están en docs/referencia/contrato-documento-v1.md §4.',
   DEMASIADAS_OPERACIONES: 'Divide el ticket en varios documentos.',
   DOCUMENTO_INVALIDO: 'Revisa los detalles; cada uno indica el campo y la regla que falló.',
 };
@@ -718,7 +718,7 @@ export class Prisma {
     }
     // El navegador no distingue un certificado no confiable de un equipo apagado: se dan las dos causas.
     const error = this._inalcanzable(e, `No se pudo conectar con el puente en ${this.url}. Si es la primera vez desde este equipo, lo más probable es que el navegador no confíe en su certificado.`,
-      `Abre ${this.url}/v1/salud en una pestaña: si aparece una advertencia de certificado, instala el certificado del puente (docs/tls.md); si la página no carga, revisa que el puente esté encendido y en la misma red.`,
+      `Abre ${this.url}/v1/salud en una pestaña: si aparece una advertencia de certificado, instala el certificado del puente (docs/instalacion/https-y-certificados.md); si la página no carga, revisa que el puente esté encendido y en la misma red.`,
       ['CERTIFICADO_NO_CONFIABLE', 'PUENTE_APAGADO_O_FUERA_DE_RED']);
     // Sin reintentos: lo más probable es el certificado, que no se arregla esperando, y así la
     // persona ve el diagnóstico de inmediato en vez de tras unos segundos.

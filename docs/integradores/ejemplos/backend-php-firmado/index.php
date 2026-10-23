@@ -26,7 +26,7 @@ $h = fn (string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
   </form>
   <p id="resultado" role="status"></p>
 
-  <script src="https://cdn.jsdelivr.net/gh/bayalad7/prisma@develop/sdk/js/dist/prisma.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/bayalad7/prisma@v0.2.0/sdk/js/dist/prisma.umd.js"></script>
   <script>
     // Nivel 3: sin llave en el navegador. El puente verifica la firma que hizo el backend.
     const prisma = new Prisma({ url: <?= json_encode($config['puente']) ?> });

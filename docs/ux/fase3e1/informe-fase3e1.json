@@ -1,0 +1,43 @@
+{
+  "axe": {
+    "inicio-escritorio": [],
+    "trabajos-escritorio": [],
+    "atajos-escritorio": [],
+    "solicitudes-oscuro-escritorio": [],
+    "inicio-celular": [],
+    "menu-celular": [],
+    "trabajos-celular": []
+  },
+  "desborde": {
+    "inicio-escritorio": 0,
+    "trabajos-escritorio": 0,
+    "atajos-escritorio": 0,
+    "solicitudes-oscuro-escritorio": 0,
+    "inicio-celular": 0,
+    "menu-celular": 0,
+    "trabajos-celular": 0
+  },
+  "consola": [],
+  "comprobaciones": [
+    "ok    escritorio: #clientes redirige https://127.0.0.1:18443/admin/aplicaciones",
+    "ok    escritorio: título de la página Aplicaciones · PRISMA",
+    "ok    escritorio: el foco queda en el h1 ",
+    "ok    escritorio: «Saltar al contenido» es lo primero y se ve con el foco saltar",
+    "ok    escritorio: el menú lleva a /admin/trabajos https://127.0.0.1:18443/admin/trabajos",
+    "ok    escritorio: Atrás vuelve a Inicio ",
+    "ok    escritorio: carga directa de /admin/imagenes ",
+    "ok    escritorio: marca la sección actual ",
+    "ok    atajo g p abre Impresoras https://127.0.0.1:18443/admin/impresoras",
+    "ok    con los atajos desactivados, g t no navega https://127.0.0.1:18443/admin/impresoras",
+    "ok    el contador de solicitudes se ve ",
+    "ok    celular: #clientes redirige https://127.0.0.1:18443/admin/aplicaciones",
+    "ok    celular: título de la página Aplicaciones · PRISMA",
+    "ok    celular: el foco queda en el h1 ",
+    "ok    celular: «Saltar al contenido» es lo primero y se ve con el foco saltar",
+    "ok    celular: Escape cierra el menú ",
+    "ok    celular: el menú lleva a /admin/trabajos https://127.0.0.1:18443/admin/trabajos",
+    "ok    celular: Atrás vuelve a Inicio ",
+    "ok    celular: carga directa de /admin/imagenes ",
+    "ok    celular: marca la sección actual "
+  ]
+}

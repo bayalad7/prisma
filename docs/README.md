@@ -1,60 +1,79 @@
 # Documentación de PRISMA
 
-PRISMA es un puente de impresión. Se instala en un equipo de la red local de un negocio, recibe documentos JSON con las operaciones de un ticket y los imprime en impresoras térmicas por red, USB o Bluetooth.
+PRISMA es un puente de impresión. Se instala en un equipo de la red local de un negocio, recibe documentos JSON con las operaciones de un ticket y los imprime en impresoras térmicas por red, USB o Bluetooth. Esta documentación corresponde a la versión **0.1.0** ([registro de cambios](../CHANGELOG.md)).
 
-## Por dónde empezar
+## Según quién eres
 
-| Si quieres… | Lee |
+### Integras PRISMA en tu aplicación
+
+| Para… | Lee |
 |---|---|
-| Ver PRISMA funcionando en 5 minutos, sin impresora | [primeros-pasos.md](primeros-pasos.md) |
-| Instalarlo en el equipo de un negocio (Windows, Raspberry Pi, Linux, Mac) | [instalacion.md](instalacion.md) |
-| Configurar impresoras y aplicaciones desde el navegador | [panel.md](panel.md) |
-| Conectar una impresora (red, USB, Bluetooth) | [conectores.md](conectores.md) |
-| Conocer todos los comandos y opciones | [cli.md](cli.md) |
-| Configurar `config.toml` | [configuracion.md](configuracion.md) |
-| Saber cómo está construido por dentro | [arquitectura.md](arquitectura.md) |
-| Contribuir al código | [desarrollo.md](desarrollo.md) |
-| Publicar una versión (llaves, CI, instaladores) | [publicar.md](publicar.md) |
-| Probar antes de publicar (matriz manual y último reporte) | [pruebas/](pruebas/README.md) |
-| Integrar PRISMA en tu aplicación (SDK, niveles, firmas) | [integradores/](integradores/README.md) |
-| Generar documentos JSON desde tu aplicación | [contrato-documento-v1.md](contrato-documento-v1.md) |
-| Imprimir desde tu aplicación (endpoints, autorización, CORS, errores) | [api-v1.md](api-v1.md) |
-| Configurar HTTPS y confiar en el certificado | [tls.md](tls.md) |
-| Resolver un problema | [solucion-de-problemas.md](solucion-de-problemas.md) |
+| Imprimir tu primer ticket en 5 minutos | [integradores/inicio-rapido.md](integradores/inicio-rapido.md) |
+| Elegir el nivel de seguridad (origen, llave, firma) | [integradores/niveles-de-seguridad.md](integradores/niveles-de-seguridad.md) |
+| Usar el SDK JavaScript | [integradores/sdk.md](integradores/sdk.md) |
+| Firmar documentos desde tu backend (nivel 3) | [integradores/firmar-documentos.md](integradores/firmar-documentos.md) |
+| Llamar a la API sin el SDK | [referencia/api-v1.md](referencia/api-v1.md) · [openapi.yaml](referencia/openapi.yaml) |
+| Saber qué lleva un documento | [referencia/contrato-documento-v1.md](referencia/contrato-documento-v1.md) |
+| Resolver un error de conexión, certificado o CORS | [integradores/problemas-comunes.md](integradores/problemas-comunes.md) |
 
-## Estado actual
+Todo para integradores: [integradores/](integradores/README.md).
 
-PRISMA está en desarrollo. Esto es lo que ya funciona y lo que falta:
+### Instalas PRISMA en un negocio
+
+| Para… | Lee |
+|---|---|
+| Instalarlo en Windows, Raspberry Pi, Linux o Mac | [instalacion/](instalacion/README.md) |
+| Preparar impresoras USB, de red o Bluetooth | [instalacion/impresoras.md](instalacion/impresoras.md) |
+| Que los equipos confíen en el certificado HTTPS | [instalacion/https-y-certificados.md](instalacion/https-y-certificados.md) |
+| Resolver un problema de instalación o de arranque | [instalacion/problemas-comunes.md](instalacion/problemas-comunes.md) |
+
+### Administras un puente (dueño del negocio)
+
+| Para… | Lee |
+|---|---|
+| Usar el panel: primer acceso y secciones | [administracion/](administracion/README.md) |
+| Agregar y probar impresoras | [administracion/impresoras.md](administracion/impresoras.md) |
+| Autorizar aplicaciones y revisar solicitudes | [administracion/aplicaciones-y-solicitudes.md](administracion/aplicaciones-y-solicitudes.md) |
+| Ajustes, certificado y respaldo | [administracion/ajustes.md](administracion/ajustes.md) |
+| Resolver un problema de impresión o del panel | [administracion/problemas-comunes.md](administracion/problemas-comunes.md) |
+| Respaldar, actualizar, leer la bitácora y recuperarte de una falla | [operacion/](operacion/README.md) |
+
+### Desarrollas PRISMA
+
+| Para… | Lee |
+|---|---|
+| Verlo funcionando sin impresora, desde el código | [desarrollo/primeros-pasos.md](desarrollo/primeros-pasos.md) |
+| Compilar, probar y las herramientas de desarrollo | [desarrollo/](desarrollo/README.md) · [desarrollo/pruebas.md](desarrollo/pruebas.md) |
+| Contribuir: ramas, commits y pull requests | [CONTRIBUTING.md](../CONTRIBUTING.md) |
+| Entender cómo está construido | [arquitectura/](arquitectura/README.md) · [diagramas/](diagramas/README.md) |
+| Saber por qué se decidió algo | [adr/](adr/README.md) |
+| Publicar una versión | [desarrollo/publicar.md](desarrollo/publicar.md) |
+| Probar antes de publicar (matriz manual y reportes) | [desarrollo/pruebas/](desarrollo/pruebas/README.md) |
+
+## Seguridad
+
+El modelo de amenazas, las políticas y cómo reportar una vulnerabilidad: [seguridad/](seguridad/README.md) y [SECURITY.md](../SECURITY.md).
+
+## Referencia
+
+| Documento | Contenido |
+|---|---|
+| [referencia/api-v1.md](referencia/api-v1.md) · [openapi.yaml](referencia/openapi.yaml) | API pública `/v1`. |
+| [referencia/contrato-documento-v1.md](referencia/contrato-documento-v1.md) | El documento JSON y sus reglas. |
+| [referencia/codigos-de-error.md](referencia/codigos-de-error.md) | Todos los códigos de error y advertencias. |
+| [referencia/cli.md](referencia/cli.md) | Todos los comandos y opciones de `prisma`. |
+| [referencia/configuracion.md](referencia/configuracion.md) | `config.toml`. |
+| [referencia/glosario.md](referencia/glosario.md) | Los términos de PRISMA. |
+
+## Estado
 
 | Parte | Estado |
 |---|---|
-| Contrato «documento v1»: esquema, validación y ejemplos | ✅ Listo |
-| Renderizador ESC/POS: páginas de códigos, QR, códigos de barras e imágenes | ✅ Listo |
-| Conectores (red, USB, Bluetooth, archivo) y detección de impresoras | ✅ Listo |
-| Cola por impresora y estado (en línea / fuera de línea / ocupada) | ✅ Listo |
-| Base de datos, configuración y CLI | ✅ Listo |
-| Herramientas de desarrollo: impresora virtual, previsualización y decodificador | ✅ Listo |
-| Servidor HTTPS (autofirmado, archivos o solo localhost) y API pública `/v1` | ✅ Listo |
-| Autorización: orígenes, llaves `pk_` (argon2id), firma Ed25519, permisos, idempotencia, CORS y límites | ✅ Listo |
-| Gestión de clientes desde la CLI (`prisma clientes`) | ✅ Listo |
-| Panel de administración web en `/admin` ([panel.md](panel.md)) | ✅ Listo |
-| SDK JavaScript, firmadores de nivel 3 (PHP, Node.js, Python) y guías para integradores ([integradores/](integradores/README.md)) | ✅ Listo |
-| Servicio del sistema (`prisma servicio`), instaladores (Inno Setup, .deb, .pkg), `prisma actualizar` y CI | ✅ Listo |
-| Verificación integral previa a la publicación ([reporte](pruebas/reporte-verificacion.md)) | ✅ Hecha; críticos corregidos, el resto pendiente de decisión |
-| Primera versión publicada en GitHub Releases y SDK en npm | ⏳ Pendiente |
+| Puente, API `/v1`, panel, CLI, conectores y seguridad por niveles | ✅ Publicado en 0.1.0 |
+| Instaladores (Windows, `.deb`, Raspberry Pi, `.pkg`) y `prisma actualizar` | ✅ Publicado en 0.1.0, sin firma de código |
+| SDK JavaScript y firmadores de nivel 3 | ✅ Publicado en 0.1.0, en el repositorio y por CDN |
+| SDK en npm | ⏳ Pendiente |
+| Negociación de versiones del documento | ⏳ Política futura ([contrato §10](referencia/contrato-documento-v1.md)) |
+| Certificados automáticos (ACME) | ⏳ Previsto ([https-y-certificados.md](instalacion/https-y-certificados.md)) |
 
-Las aplicaciones ya pueden imprimir por la red con la [API v1](api-v1.md), y el dueño configura todo desde el [panel](panel.md) sin usar la CLI. La documentación marca con **⏳** lo que todavía no existe.
-
-## Glosario
-
-| Término | Significado |
-|---|---|
-| **Puente** | El programa `prisma` corriendo en un equipo del negocio. |
-| **Impresora** | Un dispositivo configurado en el puente, identificado por un **alias** (`caja`, `cocina`). Tiene un **perfil**: tipo de conexión, destino, ancho, columnas, página de códigos y capacidades. |
-| **Destino** | Dónde está la impresora: IP, nombre en Windows, cola de CUPS, puerto serie o carpeta. |
-| **Cliente** | Una aplicación autorizada a imprimir, con un nivel de seguridad (1: origen, 2: llave, 3: firma). |
-| **Documento** | El JSON con las operaciones de un ticket (contrato «documento v1»). |
-| **Operación** | Cada paso del ticket: `texto`, `fila`, `par`, `qr`, `cortar`, etc. No dependen unas de otras: cada una trae su propio estilo. |
-| **Trabajo** | Un documento aceptado para una impresora, con su resultado. Se guarda en el historial sin el contenido del ticket. |
-| **ESC/POS** | El lenguaje de comandos de las impresoras térmicas, que PRISMA genera a partir de las operaciones. |
-| **Modo desarrollo** | `[dev] modo_desarrollo = true` en `config.toml`. Habilita `prisma imprimir`. Nunca lo actives en un negocio. |
+La documentación marca con **⏳** lo que todavía no existe.
