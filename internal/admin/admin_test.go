@@ -25,6 +25,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"testing"
@@ -606,6 +607,11 @@ func TestClientesNivelesYLlaves(t *testing.T) {
 	pedidos := r.datos["cliente"].(map[string]any)
 	if pedidos["huella_publica"] != seguridad.HuellaLlavePublica(publica) || r.datos["llave"] != nil {
 		t.Fatalf("nivel 3: %v", r.datos)
+	}
+	// Sin llave, el panel solo puede darle a su backend el id para firmar: con la forma que exigen
+	// los firmadores (cli_ y de 8 a 40 letras o números).
+	if id, _ := pedidos["id"].(string); !regexp.MustCompile(`^cli_[A-Za-z0-9]{16}$`).MatchString(id) {
+		t.Fatalf("nivel 3: el id de la aplicación debe venir en la respuesta: %v", pedidos["id"])
 	}
 	s.exigirError("POST", "/admin/api/clientes", map[string]any{"nombre": "X", "nivel": 2, "operaciones_sensibles": []string{"formatear"}}, 400, "DATOS_INVALIDOS")
 

@@ -1037,6 +1037,9 @@
     return UI.tarjeta({ titulo: c.nombre, icono: 'aplicacion',
       acciones: h('span', { class: 'fila' }, insigniaNivel(c.nivel), c.activo ? UI.insignia('ok', TAp.activa) : UI.insignia('desconocido', TAp.desactivada)) },
     h('dl', { class: 'datos' },
+      // El id: para soporte, la CLI (prisma clientes …) y, en el nivel 3, para que su backend firme.
+      h('dt', {}, D.id), h('dd', {}, h('span', { class: 'fila' }, h('span', { class: 'mono' }, c.id), botonCopiar(c.id)),
+        c.nivel === 3 && h('span', { class: 'tenue pequeno' }, D.idNivel3)),
       h('dt', {}, D.origenes), h('dd', {}, c.origenes.length ? chips(c.origenes) : h('span', { class: 'tenue' }, D.origenesNinguna)),
       h('dt', {}, D.impresoras), h('dd', {}, c.todas_las_impresoras ? D.todas : (c.impresoras.length ? chips(c.impresoras) : h('span', { class: 'tenue' }, D.ninguna))),
       h('dt', {}, D.llave), h('dd', {}, c.llave_prefijo ? h('span', { class: 'mono' }, `${c.llave_prefijo}_…`)
@@ -1170,6 +1173,7 @@
       try {
         const r = await conEspera(bGuardar, () => (existente ? api.put(`/clientes/${enc(existente.id)}`, datos) : api.post('/clientes', datos)));
         if (r.llave) await mostrarLlave(r.cliente, r.llave, impresoras);
+        else if (!existente && r.cliente.nivel === 3) await mostrarId(r.cliente, impresoras);
         else aviso(existente ? TAp.hecho.guardada : TAp.hecho.creada, 'ok');
         ir('aplicaciones');
       } catch (e) {
@@ -1197,18 +1201,37 @@
   async function mostrarLlave(cliente, llave, impresoras) {
     const L = TAp.llave;
     const url = estado.direccion || location.origin;
-    const href = URL.createObjectURL(new Blob([L.archivo(cliente.nombre, llave, url)], { type: 'text/plain;charset=utf-8' }));
+    const nivel3 = cliente.nivel === 3;
+    const href = URL.createObjectURL(new Blob([L.archivo(cliente.nombre, llave, url, nivel3 && cliente.id)], { type: 'text/plain;charset=utf-8' }));
     await dialogo({
       titulo: L.titulo(cliente.nombre), ancho: 700,
       cuerpo: h('div', { class: 'pila-amplia' },
         UI.nota({ tipo: 'aviso', titulo: L.aviso, texto: L.avisoTexto }),
         h('div', { class: 'llave-caja' }, h('code', {}, llave), botonCopiar(llave)),
+        // En el nivel 3 el backend necesita también el id para firmar.
+        nivel3 && h('div', { class: 'pila' }, h('h3', {}, L.id), cajaId(cliente.id), h('p', { class: 'tenue pequeno' }, L.idTexto)),
         h('div', {}, h('a', { class: 'boton chico', href, download: `llave-${aliasDe(cliente.nombre, new Set())}.txt` }, UI.icono('descargar'), L.descargar)),
         h('div', { class: 'pila' }, h('h3', {}, L.queHago), h('p', { class: 'tenue pequeno' }, L.queHagoTexto)),
         bloqueCodigo(cliente, impresoras, llave)),
       acciones: [{ texto: L.listo, clase: 'primario', valor: true }],
     });
     URL.revokeObjectURL(href);
+  }
+
+  const cajaId = (id) => h('div', { class: 'llave-caja' }, h('code', {}, id), botonCopiar(id));
+
+  // Nivel 3 sin llave: al crearla, el id que necesita su backend para firmar y qué hacer con él.
+  async function mostrarId(cliente, impresoras) {
+    const I = TAp.idCreado;
+    await dialogo({
+      titulo: I.titulo(cliente.nombre), ancho: 700,
+      cuerpo: h('div', { class: 'pila-amplia' },
+        h('p', {}, I.texto),
+        cajaId(cliente.id),
+        h('div', { class: 'pila' }, h('h3', {}, I.queHago), h('p', { class: 'tenue pequeno' }, I.queHagoTexto)),
+        bloqueCodigo(cliente, impresoras, null)),
+      acciones: [{ texto: I.listo, clase: 'primario', valor: true }],
+    });
   }
 
   // Código para integrar la aplicación, con la impresora elegida y la llave si el nivel la usa.
@@ -1220,9 +1243,58 @@
     const valorLlave = llave || K.llaveAqui;
     const preferida = permitidas.find((i) => i.estado === 'en_linea' && !i.virtual) || permitidas.find((i) => i.estado === 'en_linea') || permitidas[0];
     const caja = h('div', {});
+    // Nivel 3: el servidor firma con el id real de la aplicación y la página o curl entregan el
+    // documento firmado sin tocarlo (más la llave, si la aplicación la exige).
+    const variantesFirma = (alias, saludo) => ({
+      [K.pestanas.firma]: [
+        'import { readFileSync } from "node:fs";',
+        'import { firmar } from "./firmador.mjs"; // sdk/firmadores/node',
+        '',
+        `// ${K.enElServidor}`,
+        'const firmado = firmar({',
+        '  version: "1",',
+        `  impresora: "${alias}",`,
+        `  operaciones: [{ tipo: "texto", valor: "${saludo}" }, { tipo: "cortar" }],`,
+        '}, {',
+        `  clienteId: "${cliente.id}",`,
+        '  llavePrivada: readFileSync("/ruta/segura/privada.pem", "utf8"),',
+        '});',
+      ],
+      [K.pestanas.web]: [
+        `<script src="${CDN_SDK}"></script>`,
+        '<script>',
+        '  const prisma = new Prisma({',
+        `    url: "${url}",`,
+        conLlave && `    llave: "${valorLlave}",`,
+        '  });',
+        `  // ${K.enLaPagina}`,
+        '  fetch("/api/ticket-firmado", { method: "POST" })',
+        '    .then((r) => r.json())',
+        '    .then((firmado) => prisma.imprimirDocumento(firmado));',
+        '</script>',
+      ],
+      [K.pestanas.fetch]: [
+        `// ${K.firmadoDelServidor}`,
+        `const respuesta = await fetch("${url}/v1/imprimir", {`,
+        '  method: "POST",',
+        '  headers: {',
+        '    "Content-Type": "application/json",',
+        conLlave && `    "Authorization": "Bearer ${valorLlave}",`,
+        '  },',
+        '  body: JSON.stringify(firmado),',
+        '});',
+        'const resultado = await respuesta.json();',
+      ],
+      [K.pestanas.curl]: [
+        `prisma dev firmar documento.json --llave privada.pem --cliente ${cliente.id} --nuevo-id -o firmado.json`,
+        `curl --cacert certificado.pem ${url}/v1/imprimir \\`,
+        conLlave && `  -H "Authorization: Bearer ${valorLlave}" \\`,
+        '  -H "Content-Type: application/json" --data-binary @firmado.json',
+      ],
+    });
     const pintar = (alias) => {
       const saludo = K.saludo(cliente.nombre.replace(/["\\]/g, ''));
-      const variantes = {
+      const variantes = cliente.nivel === 3 ? variantesFirma(alias, saludo) : {
         [K.pestanas.web]: [
           `<script src="${CDN_SDK}"></script>`,
           '<script>',
@@ -1251,11 +1323,7 @@
           '});',
           'const resultado = await respuesta.json();',
         ],
-        [K.pestanas.curl]: cliente.nivel === 3 && !conLlave ? [
-          `prisma dev firmar documento.json --llave privada.pem --cliente ${cliente.id} --nuevo-id -o firmado.json`,
-          `curl --cacert certificado.pem ${url}/v1/imprimir \\`,
-          '  -H "Content-Type: application/json" --data-binary @firmado.json',
-        ] : [
+        [K.pestanas.curl]: [
           `curl --cacert certificado.pem ${url}/v1/imprimir \\`,
           conLlave && `  -H "Authorization: Bearer ${valorLlave}" \\`,
           '  -H "Content-Type: application/json" \\',
