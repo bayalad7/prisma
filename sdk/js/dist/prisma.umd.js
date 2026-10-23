@@ -1,4 +1,4 @@
-/*! @bayalad7/prisma 0.1.0 · SDK de PRISMA · https://github.com/bayalad7/prisma/tree/main/sdk/js */
+/*! @bayalad7/prisma 0.2.0 · SDK de PRISMA · https://github.com/bayalad7/prisma/tree/main/sdk/js */
 (function (raiz, fabrica) {
   if (typeof define === 'function' && define.amd) define([], fabrica);
   else if (typeof module === 'object' && module.exports) module.exports = fabrica();
@@ -8,7 +8,7 @@
 // SDK de PRISMA: imprime en un puente PRISMA desde el navegador o desde Node.js 18+.
 // Sin dependencias. Este archivo es la fuente; dist/ se genera con «npm run construir».
 
-const VERSION_SDK = '0.1.0';
+const VERSION_SDK = '0.2.0';
 
 const VERSION_DOCUMENTO = '1';
 const MAX_BYTES_DOCUMENTO = 256 * 1024;

@@ -1,7 +1,7 @@
 // SDK de PRISMA: imprime en un puente PRISMA desde el navegador o desde Node.js 18+.
 // Sin dependencias. Este archivo es la fuente; dist/ se genera con «npm run construir».
 
-export const VERSION_SDK = '0.1.0';
+export const VERSION_SDK = '0.2.0';
 
 const VERSION_DOCUMENTO = '1';
 const MAX_BYTES_DOCUMENTO = 256 * 1024;

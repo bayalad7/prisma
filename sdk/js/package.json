@@ -1,6 +1,6 @@
 {
   "name": "@bayalad7/prisma",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "SDK para imprimir tickets en un puente PRISMA desde el navegador o Node.js",
   "keywords": ["prisma", "impresora", "ticket", "escpos", "punto de venta", "pos", "thermal printer"],
   "homepage": "https://github.com/bayalad7/prisma/tree/main/sdk/js",
