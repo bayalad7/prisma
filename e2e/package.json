@@ -1,0 +1,14 @@
+{
+  "name": "prisma-e2e",
+  "private": true,
+  "description": "Pruebas de punta a punta del panel de PRISMA (flujos a-g, escritorio y celular, axe).",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "test": "node construir.mjs && playwright test"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
+    "@playwright/test": "1.56.1"
+  }
+}
