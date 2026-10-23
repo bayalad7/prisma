@@ -39,6 +39,7 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 
 ### Cambiado
 
+- El panel (`/admin`) lleva su propia cuenta de peticiones por IP, fija en 600 por minuto: abrirlo ya no le resta al límite de la API (`peticiones_ip_por_minuto`, que queda solo para `/v1`), y una aplicación que imprime mucho desde el mismo equipo ya no deja el panel sin cargar.
 - Navegación nueva del panel: secciones agrupadas (Operación, Integración, Sistema) con iconos, barra inferior en celular, enlace para saltar al contenido, selector de tema y atajos de teclado (`g` y una letra; se pueden desactivar). Cada sección tiene su dirección (`/admin/impresoras`, `/admin/aplicaciones`…); los enlaces viejos con `#` siguen funcionando.
 - Inicio nuevo: el estado de un vistazo con una acción en cada tarjeta, y **Primeros pasos** (agregar una impresora física o virtual, imprimir una prueba, revisar los acentos, autorizar una aplicación) hasta que el puente esté listo. Los tickets de hoy ya no cuentan las pruebas del panel.
 - Asistente nuevo para agregar impresoras en 3 pasos reales: tipo (80 mm, 58 mm o virtual), conexión con las impresoras detectadas (las que no son de tickets van marcadas) y un alias propuesto a partir del nombre, y un ticket de prueba con las preguntas «¿salió?» y «¿se leen bien los acentos?». La prueba de acentos pide elegir el renglón que se lee bien, sin hablar de páginas de códigos. Los errores de los formularios aparecen junto al campo.

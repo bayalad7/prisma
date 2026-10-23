@@ -4,7 +4,7 @@
 
 | Ajuste | Efecto |
 |---|---|
-| Límites de peticiones | Por IP y por aplicación, por minuto (0 = sin límite). Se aplican al momento y mandan sobre `[limites]` de `config.toml`, que queda como valor inicial. |
+| Límites de peticiones | Por IP y por aplicación, por minuto (0 = sin límite), para la API. Se aplican al momento y mandan sobre `[limites]` de `config.toml`, que queda como valor inicial. El panel lleva su propia cuenta por IP (600 por minuto, fija): usarlo no le resta a las aplicaciones. |
 | Retención | Días que se conserva el historial de trabajos (1 a 3650). |
 | Solo red local («Abrir el panel solo desde la red del negocio») | Activado por defecto; al desactivarlo, el panel pide confirmación y explica el riesgo: el panel solo responde a IPs privadas (192.168.x.x, 10.x.x.x, 172.16–31.x.x, IPv6 locales) y al propio equipo. El equipo del puente siempre puede entrar. |
 | Certificado | Muestra nombres, IPs, vencimiento y huella. Con `modo_tls = "autofirmado"` se puede **regenerar** (por ejemplo, si cambió la IP del equipo) y **descargar** para instalarlo en los equipos que imprimen. El puente lo usa sin reiniciar. Desde 60 días antes de vencer, *Inicio* muestra un aviso y la fila *Vence* lo marca; ver [instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md#vencimiento). |

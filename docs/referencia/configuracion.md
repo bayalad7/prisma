@@ -66,7 +66,7 @@ Límites de peticiones a la API pública. Usan una cubeta de fichas: admiten rá
 
 | Clave | Por defecto | Valores |
 |---|---|---|
-| `peticiones_ip_por_minuto` | `120` | Por dirección IP; se aplica antes que cualquier otra comprobación, incluso al preflight de CORS. |
+| `peticiones_ip_por_minuto` | `120` | Por dirección IP, para la API (`/v1`); se aplica antes que cualquier otra comprobación, incluso al preflight de CORS. El panel (`/admin`) lleva su propia cuenta por IP, fija en 600 por minuto, así que usarlo no le resta a las aplicaciones. |
 | `peticiones_cliente_por_minuto` | `60` | Por aplicación, una vez identificada. |
 
 Al superarlos, la API responde 429 `DEMASIADAS_PETICIONES` con `Retry-After`.

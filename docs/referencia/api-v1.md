@@ -196,7 +196,7 @@ El recorrido completo está en [diagramas/04-secuencia-nivel-1.md](../diagramas/
 |---|---|---|
 | Cuerpo de la petición | Se leen hasta 300 KB; el documento puede medir hasta 256 KB (262 144 bytes) | 413 `DOCUMENTO_DEMASIADO_GRANDE` |
 | Operaciones por documento | 500 | 400 `DEMASIADAS_OPERACIONES` |
-| Peticiones por IP | 120 por minuto por defecto (`[limites]` de `config.toml`, o el panel) | 429 `DEMASIADAS_PETICIONES` + `Retry-After` |
+| Peticiones por IP | 120 por minuto por defecto (`[limites]` de `config.toml`, o el panel). El panel (`/admin`) cuenta aparte, 600 por minuto | 429 `DEMASIADAS_PETICIONES` + `Retry-After` |
 | Peticiones por cliente | 60 por minuto por defecto (`[limites]` de `config.toml`, o el panel) | 429 `DEMASIADAS_PETICIONES` + `Retry-After` |
 | Trabajos pendientes por impresora | 20 | 503 `COLA_LLENA` + `Retry-After` |
 | Vigencia de un documento firmado | 120 s, con 30 s de tolerancia de reloj | 401 `FIRMA_INVALIDA` o `FIRMA_EXPIRADA` |
