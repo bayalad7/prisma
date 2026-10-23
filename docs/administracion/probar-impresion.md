@@ -34,3 +34,5 @@ Describe cómo imprime una aplicación (desde su página, otra página o un serv
 6. Que la impresora exista y esté activa.
 
 Dice en qué paso fallaría, qué respondería la API, cómo resolverlo y a qué pantalla ir. No pide la llave (supone que la aplicación envía la correcta) y no registra solicitudes. También se abre desde *Aplicaciones → Comprobar permisos*. El orden, en un dibujo: [Orden de autorización](../diagramas/07-orden-autorizacion.md).
+
+{{diagrama:07-orden-autorizacion}}

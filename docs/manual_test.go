@@ -120,3 +120,29 @@ func TestSintaxisDelManual(t *testing.T) {
 		}
 	}
 }
+
+var reInclusion = regexp.MustCompile(`\{\{diagrama:([^}]*)\}\}`)
+
+// TestInclusionDeDiagramas: {{diagrama:id}} pone el visor de un diagrama en una página del manual.
+// Debe ir solo en su renglón (como un párrafo) y nombrar un diagrama de docs/diagramas/.
+func TestInclusionDeDiagramas(t *testing.T) {
+	usos := 0
+	for _, ruta := range documentosDelManual(t) {
+		datos, _ := fs.ReadFile(Manual, ruta)
+		for n, linea := range strings.Split(string(datos), "\n") {
+			// Un ejemplo entre comillas invertidas (`{{diagrama:…}}`) es texto, no una inclusión.
+			for _, m := range reInclusion.FindAllStringSubmatch(reCodigoLinea.ReplaceAllString(linea, ""), -1) {
+				usos++
+				if strings.TrimSpace(linea) != m[0] {
+					t.Errorf("%s:%d: %s debe ir solo en su renglón", ruta, n+1, m[0])
+				}
+				if _, err := fs.Stat(Manual, "diagramas/"+m[1]+".md"); err != nil {
+					t.Errorf("%s:%d: el diagrama %q no existe en docs/diagramas/", ruta, n+1, m[1])
+				}
+			}
+		}
+	}
+	if usos == 0 {
+		t.Error("ningún documento del manual incluye un diagrama: ¿cambió la sintaxis?")
+	}
+}

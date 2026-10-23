@@ -77,7 +77,9 @@ El panel muestra los diagramas como imágenes SVG, sin Internet y sin Mermaid en
 scripts/docs/generar-diagramas.sh        # o .\scripts\docs\generar-diagramas.ps1 en Windows
 ```
 
-Escribe un SVG claro y uno oscuro por diagrama, saneados y con gzip, y su manifiesto en `internal/admin/ayuda/diagramas/`. Si se te olvida, `go test ./internal/admin` falla con «Diagramas desactualizados: ejecuta scripts/docs/generar-diagramas».
+Para mostrar un diagrama dentro de una guía del manual, escribe `{{diagrama:NN-nombre}}` solo en un renglón: el panel pone ahí su visor (GitHub muestra el texto, así que acompáñalo con un enlace al diagrama). `go test ./docs` exige que el diagrama exista.
+
+El generador escribe un SVG claro y uno oscuro por diagrama, saneados y con gzip, y su manifiesto en `internal/admin/ayuda/diagramas/`. Si se te olvida, `go test ./internal/admin` falla con «Diagramas desactualizados: ejecuta scripts/docs/generar-diagramas».
 
 ## Validación
 

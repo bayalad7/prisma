@@ -32,4 +32,8 @@ En una impresora virtual, el detalle muestra además cómo salió el ticket ([Pr
 | En cola | Espera su turno: la impresora atiende un ticket a la vez. |
 | Imprimiendo | Se está enviando a la impresora. |
 
-El recorrido completo de un trabajo, en un dibujo: [Ciclo de vida de un trabajo](../diagramas/08-ciclo-vida-trabajo.md). Los códigos de error, uno por uno: [Códigos de error](../referencia/codigos-de-error.md).
+El recorrido completo de un trabajo, en un dibujo: [Ciclo de vida de un trabajo](../diagramas/08-ciclo-vida-trabajo.md).
+
+{{diagrama:08-ciclo-vida-trabajo}}
+
+Los códigos de error, uno por uno: [Códigos de error](../referencia/codigos-de-error.md).

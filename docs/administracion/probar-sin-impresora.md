@@ -14,6 +14,8 @@ Con una **impresora virtual** puedes probar PRISMA de principio a fin sin papel:
 
 La impresora virtual recibe exactamente los mismos bytes que recibiría una de papel con el mismo perfil ([diagrama 29](../diagramas/29-impresora-virtual.md)). Cuando conectes la impresora real, imprime su *Ticket de prueba* y usa *Probar acentos* ([impresoras.md](impresoras.md#diagnóstico-y-páginas-de-códigos)).
 
+{{diagrama:29-impresora-virtual}}
+
 ## Para el dueño del negocio
 
 1. **Crea la impresora virtual.** En *Impresoras → Agregar impresora*, elige **Virtual, para probar**: el asistente propone el nombre y el alias `prueba`. Si todavía no hay ninguna impresora, el botón **Crear impresora virtual de prueba** (en *Impresoras* y en *Primeros pasos* del Inicio) la crea en un clic.
