@@ -1,6 +1,6 @@
 # Propuestas para después de 0.2.0
 
-Cambios al puente que salieron del trabajo de experiencia del panel pero quedan fuera de lo acordado para 0.2.0 (la única excepción de backend fue la impresora virtual y el área de pruebas). Ninguno está implementado.
+Cambios al puente que salieron del trabajo de experiencia del panel pero quedan fuera de lo acordado para 0.2.0 (la única excepción de backend fue la impresora virtual y el área de pruebas). Ninguno está implementado. Al final, los hallazgos del [análisis](ANALISIS-PANEL-V1.md) que quedaron pendientes (ver [RESULTADOS.md](RESULTADOS.md#hallazgos)); esos son solo del panel.
 
 ## El panel comparte el límite de peticiones por IP con la API
 
@@ -14,3 +14,23 @@ Cambios al puente que salieron del trabajo de experiencia del panel pero quedan 
 - **Por qué no está:** el panel muestra los diagramas como imágenes (ADR 0018), y una imagen no recibe clics en sus nodos. Insertar el SVG en la página exigiría relajar la CSP del panel.
 - **Propuesta:** que `generar-diagramas` guarde en el manifiesto la caja de cada nodo con enlace (posición y tamaño, en proporción) y que el visor superponga enlaces transparentes sobre la imagen, que sigan el zoom. Sin cambios en la CSP.
 
+## Inicio que se actualiza solo
+
+- **Hallazgo:** M2. El estado de las impresoras, la cola y el contador de solicitudes cambian en el puente, pero el panel no lo muestra hasta cambiar de pantalla.
+- **Por qué no está:** cuando se revisó, consultar `/admin/api/resumen` cada pocos segundos renovaba la sesión y anulaba el cierre por inactividad; la cabecera que lo evita llegó después, con el rollo en vivo.
+- **Propuesta:** consultar el resumen cada 15 s solo con la pestaña visible y con la cabecera `X-Prisma-Sondeo: 1`, que el rollo en vivo ya usa para no renovar la sesión. Sin cambios en el puente: la cabecera ya vale para cualquier ruta del panel.
+
+## Nombre del puente repetido
+
+- **Hallazgo:** M6. Con el nombre predeterminado, la barra muestra «PRISMA / PRISMA» y el título de Inicio dice «PRISMA».
+- **Propuesta:** si el nombre es el predeterminado, mostrar «Puente de impresión» e invitar a ponerle nombre en *Ajustes → General*.
+
+## Deshacer al rechazar un origen
+
+- **Hallazgo:** B5. Rechazar una solicitud no confirma, y está bien porque es reversible desde la pestaña «Rechazadas», pero no ofrece deshacer en el momento.
+- **Propuesta:** el aviso de «rechazado» con la acción «Deshacer» (`aviso(..., { accion })` ya lo permite) durante unos segundos.
+
+## Cerrar el menú del celular al tocar fuera
+
+- **Hallazgo:** B4, en parte. El menú se cierra con Escape y al elegir una sección, pero no al tocar fuera de él.
+- **Propuesta:** cerrarlo con un `pointerdown` fuera de la barra mientras esté abierto, y devolver el foco al botón *Menú*.
