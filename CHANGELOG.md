@@ -49,6 +49,7 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 
 ### Corregido
 
+- El panel no mostraba el id de la aplicación (`cli_…`), que el backend de una aplicación de nivel 3 necesita para firmar: ahora está en la ficha de cada aplicación con un botón para copiarlo, al crear una de nivel 3 (con o sin llave) y en los ejemplos de *Código para integrar*, que en el nivel 3 empiezan por la firma en el servidor.
 - En celular, Trabajos, Ayuda y el asistente de impresoras ya no se salen de la pantalla a lo ancho.
 - El foco del teclado se ve en las tarjetas de opción (nivel de seguridad, página de códigos) y los bloques de código desplazables reciben el foco.
 - Los bordes de los campos de formulario tienen contraste suficiente (3:1).

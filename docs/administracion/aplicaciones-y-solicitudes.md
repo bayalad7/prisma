@@ -12,13 +12,14 @@ El panel explica los niveles en lenguaje llano; entre paréntesis, el nombre té
 |---|---|---|---|
 | Solo la dirección de la página | 1 — Origen | Solo el encabezado `Origin` del navegador. Necesita al menos una página web. | — |
 | Dirección y llave secreta (recomendado) | 2 — Llave (por defecto) | Origen (si viene de un navegador) y la llave `pk_…`. | La llave **una sola vez**: copiarla, descargarla como archivo de texto, qué hacer con ella y el código para integrar. |
-| Firma desde su servidor | 3 — Firma | Documentos firmados con Ed25519 por el backend de la aplicación. | Valida la llave pública (PEM o base64) y muestra su huella. Opcionalmente pide también la llave secreta. |
+| Firma desde su servidor | 3 — Firma | Documentos firmados con Ed25519 por el backend de la aplicación. | Valida la llave pública (PEM o base64) y muestra su huella. Opcionalmente pide también la llave secreta. Al crearla muestra el **id de la aplicación** (`cli_…`), que su backend necesita para firmar; si también exige llave, el id aparece junto a la llave. |
 
+- **Id de la aplicación** (`cli_…`): cada ficha lo muestra con un botón para copiarlo. En el nivel 3, el backend lo usa al firmar (`clienteId`, ver [firmar documentos](../integradores/firmar-documentos.md#2-registra-la-aplicación)); en cualquier nivel sirve para la CLI (`prisma clientes regenerar-llave ID`) y para soporte. No es secreto.
 - **Cambiar la llave:** la anterior deja de funcionar en ese momento; el panel lo advierte antes.
 - **Quitar la llave:** en el nivel 2 la aplicación no puede imprimir hasta que se le dé otra; en el nivel 3 sigue imprimiendo con documentos firmados.
 - **Desactivar** y **Eliminar** piden confirmación y dicen qué deja de funcionar.
 - **Permisos especiales** (`abrir_cajon`: abrir el cajón de dinero; `raw`: enviar comandos directos a la impresora) están apagados hasta que los marques para esa aplicación.
-- **Código para integrar** muestra el ejemplo con el SDK (etiqueta `<script>`), con `fetch` y con `curl`, para la impresora que elijas entre las permitidas.
+- **Código para integrar** muestra el ejemplo con el SDK (etiqueta `<script>`), con `fetch` y con `curl`, para la impresora que elijas entre las permitidas. En el nivel 3 empieza por la firma en el servidor (Node.js) con el id real de la aplicación, y los demás ejemplos entregan el documento firmado.
 - **Comprobar permisos** abre *¿Por qué mi app no puede imprimir?* (`/admin/pruebas/permisos`) con esa aplicación: describes desde dónde imprime (su página, otra página o un servidor sin navegador), si envía la llave, si firma, la impresora y si usa operaciones sensibles, y el panel recorre sin imprimir los mismos pasos que `/v1/imprimir` (origen → llave → firma → impresora → operaciones sensibles → impresora activa). Dice en qué paso fallaría, con el código y el estado HTTP que respondería la API, cómo resolverlo y a qué pantalla ir. No pide ni muestra la llave (supone que envía la correcta) y no registra solicitudes. Una prueba compara su resultado con el de la API en cada combinación de niveles, orígenes, llaves y firmas.
 - Los errores del formulario (sin nombre, una página web mal escrita, el nivel 1 sin páginas, una página que ya pertenece a otra aplicación) aparecen junto al campo.
 

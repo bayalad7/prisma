@@ -38,7 +38,7 @@ El dueño del puente, en el panel (*Aplicaciones → Agregar aplicación*):
 2. Si el navegador entregará los documentos, agrega el **origen** de tu página.
 3. Elige las impresoras y, si hacen falta, las operaciones sensibles.
 
-El panel muestra el id de la aplicación (`cli_…`): lo necesita tu backend.
+Tu backend necesita el **id de la aplicación** (`cli_…`) para firmar (`clienteId`). El panel lo muestra al crearla y siempre en su ficha, en *Aplicaciones*, con un botón para copiarlo. *Código para integrar* trae el ejemplo de firma con ese id.
 
 ## 3. Firma en tu backend
 
