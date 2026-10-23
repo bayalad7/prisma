@@ -2649,7 +2649,18 @@
   function visorDe(d, { mermaid, explicacion } = {}) {
     const url = (v, descarga) => `/admin/diagramas/${d.id}.${v}.svg${descarga ? '?descargar=1' : ''}`;
     return UI.visorDiagrama({ src: { claro: url('claro'), oscuro: url('oscuro') }, descargar: { claro: url('claro', true), oscuro: url('oscuro', true) },
-      alt: d.alt, titulo: d.titulo, descripcion: d.descripcion, publico: d.audiencia, mermaid, explicacion });
+      alt: d.alt, titulo: d.titulo, descripcion: d.descripcion, publico: d.audiencia, mermaid, explicacion, enlaces: enlacesDeDiagrama(d) });
+  }
+  // Los nodos con enlace (front-matter «enlaces»): un documento del manual o una pantalla del panel.
+  function enlacesDeDiagrama(d) {
+    return (d.enlaces || []).map((e) => {
+      if (e.destino.startsWith('/admin/')) {
+        const seccion = e.destino.slice('/admin/'.length).split('/')[0] || 'inicio';
+        return { caja: e.caja, href: e.destino, etiqueta: window.PRISMA_TEXTOS.ui.visor.enlacePantalla(e.texto, TN.secciones[seccion] || seccion) };
+      }
+      const [ruta, ancla] = e.destino.split('#');
+      return { caja: e.caja, href: rutaAyuda(`${ruta}.md`, ancla ? `#${ancla}` : ''), etiqueta: window.PRISMA_TEXTOS.ui.visor.enlaceManual(e.texto) };
+    });
   }
 
   // El repositorio en GitHub, en la versión instalada (o main si es de desarrollo).

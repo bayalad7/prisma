@@ -499,6 +499,11 @@ pre.codigo {
 }
 .visor-grande .visor-lienzo { height: auto; }
 .visor-lienzo:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+/* Enlaces sobre los nodos del diagrama: invisibles hasta pasar el puntero o enfocarlos. */
+.visor-enlaces { position: absolute; transform-origin: center; pointer-events: none; }
+.visor-enlace { position: absolute; pointer-events: auto; border-radius: var(--radio); cursor: pointer; }
+.visor-enlace:hover { outline: 2px solid var(--acento); outline-offset: 2px; }
+.visor-enlace:focus-visible { outline: 3px solid var(--acento); outline-offset: 2px; }
 .visor figcaption p { margin: 0; }
 .visor-publico { align-items: center; }
 html.sin-desplazar { overflow: hidden; }

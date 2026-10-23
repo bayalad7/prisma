@@ -4,6 +4,7 @@ descripcion: "Qué le pasa a un ticket desde que tu aplicación lo manda hasta q
 audiencia: [usuario]
 pantallas: [trabajos, solicitudes]
 secciones_manual: [administracion/trabajos, administracion/solucion-de-problemas]
+enlaces: [permiso=administracion/aplicaciones-y-solicitudes, rechazo=/admin/solicitudes, aviso=administracion/trabajos#qué-pasó-con-un-trabajo, fallo=administracion/trabajos#qué-pasó-con-un-trabajo]
 ---
 # El viaje de un ticket
 

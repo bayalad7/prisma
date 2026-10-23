@@ -26,10 +26,21 @@ type diagramaManifiesto struct {
 	Audiencia       []string `json:"audiencia"`
 	Pantallas       []string `json:"pantallas"`
 	SeccionesManual []string `json:"secciones_manual"`
-	Alt             string   `json:"alt"`
-	Hash            string   `json:"hash"`
-	Claro           string   `json:"claro"`
-	Oscuro          string   `json:"oscuro"`
+	Enlaces         []struct {
+		Nodo    string `json:"nodo"`
+		Destino string `json:"destino"`
+		Texto   string `json:"texto"`
+		Caja    struct {
+			X     float64 `json:"x"`
+			Y     float64 `json:"y"`
+			Ancho float64 `json:"ancho"`
+			Alto  float64 `json:"alto"`
+		} `json:"caja"`
+	} `json:"enlaces"`
+	Alt    string `json:"alt"`
+	Hash   string `json:"hash"`
+	Claro  string `json:"claro"`
+	Oscuro string `json:"oscuro"`
 }
 
 func leerManifiesto(t *testing.T) []diagramaManifiesto {
@@ -109,6 +120,18 @@ func TestDiagramasVigentes(t *testing.T) {
 			!slices.Equal(fm["audiencia"], d.Audiencia) || !slices.Equal(fm["pantallas"], d.Pantallas) ||
 			!slices.Equal(fm["secciones_manual"], d.SeccionesManual) {
 			t.Errorf("%s: el front-matter cambió. %s", id, generar)
+		}
+		// Los nodos con enlace: los mismos del front-matter, con su caja dentro de la imagen.
+		var enlaces []string
+		for _, e := range d.Enlaces {
+			enlaces = append(enlaces, e.Nodo+"="+e.Destino)
+			c := e.Caja
+			if e.Texto == "" || c.Ancho <= 0 || c.Alto <= 0 || c.X < 0 || c.Y < 0 || c.X+c.Ancho > 1.001 || c.Y+c.Alto > 1.001 {
+				t.Errorf("%s: el enlace del nodo %s no tiene texto o su caja está fuera de la imagen: %+v", id, e.Nodo, e)
+			}
+		}
+		if !slices.Equal(fm["enlaces"], enlaces) {
+			t.Errorf("%s: los enlaces cambiaron (%v en el front-matter, %v en el manifiesto). %s", id, fm["enlaces"], enlaces, generar)
 		}
 		for _, f := range []string{d.Claro, d.Oscuro} {
 			if _, err := fs.Stat(archivosDiagramas, "ayuda/diagramas/"+f); err != nil {

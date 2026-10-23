@@ -19,6 +19,7 @@
         "administracion/conceptos",
         "administracion/README"
       ],
+      "enlaces": [],
       "alt": "Contexto del sistema: Quién habla con el puente y por dónde: aplicaciones, impresoras y el panel",
       "hash": "b984cf077b4a0e5a3d7c1ec0999b9276e38b13445999e2c007f55cd233862761",
       "claro": "01-contexto.claro.svg.gz",
@@ -36,6 +37,7 @@
       "secciones_manual": [
         "referencia/glosario"
       ],
+      "enlaces": [],
       "alt": "Componentes y dependencias: Qué paquete del código depende de cuál",
       "hash": "bdc5c2d9d5fdd1f9115b69275845d2f3b9cba5001037d61df4dd9613edda1a55",
       "claro": "02-componentes.claro.svg.gz",
@@ -56,6 +58,7 @@
       "secciones_manual": [
         "integradores/README"
       ],
+      "enlaces": [],
       "alt": "Flujo de impresión: Por qué pasos viaja un ticket desde la aplicación hasta la impresora",
       "hash": "cbf211c0bb4b17d94526a5af238dd56e841c422b38e9aef715260ad726e9f0cb",
       "claro": "03-flujo-impresion.claro.svg.gz",
@@ -75,6 +78,7 @@
       "secciones_manual": [
         "integradores/niveles-de-seguridad"
       ],
+      "enlaces": [],
       "alt": "Imprimir en el nivel 1 (origen): Cómo imprime una página web aprobada solo por su dirección",
       "hash": "66e13b89d103f329a5d7af8f97f6dfec5c4314fcbebf5ce12c787ceaad7a4ce5",
       "claro": "04-secuencia-nivel-1.claro.svg.gz",
@@ -94,6 +98,7 @@
       "secciones_manual": [
         "integradores/niveles-de-seguridad"
       ],
+      "enlaces": [],
       "alt": "Imprimir en el nivel 2 (llave): Cómo imprime una aplicación con su llave",
       "hash": "5ac3430bf1dd3c0a3913e67e7644ad22d9ced15a462435e3eb8c16f376e12037",
       "claro": "05-secuencia-nivel-2.claro.svg.gz",
@@ -113,6 +118,7 @@
       "secciones_manual": [
         "integradores/firmar-documentos"
       ],
+      "enlaces": [],
       "alt": "Imprimir en el nivel 3 (firma): Cómo imprime una aplicación que firma cada ticket en su servidor",
       "hash": "b636ac4b3b85f19875adec60a6a84c6226107ea02822a02baf892602a75c2bef",
       "claro": "06-secuencia-nivel-3.claro.svg.gz",
@@ -133,6 +139,7 @@
       "secciones_manual": [
         "integradores/niveles-de-seguridad"
       ],
+      "enlaces": [],
       "alt": "Identificación del cliente, en detalle: Cómo sabe el puente qué aplicación envía un ticket",
       "hash": "17dd68149f87300f9d467231fcf948cde0b8e498c3313ef372a8b01484976270",
       "claro": "07-orden-autorizacion-detalle.claro.svg.gz",
@@ -156,6 +163,7 @@
         "administracion/probar-impresion",
         "integradores/niveles-de-seguridad"
       ],
+      "enlaces": [],
       "alt": "Orden de autorización y validación: Qué revisa el puente, y en qué orden, antes de imprimir",
       "hash": "084e36ae04c519f88e051e2572107f93521ce383d786057551b52903116071cd",
       "claro": "07-orden-autorizacion.claro.svg.gz",
@@ -176,6 +184,7 @@
       "secciones_manual": [
         "administracion/trabajos"
       ],
+      "enlaces": [],
       "alt": "Ciclo de vida de un trabajo: Por qué estados pasa un ticket y cuándo se puede reintentar",
       "hash": "15b0040b96b17e9cf0b110986b4a9f1e9cfc8443d3a73d86acb71532037065fa",
       "claro": "08-ciclo-vida-trabajo.claro.svg.gz",
@@ -196,6 +205,7 @@
       "secciones_manual": [
         "administracion/trabajos"
       ],
+      "enlaces": [],
       "alt": "Cola por impresora: Qué pasa cuando varias aplicaciones imprimen a la vez",
       "hash": "f62a26108f12afdcb8ad81510ce9274af77dd5ed264cc823b0ace49e5a43fc25",
       "claro": "09-cola-por-impresora.claro.svg.gz",
@@ -216,6 +226,7 @@
       "secciones_manual": [
         "administracion/aplicaciones-y-solicitudes"
       ],
+      "enlaces": [],
       "alt": "Solicitudes de origen: Qué pasa con una página desconocida que intenta imprimir",
       "hash": "fa5242992abe6afb499252af7461380ab09460495f7d0561ee9a03693b3ca246",
       "claro": "10-solicitudes-origen.claro.svg.gz",
@@ -233,6 +244,7 @@
       "secciones_manual": [
         "operacion/respaldo-y-restauracion"
       ],
+      "enlaces": [],
       "alt": "Modelo de datos: Qué guarda el puente en su base de datos",
       "hash": "560a13ab7cc9f49f312a4110e0f772550378faa6b28b8abaae55e5802655745c",
       "claro": "11-modelo-datos.claro.svg.gz",
@@ -252,6 +264,7 @@
       "secciones_manual": [
         "instalacion/https-y-certificados"
       ],
+      "enlaces": [],
       "alt": "Modos de TLS y ciclo del certificado: Cómo funciona el certificado HTTPS del puente",
       "hash": "94d4c3bea3884f7b1ea00165181e9e2a7d6552dae2300fced269f1b940f09f76",
       "claro": "12-modos-tls.claro.svg.gz",
@@ -270,6 +283,7 @@
       "secciones_manual": [
         "operacion/README"
       ],
+      "enlaces": [],
       "alt": "Arranque del servicio: Qué hace el puente desde que el equipo lo inicia",
       "hash": "8300f37c2fb892f4f3ffbfcc380b473d3351fcb7947aeeb68ee3e464d79dd4a7",
       "claro": "14-arranque-servicio.claro.svg.gz",
@@ -289,6 +303,7 @@
       "secciones_manual": [
         "administracion/README"
       ],
+      "enlaces": [],
       "alt": "Pantallas del panel: Qué pantallas tiene el panel y para qué sirve cada una",
       "hash": "6dae717cfd6a2926ba6d9e7b8804556f8dd5a0099e1198aafd1d50078b7e9ed8",
       "claro": "15-panel-navegacion.claro.svg.gz",
@@ -309,6 +324,7 @@
       "secciones_manual": [
         "administracion/ajustes"
       ],
+      "enlaces": [],
       "alt": "Sesión del panel: Cómo se entra al panel y cómo se protege la sesión",
       "hash": "29201fc6111594d52b28105ea787a0700a042c554c3840313daea92d14c9d514",
       "claro": "16-panel-sesion.claro.svg.gz",
@@ -328,6 +344,7 @@
       "secciones_manual": [
         "instalacion/impresoras"
       ],
+      "enlaces": [],
       "alt": "Detección de impresoras: Cómo encuentra el puente las impresoras conectadas",
       "hash": "17501b5e7703bc26d90d0e519b1468e4520de683ad1c7d5501baa38dc8359e81",
       "claro": "17-deteccion-impresoras.claro.svg.gz",
@@ -348,6 +365,7 @@
       "secciones_manual": [
         "instalacion/impresoras"
       ],
+      "enlaces": [],
       "alt": "Conectores: Cómo llega el ticket a cada tipo de impresora",
       "hash": "bf54e046c119d938bf8f499b72a250ff1af5c0c2f51e1887c656ea81bd2f9622",
       "claro": "18-conectores.claro.svg.gz",
@@ -366,6 +384,7 @@
       "secciones_manual": [
         "instalacion/README"
       ],
+      "enlaces": [],
       "alt": "Despliegue por plataforma: Qué se instala en cada sistema operativo",
       "hash": "0e6b363ae73fb86f434b58da144d9efe0908ab9feb3e1ffa6cfc5e308069b2b6",
       "claro": "19-despliegue.claro.svg.gz",
@@ -383,6 +402,7 @@
       "secciones_manual": [
         "operacion/actualizacion"
       ],
+      "enlaces": [],
       "alt": "Integración continua y publicación: Qué se comprueba en cada cambio y al publicar una versión",
       "hash": "dd25de7772c93fc2a449e4d5d2841b7735d21e82a65c02c21ef1cbf54df33aa1",
       "claro": "20-ci-release.claro.svg.gz",
@@ -405,6 +425,7 @@
         "administracion/solucion-de-problemas",
         "administracion/problemas-comunes"
       ],
+      "enlaces": [],
       "alt": "Diagnóstico: «no imprime»: Por qué no salió el ticket y qué revisar",
       "hash": "ae683cd8015ad1bd2f0e2b0b123c4c4d8d00d9af4f6ed8abf09221d4194e22e8",
       "claro": "23-diagnostico-problemas.claro.svg.gz",
@@ -425,6 +446,7 @@
       "secciones_manual": [
         "integradores/sdk"
       ],
+      "enlaces": [],
       "alt": "Idempotencia: Por qué un ticket reenviado no se imprime dos veces",
       "hash": "d1ed1d154a85d30b81f356596323af55d649411d29bc312f0ef415c78bda756f",
       "claro": "24-idempotencia.claro.svg.gz",
@@ -445,6 +467,7 @@
       "secciones_manual": [
         "administracion/impresoras"
       ],
+      "enlaces": [],
       "alt": "Confirmar impresión: Cómo confirma el puente que el ticket llegó a la impresora",
       "hash": "ad010359ce9c9570a6ba9407dbf8823f1263323b8653c7808dbfc29f7d944dcf",
       "claro": "25-confirmar-impresion.claro.svg.gz",
@@ -466,6 +489,7 @@
       "secciones_manual": [
         "administracion/impresoras"
       ],
+      "enlaces": [],
       "alt": "Estados de una impresora: Cuándo una impresora está en línea, no responde u ocupada",
       "hash": "ff837e6a38d3e1eb1c983081db85d34957f626f1c6d20d83ed4eb3bea5475162",
       "claro": "26-estados-impresora.claro.svg.gz",
@@ -485,6 +509,7 @@
       "secciones_manual": [
         "integradores/niveles-de-seguridad"
       ],
+      "enlaces": [],
       "alt": "Qué nivel de seguridad elegir: Qué nivel de seguridad le conviene a una aplicación",
       "hash": "f8dbaddc614a5f7994aff1717539b2ba8e875e03db975aa493e8d4843635c2a9",
       "claro": "27-elegir-nivel.claro.svg.gz",
@@ -506,6 +531,7 @@
       "secciones_manual": [
         "operacion/actualizacion"
       ],
+      "enlaces": [],
       "alt": "Actualización: Cómo se actualiza el puente sin instalar nada que no venga del proyecto",
       "hash": "c683cf6b5a97ed1f659c87305336278dbe5335795c39a801032b270b1cb8a3a6",
       "claro": "28-actualizacion.claro.svg.gz",
@@ -529,6 +555,52 @@
       "secciones_manual": [
         "administracion/probar-sin-impresora"
       ],
+      "enlaces": [
+        {
+          "nodo": "panel",
+          "destino": "/admin/pruebas",
+          "texto": "panel: Probar impresión (sesión del dueño)",
+          "caja": {
+            "x": 0.1,
+            "y": 0.0291,
+            "ancho": 0.0821,
+            "alto": 0.2068
+          }
+        },
+        {
+          "nodo": "fisica",
+          "destino": "/admin/impresoras",
+          "texto": "impresora de papel",
+          "caja": {
+            "x": 0.6336,
+            "y": 0.0257,
+            "ancho": 0.0711,
+            "alto": 0.1574
+          }
+        },
+        {
+          "nodo": "sim",
+          "destino": "administracion/probar-sin-impresora#simular-fallas",
+          "texto": "simulación",
+          "caja": {
+            "x": 0.6466,
+            "y": 0.3437,
+            "ancho": 0.0455,
+            "alto": 0.369
+          }
+        },
+        {
+          "nodo": "ver",
+          "destino": "administracion/probar-sin-impresora#para-quien-programa-una-aplicación",
+          "texto": "panel: rollo en vivo imagen a 203 ppp, .bin, comandos",
+          "caja": {
+            "x": 0.9144,
+            "y": 0.4,
+            "ancho": 0.081,
+            "alto": 0.2563
+          }
+        }
+      ],
       "alt": "Impresora virtual: La impresora virtual recibe los mismos bytes que una de papel y los muestra en el panel",
       "hash": "02a886cac23250e6025b18a62495786563e21047a217d0fcacc49c57c03787c0",
       "claro": "29-impresora-virtual.claro.svg.gz",
@@ -548,6 +620,63 @@
       "secciones_manual": [
         "administracion/conceptos",
         "administracion/primeros-pasos"
+      ],
+      "enlaces": [
+        {
+          "nodo": "app",
+          "destino": "administracion/aplicaciones-y-solicitudes",
+          "texto": "tu punto de venta, menú o página web",
+          "caja": {
+            "x": 0.007,
+            "y": 0.1146,
+            "ancho": 0.1591,
+            "alto": 0.2156
+          }
+        },
+        {
+          "nodo": "caja",
+          "destino": "/admin/impresoras",
+          "texto": "impresora de la caja",
+          "caja": {
+            "x": 0.8263,
+            "y": 0.082,
+            "ancho": 0.16,
+            "alto": 0.164
+          }
+        },
+        {
+          "nodo": "cocina",
+          "destino": "/admin/impresoras",
+          "texto": "impresora de la cocina",
+          "caja": {
+            "x": 0.8196,
+            "y": 0.4263,
+            "ancho": 0.1735,
+            "alto": 0.164
+          }
+        },
+        {
+          "nodo": "virtual",
+          "destino": "administracion/probar-sin-impresora",
+          "texto": "impresora virtual, para probar sin papel",
+          "caja": {
+            "x": 0.8227,
+            "y": 0.7577,
+            "ancho": 0.1671,
+            "alto": 0.2156
+          }
+        },
+        {
+          "nodo": "tu",
+          "destino": "administracion/primeros-pasos",
+          "texto": "tú, en el panel",
+          "caja": {
+            "x": 0.0224,
+            "y": 0.6915,
+            "ancho": 0.1281,
+            "alto": 0.164
+          }
+        }
       ],
       "alt": "Cómo funciona PRISMA: Tus aplicaciones mandan los tickets a PRISMA y PRISMA los imprime en tus impresoras",
       "hash": "25fa36663c30ffe556123e4cb42e3eef7b881516cc76a8f32f60ca047d136c48",
@@ -569,6 +698,52 @@
       "secciones_manual": [
         "administracion/trabajos",
         "administracion/solucion-de-problemas"
+      ],
+      "enlaces": [
+        {
+          "nodo": "permiso",
+          "destino": "administracion/aplicaciones-y-solicitudes",
+          "texto": "¿la aplicación tiene permiso para esa impresora?",
+          "caja": {
+            "x": 0.1526,
+            "y": 0.1141,
+            "ancho": 0.2925,
+            "alto": 0.2579
+          }
+        },
+        {
+          "nodo": "rechazo",
+          "destino": "/admin/solicitudes",
+          "texto": "no se imprime: si es una página nueva, aparece en Solicitudes para que decidas",
+          "caja": {
+            "x": 0.0097,
+            "y": 0.4498,
+            "ancho": 0.3107,
+            "alto": 0.1015
+          }
+        },
+        {
+          "nodo": "aviso",
+          "destino": "administracion/trabajos#qué-pasó-con-un-trabajo",
+          "texto": "Impreso con aviso: Trabajos explica qué ajustar",
+          "caja": {
+            "x": 0.3447,
+            "y": 0.9146,
+            "ancho": 0.2787,
+            "alto": 0.0686
+          }
+        },
+        {
+          "nodo": "fallo",
+          "destino": "administracion/trabajos#qué-pasó-con-un-trabajo",
+          "texto": "Falló: Trabajos dice qué revisar; se puede reenviar sin que salga dos veces",
+          "caja": {
+            "x": 0.6838,
+            "y": 0.9064,
+            "ancho": 0.3065,
+            "alto": 0.0851
+          }
+        }
       ],
       "alt": "El viaje de un ticket: Qué le pasa a un ticket desde que tu aplicación lo manda hasta que sale o falla",
       "hash": "a894467fa3debc2a69efc93159c0b60837ca26fdfcd5759e439dd581d1b58f7b",

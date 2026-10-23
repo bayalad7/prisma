@@ -67,6 +67,60 @@ function frontMatter(texto) {
   return meta;
 }
 
+// enlaces del front-matter: [nodo=destino, …]. destino es un documento del manual (sin .md, con
+// #ancla opcional) o una pantalla del panel (/admin/…).
+function enlacesDe(meta) {
+  return (meta.enlaces || []).map((e) => {
+    const [nodo, destino] = e.split('=').map((x) => x.trim());
+    if (!nodo || !destino) throw new Error(`enlace mal escrito: «${e}» (se espera nodo=destino)`);
+    return { nodo, destino };
+  });
+}
+
+// El texto de un nodo en el bloque mermaid (nodo["texto"]), para la etiqueta del enlace.
+function textoDeNodo(bloque, nodo) {
+  const m = new RegExp(`(?:^|[\\s>-])${nodo}\\s*[\\[({>]+"([^"]+)"`, 'm').exec(bloque);
+  return m ? m[1].replace(/<br\s*\/?>/g, ' ').replace(/\s+/g, ' ').trim() : nodo;
+}
+
+// Cajas de los nodos en el SVG de un flowchart, en proporción del viewBox (0 a 1): el visor pone
+// encima un enlace transparente por nodo. Suma los translate de los grupos que contienen al nodo y
+// toma la primera figura (rect, polygon o circle) con medidas.
+function cajasDeNodos(svg, nodos) {
+  const vb = /viewBox="([^"]+)"/.exec(svg)[1].trim().split(/[\s,]+/).map(Number);
+  const cajas = {};
+  const pila = [];
+  const etiqueta = /<(\/?)([a-zA-Z][\w:-]*)([^>]*?)(\/?)>/g;
+  let m;
+  while ((m = etiqueta.exec(svg))) {
+    const [, cierre, nombre, atributos, sola] = m;
+    if (cierre) { pila.pop(); continue; }
+    const padre = pila.at(-1) || { x: 0, y: 0, nodo: null };
+    const t = /transform="translate\(\s*([-\d.e]+)[\s,]+([-\d.e]+)\s*\)"/.exec(atributos);
+    const x = padre.x + (t ? Number(t[1]) : 0), y = padre.y + (t ? Number(t[2]) : 0);
+    let nodo = padre.nodo;
+    const id = nombre === 'g' && /class="node[\s"]/.test(atributos) && /id="[^"]*-flowchart-(.+?)-\d+"/.exec(atributos);
+    if (id && nodos.includes(id[1])) nodo = id[1];
+    if (nodo && !cajas[nodo]) {
+      const num = (a) => Number((new RegExp(`\\s${a}="([-\\d.e]+)"`).exec(atributos) || [])[1]);
+      let caja = null;
+      if (nombre === 'rect' && num('width') > 0) caja = [x + (num('x') || 0), y + (num('y') || 0), num('width'), num('height')];
+      if (nombre === 'circle' && num('r') > 0) caja = [x + (num('cx') || 0) - num('r'), y + (num('cy') || 0) - num('r'), 2 * num('r'), 2 * num('r')];
+      if (nombre === 'polygon') {
+        const p = (/points="([^"]+)"/.exec(atributos) || [])[1].trim().split(/[\s,]+/).map(Number);
+        const xs = p.filter((_, k) => k % 2 === 0), ys = p.filter((_, k) => k % 2 === 1);
+        caja = [x + Math.min(...xs), y + Math.min(...ys), Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)];
+      }
+      if (caja) {
+        const r4 = (v) => Math.round(v * 10000) / 10000;
+        cajas[nodo] = { x: r4((caja[0] - vb[0]) / vb[2]), y: r4((caja[1] - vb[1]) / vb[3]), ancho: r4(caja[2] / vb[2]), alto: r4(caja[3] / vb[3]) };
+      }
+    }
+    if (!sola) pila.push({ x, y, nodo });
+  }
+  return cajas;
+}
+
 const archivos = fs.readdirSync(origen).filter((f) => /^\d\d-.+\.md$/.test(f)).sort();
 const diagramas = [];
 for (const archivo of archivos) {
@@ -97,6 +151,15 @@ for (const [variante, tema] of Object.entries(temas)) {
     '-c', config, '-i', entrada, '-o', path.join(tmp, `${variante}-salida.md`)], { stdio: 'inherit', shell: process.platform === 'win32' });
   diagramas.forEach((d, k) => {
     const svg = sanear(fs.readFileSync(path.join(tmp, `${variante}-salida-${k + 1}.svg`), 'utf8'));
+    if (variante === 'claro') {
+      // Las cajas salen del SVG claro; el oscuro tiene la misma disposición.
+      const enlaces = enlacesDe(d.meta);
+      const cajas = cajasDeNodos(svg, enlaces.map((e) => e.nodo));
+      d.enlaces = enlaces.map((e) => {
+        if (!cajas[e.nodo]) throw new Error(`${d.id}: no se encontró el nodo «${e.nodo}» en el SVG`);
+        return { ...e, texto: textoDeNodo(d.bloque, e.nodo), caja: cajas[e.nodo] };
+      });
+    }
     fs.writeFileSync(path.join(destino, `${d.id}.${variante}.svg.gz`), zlib.gzipSync(svg, { level: 9 }));
   });
 }
@@ -112,6 +175,7 @@ const manifiesto = {
     audiencia: d.meta.audiencia || [],
     pantallas: d.meta.pantallas || [],
     secciones_manual: d.meta.secciones_manual || [],
+    enlaces: d.enlaces || [],
     alt: [d.meta.titulo, d.meta.descripcion].filter(Boolean).join(': '),
     hash: createHash('sha256').update(d.bloque).digest('hex'),
     claro: `${d.id}.claro.svg.gz`,

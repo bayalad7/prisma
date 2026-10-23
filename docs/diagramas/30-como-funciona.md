@@ -4,6 +4,7 @@ descripcion: "Tus aplicaciones mandan los tickets a PRISMA y PRISMA los imprime 
 audiencia: [usuario]
 pantallas: [inicio]
 secciones_manual: [administracion/conceptos, administracion/primeros-pasos]
+enlaces: [app=administracion/aplicaciones-y-solicitudes, caja=/admin/impresoras, cocina=/admin/impresoras, virtual=administracion/probar-sin-impresora, tu=administracion/primeros-pasos]
 ---
 # Cómo funciona PRISMA
 

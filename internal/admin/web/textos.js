@@ -47,6 +47,9 @@ window.PRISMA_TEXTOS = {
       sinImagen: 'No se encontró la imagen del diagrama. Este es su código:',
       publico: 'Para:',
       audiencias: { usuario: 'dueños', instalador: 'instaladores', integrador: 'quien programa', desarrollador: 'desarrolladores' },
+      conEnlaces: 'Algunos recuadros llevan a su sección: tócalos o recórrelos con Tab.',
+      enlaceManual: (texto) => `${texto}: abrir su sección del manual`,
+      enlacePantalla: (texto, pantalla) => `${texto}: ir a ${pantalla}`,
     },
     ticket: {
       etiqueta: (mm) => `Vista del ticket en papel de ${mm} mm`,

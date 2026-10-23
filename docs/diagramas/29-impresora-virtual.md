@@ -4,6 +4,7 @@ descripcion: "La impresora virtual recibe los mismos bytes que una de papel y lo
 audiencia: [usuario, instalador, integrador]
 pantallas: [impresoras, pruebas, rollo]
 secciones_manual: [administracion/probar-sin-impresora]
+enlaces: [panel=/admin/pruebas, fisica=/admin/impresoras, sim=administracion/probar-sin-impresora#simular-fallas, ver=administracion/probar-sin-impresora#para-quien-programa-una-aplicación]
 ---
 # Impresora virtual
 

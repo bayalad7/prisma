@@ -482,14 +482,29 @@
   // ocupa la ventana sin la API de pantalla completa. src: una URL o { claro, oscuro } (cambia sola
   // con el tema). publico: etiquetas de para quién es. explicacion: nodos que van debajo (la
   // descripción larga, vinculada con aria-describedby). Si la imagen no carga, muestra el código.
-  function visorDiagrama({ src, alt, titulo, descripcion, mermaid, publico = [], descargar, explicacion }) {
+  // enlaces: [{ caja: { x, y, ancho, alto } (proporción de la imagen), href, etiqueta, pantalla }]: recuadros
+  // transparentes sobre los nodos que llevan a una sección del manual o a una pantalla (ADR 0019).
+  function visorDiagrama({ src, alt, titulo, descripcion, mermaid, publico = [], descargar, explicacion, enlaces = [] }) {
     const idDesc = nuevoId('vd');
     const variantes = typeof src === 'string' ? { claro: src, oscuro: src } : src;
     const actual = () => variantes[temaOscuro() ? 'oscuro' : 'claro'];
     let escala = 1, x = 0, y = 0;
     const img = h('img', { src: actual(), alt, draggable: 'false' });
-    const lienzo = h('div', { class: 'visor-lienzo', tabindex: '0', role: 'group', 'aria-label': titulo, 'aria-describedby': idDesc }, img);
-    const aplicar = () => { img.style.transform = `translate(${x}px, ${y}px) scale(${escala})`; };
+    // La capa de enlaces ocupa la misma caja que la imagen y recibe la misma transformación.
+    const capa = enlaces.length > 0 && h('div', { class: 'visor-enlaces' }, enlaces.map((e) => {
+      const a = h('a', { class: 'visor-enlace', href: e.href, 'aria-label': e.etiqueta, title: e.etiqueta });
+      Object.assign(a.style, { left: `${e.caja.x * 100}%`, top: `${e.caja.y * 100}%`, width: `${e.caja.ancho * 100}%`, height: `${e.caja.alto * 100}%` });
+      return a;
+    }));
+    const lienzo = h('div', { class: 'visor-lienzo', tabindex: '0', role: 'group', 'aria-label': titulo, 'aria-describedby': idDesc }, img, capa);
+    const sincronizar = () => {
+      if (!capa || !img.naturalWidth) return;
+      Object.assign(capa.style, { left: `${img.offsetLeft}px`, top: `${img.offsetTop}px`, width: `${img.offsetWidth}px`, height: `${img.offsetHeight}px` });
+    };
+    const aplicar = () => {
+      img.style.transform = `translate(${x}px, ${y}px) scale(${escala})`;
+      if (capa) capa.style.transform = img.style.transform;
+    };
     const zoom = (f) => { escala = Math.min(8, Math.max(0.4, escala * f)); aplicar(); };
     const restablecer = () => { escala = 1; x = 0; y = 0; aplicar(); };
     const grande = boton({ icono: 'expandir', etiqueta: T.visor.grande, chico: true, 'aria-pressed': 'false' });
@@ -521,8 +536,11 @@
         descripcion && h('p', { class: 'tenue pequeno' }, descripcion),
         publico.length > 0 && h('p', { class: 'fila visor-publico' }, h('span', { class: 'tenue pequeno' }, T.visor.publico),
           publico.map((p) => h('span', { class: 'chip' }, T.visor.audiencias[p] || p))),
+        capa && h('p', { class: 'tenue pequeno' }, T.visor.conEnlaces),
         explicacion,
         h('span', { class: 'solo-lector' }, T.visor.ayudaTeclado)));
+    // Al seguir un enlace desde «Ver en grande», se vuelve al tamaño normal (y la página se desbloquea).
+    if (capa) capa.addEventListener('click', () => { if (fig.classList.contains('visor-grande')) grande.click(); });
     conTema();
     grande.addEventListener('click', () => {
       const activo = fig.classList.toggle('visor-grande');
@@ -544,7 +562,10 @@
     // Arrastrar para mover y pellizcar (dos dedos) para acercar.
     const punteros = new Map();
     let distancia = 0;
-    lienzo.addEventListener('pointerdown', (ev) => { lienzo.setPointerCapture(ev.pointerId); punteros.set(ev.pointerId, [ev.clientX, ev.clientY]); });
+    lienzo.addEventListener('pointerdown', (ev) => {
+      if (ev.target.closest('.visor-enlace')) return; // un enlace se toca, no se arrastra
+      lienzo.setPointerCapture(ev.pointerId); punteros.set(ev.pointerId, [ev.clientX, ev.clientY]);
+    });
     lienzo.addEventListener('pointermove', (ev) => {
       const previo = punteros.get(ev.pointerId);
       if (!previo) return;
@@ -571,9 +592,9 @@
       const alto = lienzo.clientWidth * img.naturalHeight / img.naturalWidth;
       lienzo.style.height = `${Math.round(Math.min(innerHeight * 0.7, Math.max(200, alto)))}px`;
     };
-    img.addEventListener('load', ajustarAlto);
-    new ResizeObserver(ajustarAlto).observe(fig);
-    grande.addEventListener('click', () => { if (fig.classList.contains('visor-grande')) lienzo.style.height = ''; else ajustarAlto(); });
+    img.addEventListener('load', () => { ajustarAlto(); sincronizar(); });
+    new ResizeObserver(() => { ajustarAlto(); sincronizar(); }).observe(fig);
+    grande.addEventListener('click', () => { if (fig.classList.contains('visor-grande')) lienzo.style.height = ''; else ajustarAlto(); requestAnimationFrame(sincronizar); });
     return fig;
   }
 
