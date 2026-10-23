@@ -42,6 +42,8 @@ Los diagramas de secuencia no admiten clases: usan cajas con los mismos colores.
 | 27 | [Qué nivel de seguridad elegir](27-elegir-nivel.md) | `flowchart` | integradores |
 | 28 | [Actualización](28-actualizacion.md) | `sequenceDiagram` | administradores, auditores |
 | 29 | [Impresora virtual](29-impresora-virtual.md) | `flowchart` | dueños, instaladores, integradores |
+| 30 | [Cómo funciona PRISMA](30-como-funciona.md) | `flowchart` | dueños (versión sencilla de 01) |
+| 31 | [El viaje de un ticket](31-viaje-de-un-ticket.md) | `flowchart` | dueños (versión sencilla de 08) |
 
 ## Diagramas que no existen en 0.1.0
 

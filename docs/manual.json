@@ -97,6 +97,8 @@
       "titulo": "Cómo funciona",
       "documentos": [
         "diagramas/README.md",
+        "diagramas/30-como-funciona.md",
+        "diagramas/31-viaje-de-un-ticket.md",
         "diagramas/01-contexto.md",
         "diagramas/02-componentes.md",
         "diagramas/03-flujo-impresion.md",

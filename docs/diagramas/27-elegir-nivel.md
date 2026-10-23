@@ -1,7 +1,7 @@
 ---
 titulo: "Qué nivel de seguridad elegir"
 descripcion: "Qué nivel de seguridad le conviene a una aplicación"
-audiencia: [usuario, integrador]
+audiencia: [integrador]
 pantallas: [aplicaciones]
 secciones_manual: [integradores/niveles-de-seguridad]
 ---

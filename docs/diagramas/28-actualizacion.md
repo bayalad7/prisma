@@ -1,7 +1,7 @@
 ---
 titulo: "Actualización"
 descripcion: "Cómo se actualiza el puente sin instalar nada que no venga del proyecto"
-audiencia: [usuario, instalador]
+audiencia: [instalador, desarrollador]
 pantallas: [inicio, ajustes]
 secciones_manual: [operacion/actualizacion]
 ---

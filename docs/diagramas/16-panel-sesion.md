@@ -1,7 +1,7 @@
 ---
 titulo: "Sesión del panel"
 descripcion: "Cómo se entra al panel y cómo se protege la sesión"
-audiencia: [usuario, desarrollador]
+audiencia: [instalador, desarrollador]
 pantallas: [ajustes]
 secciones_manual: [administracion/ajustes]
 ---

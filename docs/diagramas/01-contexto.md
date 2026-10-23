@@ -1,7 +1,7 @@
 ---
 titulo: "Contexto del sistema"
 descripcion: "Quién habla con el puente y por dónde: aplicaciones, impresoras y el panel"
-audiencia: [usuario, instalador, integrador, desarrollador]
+audiencia: [instalador, integrador, desarrollador]
 pantallas: [inicio]
 secciones_manual: [administracion/conceptos, administracion/README]
 ---

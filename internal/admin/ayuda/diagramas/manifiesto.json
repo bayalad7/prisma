@@ -8,7 +8,6 @@
       "titulo": "Contexto del sistema",
       "descripcion": "Quién habla con el puente y por dónde: aplicaciones, impresoras y el panel",
       "audiencia": [
-        "usuario",
         "instalador",
         "integrador",
         "desarrollador"
@@ -168,8 +167,8 @@
       "titulo": "Ciclo de vida de un trabajo",
       "descripcion": "Por qué estados pasa un ticket y cuándo se puede reintentar",
       "audiencia": [
-        "usuario",
-        "integrador"
+        "integrador",
+        "desarrollador"
       ],
       "pantallas": [
         "trabajos"
@@ -301,7 +300,7 @@
       "titulo": "Sesión del panel",
       "descripcion": "Cómo se entra al panel y cómo se protege la sesión",
       "audiencia": [
-        "usuario",
+        "instalador",
         "desarrollador"
       ],
       "pantallas": [
@@ -457,7 +456,7 @@
       "titulo": "Estados de una impresora",
       "descripcion": "Cuándo una impresora está en línea, no responde u ocupada",
       "audiencia": [
-        "usuario",
+        "instalador",
         "integrador"
       ],
       "pantallas": [
@@ -478,7 +477,6 @@
       "titulo": "Qué nivel de seguridad elegir",
       "descripcion": "Qué nivel de seguridad le conviene a una aplicación",
       "audiencia": [
-        "usuario",
         "integrador"
       ],
       "pantallas": [
@@ -498,8 +496,8 @@
       "titulo": "Actualización",
       "descripcion": "Cómo se actualiza el puente sin instalar nada que no venga del proyecto",
       "audiencia": [
-        "usuario",
-        "instalador"
+        "instalador",
+        "desarrollador"
       ],
       "pantallas": [
         "inicio",
@@ -535,6 +533,47 @@
       "hash": "02a886cac23250e6025b18a62495786563e21047a217d0fcacc49c57c03787c0",
       "claro": "29-impresora-virtual.claro.svg.gz",
       "oscuro": "29-impresora-virtual.oscuro.svg.gz"
+    },
+    {
+      "id": "30-como-funciona",
+      "fuente": "diagramas/30-como-funciona.md",
+      "titulo": "Cómo funciona PRISMA",
+      "descripcion": "Tus aplicaciones mandan los tickets a PRISMA y PRISMA los imprime en tus impresoras",
+      "audiencia": [
+        "usuario"
+      ],
+      "pantallas": [
+        "inicio"
+      ],
+      "secciones_manual": [
+        "administracion/conceptos",
+        "administracion/primeros-pasos"
+      ],
+      "alt": "Cómo funciona PRISMA: Tus aplicaciones mandan los tickets a PRISMA y PRISMA los imprime en tus impresoras",
+      "hash": "25fa36663c30ffe556123e4cb42e3eef7b881516cc76a8f32f60ca047d136c48",
+      "claro": "30-como-funciona.claro.svg.gz",
+      "oscuro": "30-como-funciona.oscuro.svg.gz"
+    },
+    {
+      "id": "31-viaje-de-un-ticket",
+      "fuente": "diagramas/31-viaje-de-un-ticket.md",
+      "titulo": "El viaje de un ticket",
+      "descripcion": "Qué le pasa a un ticket desde que tu aplicación lo manda hasta que sale o falla",
+      "audiencia": [
+        "usuario"
+      ],
+      "pantallas": [
+        "trabajos",
+        "solicitudes"
+      ],
+      "secciones_manual": [
+        "administracion/trabajos",
+        "administracion/solucion-de-problemas"
+      ],
+      "alt": "El viaje de un ticket: Qué le pasa a un ticket desde que tu aplicación lo manda hasta que sale o falla",
+      "hash": "a894467fa3debc2a69efc93159c0b60837ca26fdfcd5759e439dd581d1b58f7b",
+      "claro": "31-viaje-de-un-ticket.claro.svg.gz",
+      "oscuro": "31-viaje-de-un-ticket.oscuro.svg.gz"
     }
   ]
 }

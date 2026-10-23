@@ -1,7 +1,7 @@
 ---
 titulo: "Ciclo de vida de un trabajo"
 descripcion: "Por qué estados pasa un ticket y cuándo se puede reintentar"
-audiencia: [usuario, integrador]
+audiencia: [integrador, desarrollador]
 pantallas: [trabajos]
 secciones_manual: [administracion/trabajos]
 ---

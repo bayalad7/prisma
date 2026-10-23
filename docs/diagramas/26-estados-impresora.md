@@ -1,7 +1,7 @@
 ---
 titulo: "Estados de una impresora"
 descripcion: "Cuándo una impresora está en línea, no responde u ocupada"
-audiencia: [usuario, integrador]
+audiencia: [instalador, integrador]
 pantallas: [impresoras, inicio]
 secciones_manual: [administracion/impresoras]
 ---
