@@ -456,7 +456,8 @@ pre.codigo {
 .llave-caja code { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: .95rem; align-self: center; }
 
 /* Datos clave-valor */
-.datos { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; font-size: .9rem; }
+/* La etiqueta ocupa a lo más el 45 %: una larga se parte en renglones y el valor conserva su espacio. */
+.datos { display: grid; grid-template-columns: fit-content(45%) minmax(0, 1fr); gap: 4px 14px; font-size: .9rem; }
 .datos dt { color: var(--tenue); }
 .datos dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 .acciones { display: flex; flex-wrap: wrap; gap: var(--e-2); }
