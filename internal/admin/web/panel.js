@@ -1041,7 +1041,7 @@
   // ---------------------------------------------------------------------------------------------
   const TAp = window.PRISMA_TEXTOS.aplicaciones;
   const TS = window.PRISMA_TEXTOS.solicitudes;
-  const CDN_SDK = 'https://cdn.jsdelivr.net/gh/bayalad7/prisma@v0.1.0/sdk/js/dist/prisma.umd.js';
+  const CDN_SDK = 'https://cdn.jsdelivr.net/gh/bayalad7/prisma@v0.2.0/sdk/js/dist/prisma.umd.js';
   const ICONO_NIVEL = { 1: 'aplicacion', 2: 'llave', 3: 'escudo' };
   const insigniaNivel = (n) => UI.insignia('acento', `${TAp.nivel(n)} · ${TAp.niveles[n].corto}`, { icono: ICONO_NIVEL[n] });
   // Tarjetas de opción para elegir el nivel; el recomendado (2) va primero.
