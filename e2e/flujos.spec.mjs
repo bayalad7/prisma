@@ -256,3 +256,24 @@ test('g) un integrador prueba su aplicación sin impresora', async () => {
   await expect(resumen).toContainText('La API respondería 401 LLAVE_REQUERIDA');
   await sinViolaciones(page, 'comprobador de permisos');
 });
+
+test('los nodos con enlace de un diagrama llevan a su sección o a su pantalla', async () => {
+  await irA(page, '/admin/ayuda/diagramas/30-como-funciona.md');
+  await expect(page.locator('.visor-lienzo img')).toBeVisible();
+  const enlaces = page.locator('.visor-enlace');
+  await expect(enlaces).toHaveCount(5);
+  await sinViolaciones(page, 'diagrama con enlaces');
+  // La capa coincide con la imagen: cada recuadro queda dentro de ella.
+  const img = await page.locator('.visor-lienzo img').boundingBox();
+  for (const caja of await Promise.all((await enlaces.all()).map((e) => e.boundingBox()))) {
+    expect(caja.x).toBeGreaterThanOrEqual(img.x - 1);
+    expect(caja.x + caja.width).toBeLessThanOrEqual(img.x + img.width + 1);
+  }
+  await page.getByRole('link', { name: /tu punto de venta.*abrir su sección del manual/ }).click();
+  await listo(page);
+  expect(page.url()).toMatch(/\/admin\/ayuda\/administracion\/aplicaciones-y-solicitudes\.md$/);
+  await irA(page, '/admin/ayuda/diagramas/30-como-funciona.md');
+  await page.getByRole('link', { name: 'impresora de la caja: ir a Impresoras' }).click();
+  await listo(page);
+  expect(page.url()).toMatch(/\/admin\/impresoras$/);
+});
