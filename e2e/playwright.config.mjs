@@ -1,5 +1,6 @@
 // Pruebas de punta a punta del panel (Fase 7 de 0.2.0): los flujos a)–g) en escritorio y en celular,
-// cada uno contra su propio puente recién instalado (puente.mjs), con axe en cada pantalla.
+// cada uno contra su propio puente recién instalado (puente.mjs), y después todas las pantallas en
+// claro y oscuro y la navegación con teclado, con axe en cada pantalla.
 // Uso: cd e2e && npm ci && npx playwright install chromium && npm test
 import { defineConfig, devices } from '@playwright/test';
 
@@ -8,6 +9,10 @@ import { defineConfig, devices } from '@playwright/test';
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const PUERTOS = { escritorio: 18601, celular: 18602 };
+const VISTAS = {
+  escritorio: { viewport: { width: 1366, height: 768 }, baseURL: `https://127.0.0.1:${PUERTOS.escritorio}` },
+  celular: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 }, baseURL: `https://127.0.0.1:${PUERTOS.celular}` },
+};
 
 export default defineConfig({
   testDir: '.',
@@ -19,9 +24,13 @@ export default defineConfig({
   retries: 0,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   use: { ignoreHTTPSErrors: true, locale: 'es-MX', colorScheme: 'light', trace: 'retain-on-failure', screenshot: 'only-on-failure' },
+  // Primero los flujos (dejan el puente con datos); después, en el mismo puente, todas las pantallas y
+  // el teclado.
   projects: [
-    { name: 'escritorio', use: { viewport: { width: 1366, height: 768 }, baseURL: `https://127.0.0.1:${PUERTOS.escritorio}` } },
-    { name: 'celular', use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 }, baseURL: `https://127.0.0.1:${PUERTOS.celular}` } },
+    { name: 'escritorio', testMatch: /flujos\.spec\.mjs/, use: VISTAS.escritorio },
+    { name: 'celular', testMatch: /flujos\.spec\.mjs/, use: VISTAS.celular },
+    { name: 'escritorio-pantallas', testMatch: /(pantallas|teclado)\.spec\.mjs/, dependencies: ['escritorio'], use: VISTAS.escritorio },
+    { name: 'celular-pantallas', testMatch: /pantallas\.spec\.mjs/, dependencies: ['celular'], use: VISTAS.celular },
   ],
   webServer: Object.values(PUERTOS).map((puerto) => ({
     command: `node puente.mjs ${puerto}`,
