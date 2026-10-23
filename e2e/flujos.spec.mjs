@@ -2,6 +2,7 @@
 // que prueba su aplicación sin impresora, en orden y con axe en cada pantalla. Cada proyecto
 // (escritorio y celular) tiene su propio puente.
 import { test, expect } from '@playwright/test';
+import { generateKeyPairSync } from 'node:crypto';
 import { CONTRASENA, CONTRASENA_NUEVA, listo, irA, sinViolaciones, imprimirComoApp } from './ayudas.mjs';
 
 test.describe.configure({ mode: 'serial' });
@@ -92,6 +93,33 @@ test('c) aplicación de nivel 2: llave, código para integrar y primer ticket', 
   expect(r, JSON.stringify(r.datos)).toMatchObject({ estado: 200, datos: { ok: true } });
   await irA(page, '/admin/pruebas/rollo/prueba');
   await expect(page.locator('.ticket-rollo', { hasText: 'Punto de venta · E2E-C' })).toBeVisible({ timeout: 8_000 });
+});
+
+test('c) aplicación de nivel 3 sin llave: el panel da el id con que su servidor firma', async () => {
+  const { publicKey, privateKey } = generateKeyPairSync('ed25519');
+  await irA(page, '/admin/aplicaciones');
+  await page.getByRole('button', { name: 'Agregar aplicación' }).first().click();
+  await page.locator('#cli-nombre').fill('Pedidos en línea');
+  await page.locator('label.opcion', { hasText: 'Firma desde su servidor' }).click();
+  await page.locator('#cli-publica').fill(publicKey.export({ type: 'spki', format: 'pem' }));
+  await page.getByRole('button', { name: 'Crear aplicación' }).click();
+  const dialogo = page.locator('dialog[open]');
+  await expect(dialogo.getByText('su backend necesita este id')).toBeVisible();
+  const id = (await dialogo.locator('.llave-caja code').innerText()).trim();
+  expect(id).toMatch(/^cli_[A-Za-z0-9]{16}$/);
+  // El primer ejemplo es la firma en el servidor, con el id real.
+  await expect(dialogo.locator('pre').first()).toContainText(`clienteId: "${id}"`);
+  await sinViolaciones(page, 'id de una aplicación de nivel 3');
+  await dialogo.getByRole('button', { name: 'Entendido' }).click();
+  await listo(page);
+  await expect(page.locator('.tarjeta', { hasText: 'Pedidos en línea' }).getByText(id, { exact: true })).toBeVisible();
+
+  // Su servidor firma con ese id y el puente imprime, sin origen ni llave.
+  const { firmar } = await import('../sdk/firmadores/node/firmador.mjs');
+  const firmado = firmar({ version: '1', impresora: 'prueba', referencia: 'E2E-FIRMA',
+    operaciones: [{ tipo: 'texto', valor: 'Firmado' }, { tipo: 'cortar' }] }, { clienteId: id, llavePrivada: privateKey });
+  const r = await fetch(`${baseURL}/v1/imprimir`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(firmado) });
+  expect(r.status, await r.clone().text()).toBe(200);
 });
 
 test('d) una página desconocida pide permiso y se aprueba', async () => {
