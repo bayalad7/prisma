@@ -37,7 +37,8 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 
 ### Cambiado
 
-- Pruebas de punta a punta del panel (`e2e/`, Playwright): los flujos de primer uso, impresoras, aplicaciones, solicitudes, trabajos fallidos, ajustes y pruebas sin impresora, en escritorio y celular, con axe en cada pantalla; el CI las corre en cada cambio.
+- Pruebas de punta a punta del panel (`e2e/`, Playwright): los flujos de primer uso, impresoras, aplicaciones, solicitudes, trabajos fallidos, ajustes y pruebas sin impresora, en escritorio y celular, y después todas las pantallas en claro y oscuro y la navegación solo con teclado, con axe en cada una; el CI las corre en cada cambio.
+- En tema oscuro, el texto de la vista previa vacía de *Imágenes* no tenía contraste suficiente.
 - **Cómo funciona PRISMA** (*Ayuda*): galería de diagramas para el negocio o técnicos, con búsqueda. La ayuda de cada pantalla muestra sus diagramas, y el detalle de un trabajo fallido y el comprobador de permisos, el del error. Dos diagramas nuevos sin tecnicismos para el dueño: *Cómo funciona PRISMA* y *El viaje de un ticket*.
 - Los diagramas se ven dibujados en la Ayuda, sin Internet: un visor que sigue el tema claro u oscuro, acerca y aleja (botones, teclado, rueda con Ctrl o los dedos), se ve en grande, descarga el SVG y copia el código Mermaid. Las guías pueden incluir un diagrama con `{{diagrama:id}}`; Trabajos, Probar impresión y Probar sin impresora ya lo hacen.
 - Diagramas para el panel: cada diagrama de `docs/diagramas/` lleva metadatos (título, descripción, público, pantallas y secciones del manual) y se dibuja de antemano en SVG claro y oscuro, saneado, sin depender de Internet ni de Node al compilar (ADR 0018). Una prueba avisa si un diagrama cambió y no se volvió a generar.
