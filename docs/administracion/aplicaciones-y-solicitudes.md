@@ -30,7 +30,7 @@ Cuando una página web desconocida intenta imprimir, el puente la rechaza (`ORIG
 - **Aplicación nueva** («Dirección y llave secreta», recomendado, o «Solo la dirección»): puede imprimir en todas las impresoras y sin permisos especiales; ajústala después en Aplicaciones. Con llave, se muestra una vez.
 - **Aplicación existente:** el origen se agrega a esa aplicación con sus permisos.
 
-**Rechazar** la pasa a *Rechazadas* (plegada al final): sus intentos se siguen contando, pero ya no aparece como pendiente y se puede aprobar después. **Olvidar** la borra; si el origen vuelve a intentarlo, aparecerá otra vez.
+**Rechazar** la pasa a *Rechazadas* (plegada al final): sus intentos se siguen contando, pero ya no aparece como pendiente y se puede aprobar después. No pide confirmación: el aviso ofrece *Deshacer* durante 10 segundos, que la devuelve a pendientes. **Olvidar** la borra; si el origen vuelve a intentarlo, aparecerá otra vez.
 
 La lista se limpia sola, para que ningún equipo de la red pueda llenarla con orígenes inventados:
 

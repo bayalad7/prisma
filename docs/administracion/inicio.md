@@ -2,6 +2,10 @@
 
 La primera pantalla del panel: el estado del puente de un vistazo. Cada tarjeta tiene su acción, para ir directo a lo que hace falta.
 
+Mientras la ves, se actualiza sola cada 15 segundos: impresoras que dejan de responder, solicitudes nuevas o trabajos fallidos aparecen sin recargar. No se actualiza mientras usas un control de la pantalla o tienes una ventana abierta, y esas consultas no cuentan como actividad: la sesión se cierra igual tras 30 minutos sin usar el panel.
+
+El título es el nombre del puente. Con el nombre predeterminado dice «Puente de impresión» y ofrece *Ponerle nombre*, que lleva a *Ajustes → General*.
+
 ## Primeros pasos
 
 Mientras falte algo para que el puente quede listo, el Inicio lista lo que queda, con un botón para cada paso:

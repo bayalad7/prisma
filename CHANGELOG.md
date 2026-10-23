@@ -35,6 +35,7 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 - **Cómo funciona PRISMA** (*Ayuda*): galería de diagramas para el negocio o técnicos, con búsqueda. La ayuda de cada pantalla muestra sus diagramas, y el detalle de un trabajo fallido y el comprobador de permisos, el del error. Dos diagramas nuevos sin tecnicismos para el dueño: *Cómo funciona PRISMA* y *El viaje de un ticket*.
 - Pruebas de punta a punta del panel (`e2e/`, Playwright): los flujos de primer uso, impresoras, aplicaciones, solicitudes, trabajos fallidos, ajustes y pruebas sin impresora, en escritorio y celular, y después todas las pantallas en claro y oscuro y la navegación solo con teclado, con axe en cada una; el CI las corre en cada cambio. Una prueba de usuario nuevo va de un puente recién instalado a una aplicación imprimiendo (meta: menos de 5 minutos) y comprueba que los tickets de la impresora virtual no sobreviven a un reinicio.
 - Una prueba imprime cada ejemplo del repositorio en una impresora virtual de 58 y de 80 mm por `/v1/imprimir` y exige la misma vista y la misma traza ESC/POS que los golden del renderizador.
+- El Inicio se actualiza solo cada 15 segundos mientras se ve, sin renovar la sesión. Con el nombre predeterminado, el panel muestra «Puente de impresión» en lugar de repetir «PRISMA» y ofrece ponerle nombre. Rechazar una solicitud ofrece *Deshacer* durante 10 segundos (`POST /admin/api/solicitudes/restaurar`). El menú del celular se cierra al tocar fuera.
 
 ### Cambiado
 

@@ -9,9 +9,7 @@ El antes y el después del trabajo que planteó el [análisis del panel](ANALISI
   - una aplicación autorizada imprime con **10 clics y 4 campos** en total.
   - La prueba automática tarda 4 s. Para una persona, la estimación es de 2 a 3 minutos; la meta era menos de 5.
 - **Hallazgos:**
-  - Resueltos: los 5 críticos, los 9 altos, 10 de los 12 medios y 5 de los 7 bajos.
-  - En parte: B4.
-  - Pendientes: M2, M6 y B5 (ver [Lo que queda](#lo-que-queda)).
+  - Resueltos: todos (los 5 críticos, los 9 altos, los 12 medios y los 7 bajos). M2, M6, B4 y B5 se cerraron después de la Fase 7, con las [propuestas](PROPUESTAS-V2.md).
 - **Accesibilidad:**
   - Antes: 1 regla de axe incumplida en 5 de 24 pantallas, revisada solo en tema claro.
   - Ahora: 0 violaciones críticas o serias en 34 pantallas, en claro y oscuro, en escritorio y celular.
@@ -87,11 +85,11 @@ Corre en el CI con las demás pruebas de punta a punta y falla si pasa de 5 minu
 | A8 | Resuelto | Desactivar una aplicación o una impresora pide confirmación y dice qué pasará. |
 | A9 | Resuelto | Pestañas ARIA con flechas; los resultados se anuncian; los `pre` reciben el foco. |
 | M1 | Resuelto | Textos sin jerga y «Saber más» en los campos técnicos. |
-| M2 | **Pendiente** | El panel no se actualiza solo. Solo se actualizan el rollo en vivo y el aviso de sesión. Ya se puede hacer sin cambiar el puente, con la cabecera `X-Prisma-Sondeo`, que no renueva la sesión. Queda en las [propuestas](PROPUESTAS-V2.md#inicio-que-se-actualiza-solo). |
+| M2 | Resuelto | El Inicio se actualiza solo cada 15 s, como sondeo (`X-Prisma-Sondeo`): no renueva la sesión ni estorba a quien usa un control ([propuesta](PROPUESTAS-V2.md#inicio-que-se-actualiza-solo)). |
 | M3 | Resuelto | Los tickets de hoy ya no cuentan las pruebas del panel. |
 | M4 | Resuelto | Ajustes en cuatro pestañas. |
 | M5 | Resuelto | Las solicitudes dicen de dónde vienen y si usan `http`. |
-| M6 | **Pendiente** | La barra todavía muestra «PRISMA / PRISMA» cuando el puente conserva el nombre predeterminado ([despues/12](despues/12-inicio-escritorio.webp)). Queda en las [propuestas](PROPUESTAS-V2.md#nombre-del-puente-repetido). |
+| M6 | Resuelto | Con el nombre predeterminado, «Puente de impresión» y *Ponerle nombre* ([propuesta](PROPUESTAS-V2.md#nombre-del-puente-repetido)). |
 | M7 | Resuelto | «Desactivada», con su color. |
 | M8 | Resuelto | Una acción principal según el estado y el error sin el código delante. |
 | M9 | Resuelto | Aviso 2 minutos antes de cerrar la sesión, con «Seguir conectado». |
@@ -101,8 +99,8 @@ Corre en el CI con las demás pruebas de punta a punta y falla si pasa de 5 minu
 | B1 | Resuelto | «Saltar al contenido» (lo prueba [e2e/teclado.spec.mjs](../../e2e/teclado.spec.mjs)). |
 | B2 | Resuelto | Fechas y números con `es-MX`, desde `textos.js`. |
 | B3 | Resuelto | Al cambiar de pantalla el foco va al título, sin contorno. |
-| B4 | En parte | El menú del celular se cierra con Escape, devuelve el foco al botón y se cierra al elegir una sección. Todavía no se cierra al tocar fuera. |
-| B5 | **Pendiente** | Rechazar no ofrece «Deshacer». Sí se puede revertir desde la pestaña «Rechazadas». Queda en las [propuestas](PROPUESTAS-V2.md#deshacer-al-rechazar-un-origen). |
+| B4 | Resuelto | El menú del celular se cierra con Escape (devuelve el foco al botón), al elegir una sección y al tocar fuera. |
+| B5 | Resuelto | El aviso de «rechazado» ofrece *Deshacer* durante 10 s; después, «Rechazadas» ([propuesta](PROPUESTAS-V2.md#deshacer-al-rechazar-un-origen)). |
 | B6 | Resuelto | Trabajos dice cuántos hay y cuántos días se conservan. |
 | B7 | Resuelto | Inicio sin trabajos tiene su propio mensaje. |
 
@@ -159,6 +157,6 @@ La memoria del puente solo crece con la impresora virtual: guarda los últimos 2
 
 ## Lo que queda
 
-- **M2, M6, B5 y el resto de B4:** anotados en [PROPUESTAS-V2.md](PROPUESTAS-V2.md).
+- **El resto de [PROPUESTAS-V2.md](PROPUESTAS-V2.md):** el límite de peticiones propio del panel y los enlaces en los nodos de los diagramas.
 - **Prueba con una persona real:** con el protocolo de [Prueba de usuario nuevo](#prueba-de-usuario-nuevo).
 - **Matriz manual antes de publicar:** [docs/desarrollo/pruebas/matriz.md](../desarrollo/pruebas/matriz.md).
