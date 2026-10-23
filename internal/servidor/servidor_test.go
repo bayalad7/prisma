@@ -461,6 +461,40 @@ func TestLimitePorIPYPorCliente(t *testing.T) {
 	}
 }
 
+// TestPanelConLimitePropio: el panel (/admin) y la API (/v1) llevan cuentas separadas por IP, así
+// que abrir el panel no le resta a una aplicación que imprime desde el mismo equipo, ni al revés.
+func TestPanelConLimitePropio(t *testing.T) {
+	e := nuevoEntorno(t, config.Limites{PorIP: 3})
+	e.srv.MontarPanel(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusNoContent) }))
+	if lim := e.srv.LimitadorPanel(); lim.PorMinuto() != LimitePanelPorMinuto {
+		t.Fatalf("límite del panel: %d", lim.PorMinuto())
+	}
+	for i := range 20 {
+		if r := e.pedir(http.MethodGet, "/admin/panel.js", nil, nil); r.estado != http.StatusNoContent {
+			t.Fatalf("panel %d: %d", i, r.estado)
+		}
+	}
+	for i := range 3 {
+		if r := e.pedir(http.MethodGet, "/v1/salud", nil, nil); r.estado != 200 {
+			t.Fatalf("el panel no debe restarle a la API (petición %d): %d", i, r.estado)
+		}
+	}
+	if r := e.pedir(http.MethodGet, "/v1/salud", nil, nil); r.estado != 429 {
+		t.Fatalf("la API conserva su límite: %d", r.estado)
+	}
+	if r := e.pedir(http.MethodGet, "/admin/", nil, nil); r.estado != http.StatusNoContent {
+		t.Fatalf("la API agotada no debe bloquear el panel: %d", r.estado)
+	}
+
+	// El panel también tiene su tope, sin cabeceras CORS (es del mismo origen).
+	e.srv.LimitadorPanel().Configurar(1)
+	e.pedir(http.MethodGet, "/admin/", nil, nil)
+	r := e.pedir(http.MethodGet, "/admin/", nil, map[string]string{"Origin": "https://cualquiera.example"})
+	if r.estado != 429 || r.codigo() != "DEMASIADAS_PETICIONES" || r.cab.Get("Access-Control-Allow-Origin") != "" {
+		t.Fatalf("límite del panel: %d %s %v", r.estado, r.crudo, r.cab)
+	}
+}
+
 func TestSaludYCabecerasDeSeguridad(t *testing.T) {
 	e := nuevoEntorno(t, config.Limites{})
 	e.alm.Ajustes.Establecer(context.Background(), AjusteNombrePuente, "Café Prisma")
