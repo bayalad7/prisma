@@ -35,6 +35,10 @@ test('a) primer arranque: crear la contraseña y entrar', async () => {
   await listo(page);
   await expect(page.getByText('Primeros pasos')).toBeVisible();
   await expect(page.getByText(/1 de \d pasos completados/)).toBeVisible();
+  // Con el nombre predeterminado no repite «PRISMA»: invita a ponerle uno.
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Puente de impresión');
+  await expect(page.locator('#nombre-puente')).toHaveText('Puente de impresión');
+  await expect(page.getByRole('link', { name: /Ponerle nombre/ })).toBeVisible();
   await sinViolaciones(page, 'Inicio con primeros pasos');
 });
 
@@ -141,6 +145,31 @@ test('d) una página desconocida pide permiso y se aprueba', async () => {
   await expect(page.locator('.tarjeta', { hasText: 'menu.ejemplo.test' }).first()).toBeVisible();
 });
 
+test('d) rechazar una solicitud se puede deshacer desde el aviso', async () => {
+  const origen = 'https://otra.ejemplo.test';
+  await imprimirComoApp(baseURL, { origen, impresora: 'prueba' });
+  await irA(page, '/admin/solicitudes');
+  await page.locator('.tarjeta', { hasText: origen }).getByRole('button', { name: 'Rechazar' }).click();
+  await expect(page.locator('.toast', { hasText: `${origen} rechazado` })).toBeVisible();
+  await page.locator('.toast', { hasText: `${origen} rechazado` }).getByRole('button', { name: 'Deshacer' }).click();
+  await expect(page.getByText(`${origen} volvió a las solicitudes pendientes.`)).toBeVisible();
+  await listo(page);
+  await expect(page.locator('#s-pendientes + details + .lista .tarjeta', { hasText: origen })).toBeVisible();
+  await page.locator('.tarjeta', { hasText: origen }).first().getByRole('button', { name: 'Rechazar' }).click();
+  await listo(page);
+});
+
+test('el Inicio se actualiza solo, sin renovar la sesión', async () => {
+  await irA(page, '/admin/');
+  const cifra = page.locator('.tarjeta').filter({ has: page.getByRole('heading', { name: 'Solicitudes', exact: true }) }).locator('.cifra');
+  const antes = await cifra.innerText();
+  // Una página nueva pide permiso: el Inicio lo muestra en la siguiente vuelta, como sondeo.
+  const sondeo = page.waitForRequest((q) => q.url().endsWith('/admin/api/resumen') && q.headers()['x-prisma-sondeo'] === '1', { timeout: 20_000 });
+  await imprimirComoApp(baseURL, { origen: 'https://nueva.ejemplo.test', impresora: 'prueba' });
+  await sondeo;
+  await expect(cifra).toHaveText(String(Number(antes) + 1));
+});
+
 test('e) un trabajo falla: qué pasó, por qué y qué hacer', async () => {
   // La impresora virtual simula estar fuera de línea.
   await irA(page, '/admin/impresoras');
@@ -167,6 +196,17 @@ test('e) un trabajo falla: qué pasó, por qué y qué hacer', async () => {
   await page.locator('#simulacion').selectOption('normal');
   await page.getByRole('button', { name: 'Guardar cambios' }).click();
   await listo(page);
+});
+
+test('en celular, el menú se cierra al tocar fuera', async ({}, info) => {
+  test.skip(info.project.name !== 'celular', 'solo en celular');
+  await irA(page, '/admin/');
+  await page.getByRole('button', { name: 'Menú' }).click();
+  await expect(page.locator('.barra')).toHaveClass(/abierta/);
+  // El menú abierto ocupa casi toda la pantalla: se toca el contenido que queda visible debajo.
+  const barra = await page.locator('.barra').boundingBox();
+  await page.mouse.click(40, barra.y + barra.height + 8);
+  await expect(page.locator('.barra')).not.toHaveClass(/abierta/);
 });
 
 test('f) contraseña, certificado y respaldo', async () => {
