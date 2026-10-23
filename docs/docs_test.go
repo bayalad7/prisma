@@ -136,10 +136,16 @@ func TestFormatoDeLosDiagramas(t *testing.T) {
 		manual[strings.TrimSuffix(d, ".md")] = true
 	}
 	reFuente := regexp.MustCompile("(?m)^- `?([A-Za-z0-9_./-]+)")
+	secciones, anclas := seccionesDelPanel(t), map[string]map[string]bool{}
 	for _, ruta := range archivos {
 		nombre := filepath.Base(ruta)
 		texto := leer(t, filepath.ToSlash(filepath.Join("docs", "diagramas", nombre)))
 		meta, resto, ok := frontMatter(texto)
+		_, bloqueFM, _ := strings.Cut(resto, "```mermaid\n")
+		bloqueFM, _, _ = strings.Cut(bloqueFM, "\n```")
+		for _, e := range revisarEnlacesDiagrama(t, meta, bloqueFM, manual, secciones, anclas) {
+			t.Errorf("%s: enlaces: %s", nombre, e)
+		}
 		if !ok {
 			t.Errorf("%s: falta el front-matter (titulo, descripcion, audiencia, pantallas, secciones_manual)", nombre)
 		} else {
@@ -197,6 +203,67 @@ func frontMatter(texto string) (meta, resto string, ok bool) {
 		return "", texto, false
 	}
 	return meta, strings.TrimLeft(resto, "\n"), true
+}
+
+// seccionesDelPanel son las claves de nav.secciones en textos.js: las pantallas a las que puede
+// llevar un nodo de un diagrama (/admin/<seccion>).
+func seccionesDelPanel(t *testing.T) map[string]bool {
+	t.Helper()
+	_, resto, ok := strings.Cut(leer(t, "internal/admin/web/textos.js"), "\n    secciones: {\n")
+	if !ok {
+		t.Fatal("textos.js no tiene nav.secciones")
+	}
+	bloque, _, _ := strings.Cut(resto, "\n    },")
+	claves := map[string]bool{}
+	for _, m := range regexp.MustCompile(`(\w+): '`).FindAllStringSubmatch(bloque, -1) {
+		claves[m[1]] = true
+	}
+	return claves
+}
+
+// revisarEnlacesDiagrama revisa el campo opcional «enlaces: [nodo=destino, …]»: cada nodo existe en
+// el bloque mermaid y cada destino es un documento del manual (sin .md, con #ancla opcional que
+// exista) o una pantalla del panel (/admin/<seccion>).
+func revisarEnlacesDiagrama(t *testing.T, meta, bloque string, manual, secciones map[string]bool, anclas map[string]map[string]bool) []string {
+	var valor string
+	for _, linea := range strings.Split(meta, "\n") {
+		if v, ok := strings.CutPrefix(linea, "enlaces:"); ok {
+			valor = strings.TrimSpace(v)
+		}
+	}
+	if valor == "" {
+		return nil
+	}
+	if !strings.HasPrefix(valor, "[") || !strings.HasSuffix(valor, "]") {
+		return []string{"debe ser una lista [nodo=destino, …]"}
+	}
+	var errores []string
+	for _, e := range listaFrontMatter(valor) {
+		nodo, destino, ok := strings.Cut(e, "=")
+		nodo, destino = strings.TrimSpace(nodo), strings.TrimSpace(destino)
+		if !ok || nodo == "" || destino == "" {
+			errores = append(errores, "se espera nodo=destino: "+e)
+			continue
+		}
+		if !regexp.MustCompile(`(?m)(^|[\s>-])` + regexp.QuoteMeta(nodo) + `\s*[\[({>]`).MatchString(bloque) {
+			errores = append(errores, "el nodo "+nodo+" no está definido en el bloque mermaid")
+		}
+		if seccion, ok := strings.CutPrefix(destino, "/admin/"); ok {
+			if !secciones[seccion] {
+				errores = append(errores, "pantalla desconocida: "+destino)
+			}
+			continue
+		}
+		doc, ancla, _ := strings.Cut(destino, "#")
+		if !manual[doc] {
+			errores = append(errores, destino+": "+doc+".md no está en docs/manual.json")
+			continue
+		}
+		if ancla != "" && !anclasDe(t, filepath.Join(raiz, "docs", filepath.FromSlash(doc)+".md"), anclas)[ancla] {
+			errores = append(errores, destino+": no existe el título #"+ancla)
+		}
+	}
+	return errores
 }
 
 // audienciasDiagramas son los públicos que admite el campo audiencia.
