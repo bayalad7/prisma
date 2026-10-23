@@ -33,7 +33,8 @@ La versión, el commit, la fecha y la llave pública de las versiones (`empaquet
 
 - `go vet`, staticcheck y `go test -race` en Windows, Ubuntu y macOS;
 - las pruebas del SDK en los tres sistemas, y las de los firmadores;
-- un trabajo que instala el servicio de verdad en los tres sistemas, comprueba que el panel responda, lo reinicia y lo desinstala.
+- un trabajo que instala el servicio de verdad en los tres sistemas, comprueba que el panel responda, lo reinicia y lo desinstala;
+- las pruebas de punta a punta del panel (`e2e/`, Playwright) en escritorio y celular, contra un puente recién instalado.
 
 Las versiones se publican con una etiqueta: ver [publicar.md](publicar.md).
 

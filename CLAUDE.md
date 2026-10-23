@@ -87,6 +87,8 @@ según el perfil de la impresora y lo imprime por USB, red (TCP 9100) o Bluetoot
 - Pruebas: `go test ./...` (`-race` corre en el CI; localmente, en un contenedor Linux con CGO).
 - Lint: `make lint` / `.\build.ps1 lint` (go vet + staticcheck).
 - SDK y firmadores: `make test-sdk` / `.\build.ps1 test-sdk`. Tras cambiar sdk/js/src: `npm run construir`.
+- Panel de punta a punta: `cd e2e && npm ci && npx playwright install chromium && npm test` (flujos a–g,
+  escritorio y celular, con axe; compila y arranca sus propios puentes; lo corre el CI).
 - Archivos generados por pruebas: `go test ./internal/dev -actualizar` (golden) y
   `go test ./internal/servicio -run Deb -actualizar` (unidad de systemd del .deb).
 - Binarios y paquetes: `make build-todo | deb | pkg | checksums` / `.\build.ps1 build-todo | deb | instalador | checksums`.
@@ -121,6 +123,7 @@ internal/dev/           herramientas: impresora virtual, decodificador, simulado
 internal/version/       versión, commit y fecha (-ldflags)
 sdk/js/                 SDK JavaScript público (@bayalad7/prisma; dist/ se versiona para el CDN)
 sdk/firmadores/         firmadores de nivel 3 (PHP, Node.js, Python) y casos JCS compartidos con el puente
+e2e/                    pruebas de punta a punta del panel con Playwright (flujos a–g, axe)
 schema/                 JSON Schema del documento (embebido)
 ejemplos/               documentos válidos e inválidos (con indice.json); los usan puente, SDK y
                         las plantillas de «Probar impresión» (embebidos)
