@@ -157,6 +157,5 @@ La memoria del puente solo crece con la impresora virtual: guarda los últimos 2
 
 ## Lo que queda
 
-- **El resto de [PROPUESTAS-V2.md](PROPUESTAS-V2.md):** los enlaces en los nodos de los diagramas.
 - **Prueba con una persona real:** con el protocolo de [Prueba de usuario nuevo](#prueba-de-usuario-nuevo).
 - **Matriz manual antes de publicar:** [docs/desarrollo/pruebas/matriz.md](../desarrollo/pruebas/matriz.md).

@@ -1,6 +1,6 @@
-# Propuestas para después de 0.2.0
+# Propuestas que quedaron fuera del plan de 0.2.0
 
-Cambios al puente que salieron del trabajo de experiencia del panel pero quedan fuera de lo acordado para 0.2.0 (la única excepción de backend fue la impresora virtual y el área de pruebas). Se implementan antes de publicar 0.2.0; cada sección dice si ya está hecha. Al final, los hallazgos del [análisis](ANALISIS-PANEL-V1.md) que quedaron pendientes (ver [RESULTADOS.md](RESULTADOS.md#hallazgos)); esos son solo del panel.
+Cambios que salieron del trabajo de experiencia del panel pero quedaban fuera de lo acordado para 0.2.0: primero, dos que tocan el puente (la única excepción de backend del plan fue la impresora virtual y el área de pruebas); al final, los hallazgos del [análisis](ANALISIS-PANEL-V1.md) que la Fase 7 dejó pendientes, solo del panel (ver [RESULTADOS.md](RESULTADOS.md#hallazgos)). **Todas se hicieron antes de publicar 0.2.0;** cada sección dice cómo quedó.
 
 ## El panel comparte el límite de peticiones por IP con la API
 
@@ -11,6 +11,8 @@ Cambios al puente que salieron del trabajo de experiencia del panel pero quedan 
 - **Propuesta:** no contar los archivos estáticos del panel (son públicos e iguales para todos) y dar al panel con sesión un límite propio, separado del de `/v1`. Requiere decidir los valores y una prueba en `internal/servidor`.
 
 ## Nodos de los diagramas que enlacen al manual
+
+**Estado:** hecho, como se proponía ([ADR 0019](../adr/0019-enlaces-en-los-nodos-de-los-diagramas.md)): `enlaces: [nodo=destino]` en el front-matter, cajas en el manifiesto y enlaces transparentes sobre la imagen que siguen el zoom, sin cambios en la CSP. Los tienen los diagramas 29, 30 y 31.
 
 - **Qué falta:** el plan de la Fase 5 lo proponía como opcional: que ciertos nodos de un diagrama lleven a una sección del manual o a una pantalla del panel, con un mapa nodo → enlace en el front-matter.
 - **Por qué no está:** el panel muestra los diagramas como imágenes (ADR 0018), y una imagen no recibe clics en sus nodos. Insertar el SVG en la página exigiría relajar la CSP del panel.

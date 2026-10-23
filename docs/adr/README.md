@@ -22,6 +22,7 @@ Cada archivo registra una decisión que ya está tomada en el código: el contex
 | 0016 | [Impresora virtual dentro del puente, con tickets solo en memoria](0016-impresora-virtual-en-el-puente.md) | 2026-10-22 |
 | 0017 | [Manual del panel desde docs/, con un renderizador propio en el navegador](0017-manual-del-panel-con-renderizador-propio.md) | 2026-10-22 |
 | 0018 | [Diagramas del panel en SVG pregenerado, servidos como imágenes](0018-diagramas-del-panel-en-svg-pregenerado.md) | 2026-10-22 |
+| 0019 | [Enlaces en los nodos de los diagramas, superpuestos a la imagen](0019-enlaces-en-los-nodos-de-los-diagramas.md) | 2026-10-23 |
 
 ## Cómo agregar una decisión
 

@@ -68,6 +68,7 @@ Cada diagrama empieza con un bloque YAML (front-matter) que el panel usa para su
 | `audiencia` | Para quién es: `usuario`, `instalador`, `integrador`, `desarrollador`. |
 | `pantallas` | Las pantallas del panel donde aparece como ayuda (claves de `ayuda.pantallas` en `internal/admin/web/textos.js`). Puede ir vacía. |
 | `secciones_manual` | Los documentos del manual que lo citan, sin `.md` (por ejemplo `administracion/impresoras`). |
+| `enlaces` | Opcional, solo en `flowchart`: nodos que llevan a otra parte, como `[caja=/admin/impresoras, fallo=administracion/trabajos#qué-pasó-con-un-trabajo]`. El destino es un documento del manual (sin `.md`, con ancla opcional) o una pantalla del panel. En el panel, el nodo se vuelve un enlace sobre la imagen ([ADR 0019](../adr/0019-enlaces-en-los-nodos-de-los-diagramas.md)). |
 
 `go test ./docs` exige el bloque en cada diagrama y revisa cada campo.
 
