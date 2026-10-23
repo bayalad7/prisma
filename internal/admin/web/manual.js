@@ -224,6 +224,9 @@
       }
       const parrafo = [];
       while (i < lineas.length && !vacia(lineas[i]) && (parrafo.length === 0 || !iniciaBloque(lineas[i]))) parrafo.push(lineas[i++].trim());
+      // {{diagrama:id}} solo en su párrafo: el panel pone ahí el visor de ese diagrama.
+      const inclusion = parrafo.length === 1 && /^\{\{diagrama:([\w-]+)\}\}$/.exec(parrafo[0]);
+      if (inclusion && ctx.diagrama) { salida.push(ctx.diagrama(inclusion[1])); continue; }
       salida.push(h('p', {}, enLinea(parrafo.join(' '), ctx)));
     }
     return salida;

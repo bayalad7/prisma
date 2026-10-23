@@ -45,6 +45,8 @@ window.PRISMA_TEXTOS = {
       copiarMermaid: 'Copiar código Mermaid',
       ayudaTeclado: 'Usa + y − para acercar o alejar, las flechas para moverte y 0 para volver al tamaño original.',
       sinImagen: 'No se encontró la imagen del diagrama. Este es su código:',
+      publico: 'Para:',
+      audiencias: { usuario: 'dueños', instalador: 'instaladores', integrador: 'quien programa', desarrollador: 'desarrolladores' },
     },
     ticket: {
       etiqueta: (mm) => `Vista del ticket en papel de ${mm} mm`,
@@ -620,6 +622,9 @@ window.PRISMA_TEXTOS = {
     codigo: 'Bloque de código',
     diagrama: 'Código del diagrama',
     verDiagrama: 'Ver el código del diagrama (Mermaid)',
+    verExplicacion: 'Ver la explicación del diagrama',
+    diagramaNoExiste: (id) => `No hay un diagrama «${id}» en esta versión.`,
+    fuentes: 'Fuentes en el código (para desarrolladores)',
     imagenExterna: (alt) => `Imagen en Internet: ${alt}`,
     noExiste: 'Esa página del manual no existe',
     noExisteTexto: 'Puede que el enlace sea de otra versión. Busca el tema en el índice.',

@@ -250,7 +250,7 @@ func seccionesDe(ruta, titulo, texto string) []seccionManual {
 			cuerpo = nil
 			continue
 		}
-		if reSeparadorM.MatchString(linea) {
+		if reSeparadorM.MatchString(linea) || strings.HasPrefix(strings.TrimSpace(linea), "{{diagrama:") {
 			continue
 		}
 		if p := plano(linea); p != "" {

@@ -2520,11 +2520,30 @@
     if (!textosManual.has(ruta)) textosManual.set(ruta, await (await api.pedir('GET', '/admin/manual/' + ruta.split('/').map(enc).join('/'))).text());
     return textosManual.get(ruta);
   }
+  // Diagramas dibujados de antemano (ADR 0018): el manifiesto, por id y por documento de origen.
+  let diagramas = null;
+  async function cargarDiagramas() {
+    if (diagramas) return diagramas;
+    const { diagramas: lista } = await api.get('/diagramas');
+    diagramas = { lista, porId: new Map(lista.map((d) => [d.id, d])), porFuente: new Map(lista.map((d) => [d.fuente, d])) };
+    return diagramas;
+  }
+  // El visor de un diagrama, con sus dos variantes (cambian con el tema del panel).
+  function visorDe(d, { mermaid, explicacion } = {}) {
+    const url = (v, descarga) => `/admin/diagramas/${d.id}.${v}.svg${descarga ? '?descargar=1' : ''}`;
+    return UI.visorDiagrama({ src: { claro: url('claro'), oscuro: url('oscuro') }, descargar: { claro: url('claro', true), oscuro: url('oscuro', true) },
+      alt: d.alt, titulo: d.titulo, descripcion: d.descripcion, publico: d.audiencia, mermaid, explicacion });
+  }
+
+  // El repositorio en GitHub, en la versión instalada (o main si es de desarrollo).
+  const repoGithub = () => `https://github.com/bayalad7/prisma/blob/${/^\d+\.\d+\.\d+(-rc\.\d+)?$/.test(estado.version || '') ? `v${estado.version}` : 'main'}/`;
+  // Un enlace que sale del panel: otra pestaña, con su aviso para el lector de pantalla.
+  const externo = (href, hijos, nota = TAy.externo) => h('a', { href, target: '_blank', rel: 'noopener noreferrer', class: 'enlace-externo' },
+    hijos, UI.icono('externo'), h('span', { class: 'solo-lector' }, ` ${nota}`));
+
   // Adónde lleva cada enlace de un documento del manual (para manual.js).
-  function contextoManual(ruta, documentos) {
-    const ref = `https://github.com/bayalad7/prisma/blob/${/^\d+\.\d+\.\d+(-rc\.\d+)?$/.test(estado.version || '') ? `v${estado.version}` : 'main'}/`;
-    const externo = (href, hijos, nota = TAy.externo) => h('a', { href, target: '_blank', rel: 'noopener noreferrer', class: 'enlace-externo' },
-      hijos, UI.icono('externo'), h('span', { class: 'solo-lector' }, ` ${nota}`));
+  function contextoManual(ruta, documentos, dibujos) {
+    const ref = repoGithub();
     return {
       textos: TAy,
       enlace(destino, hijos) {
@@ -2542,11 +2561,27 @@
         const { ruta: r } = resolverRuta(destino, ruta);
         return h('img', { src: `/admin/manual/${r}`, alt, loading: 'lazy', class: 'imagen-manual' });
       },
-      codigo(lenguaje, _texto, pre) {
+      codigo(lenguaje, texto, pre) {
         if (lenguaje !== 'mermaid') return pre;
+        // En la página de un diagrama, su bloque se ve dibujado; otros bloques mermaid, como código.
+        const d = dibujos && dibujos.porFuente.get(ruta);
+        if (d) return visorDe(d, { mermaid: texto });
         return h('details', { class: 'avanzado' }, h('summary', {}, TAy.verDiagrama), pre);
       },
+      // {{diagrama:id}}: el visor de ese diagrama, con un enlace a su explicación.
+      diagrama(id) {
+        const d = dibujos && dibujos.porId.get(id);
+        if (!d) return UI.nota({ tipo: 'aviso', titulo: TAy.diagramaNoExiste(id) });
+        return visorDe(d, { explicacion: h('a', { href: rutaAyuda(d.fuente) }, TAy.verExplicacion) });
+      },
     };
+  }
+  // En la página de un diagrama, «Fuentes en el código» (para desarrolladores) va plegado.
+  function plegarFuentes(nodos) {
+    const i = nodos.findIndex((n) => n.tagName === 'P' && n.textContent.startsWith('Fuentes en el código'));
+    if (i < 0 || !nodos[i + 1] || nodos[i + 1].tagName !== 'UL') return nodos;
+    const plegado = h('details', { class: 'avanzado' }, h('summary', {}, TAy.fuentes), nodos[i + 1]);
+    return [...nodos.slice(0, i), plegado, ...nodos.slice(i + 2)];
   }
 
   // Panel lateral de ayuda: una sección del manual («ruta#ancla») sin salir de la pantalla, así no se
@@ -2556,7 +2591,8 @@
     const { documentos } = await cargarManual();
     const doc = documentos.get(ruta);
     if (!doc) return;
-    const { nodos } = window.PrismaManual.renderizar(await leerDocumento(ruta), contextoManual(ruta, documentos));
+    const dibujos = await cargarDiagramas().catch(() => null);
+    const { nodos } = window.PrismaManual.renderizar(await leerDocumento(ruta), contextoManual(ruta, documentos, dibujos));
     let titulo = doc.titulo;
     let cuerpo = nodos.slice(1);
     const i = ancla ? nodos.findIndex((n) => n.id === ancla) : -1;
@@ -2692,8 +2728,9 @@
       return;
     }
     const texto = await leerDocumento(ruta);
-    const contexto = contextoManual(ruta, documentos);
-    const { nodos, titulos } = window.PrismaManual.renderizar(texto, contexto);
+    const contexto = contextoManual(ruta, documentos, await cargarDiagramas().catch(() => null));
+    const { nodos: dibujados, titulos } = window.PrismaManual.renderizar(texto, contexto);
+    const nodos = ruta.startsWith('diagramas/') ? plegarFuentes(dibujados) : dibujados;
     const secciones = titulos.filter((t) => t.nivel === 2);
     const enEsta = secciones.length >= 3 && h('details', { class: 'avanzado en-esta-pagina' }, h('summary', {}, TAy.enEstaPagina),
       h('ul', { class: 'lista-manual' }, secciones.map((t) => h('li', {}, h('a', { href: `#${t.id}`, 'data-ancla': '1' }, t.texto)))));
@@ -2704,7 +2741,7 @@
       h('div', { class: 'fila-entre' }, volver, h('span', { class: 'tenue pequeno' }, doc.grupo.titulo)),
       nodos.slice(0, 1), enEsta, nodos.slice(1),
       h('nav', { class: 'vecinos-manual', 'aria-label': TAy.indice }, vecino(k - 1, TAy.anterior, 'izq'), vecino(k + 1, TAy.siguiente, 'der')),
-      h('p', { class: 'pequeno' }, externo(`${ref}docs/${ruta}`, TAy.enGithub, TAy.requiereInternet)));
+      h('p', { class: 'pequeno' }, externo(`${repoGithub()}docs/${ruta}`, TAy.enGithub, TAy.requiereInternet)));
     // Anclas dentro de la página: desplazan sin volver a dibujar.
     articulo.addEventListener('click', (ev) => {
       const a = ev.target.closest('a[data-ancla]');

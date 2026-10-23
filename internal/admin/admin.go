@@ -127,6 +127,7 @@ func (a *Admin) Handler() http.Handler {
 
 	privada("GET /admin/api/manual", a.listarManual)
 	privada("GET /admin/api/manual/buscar", a.buscarManual)
+	privada("GET /admin/api/diagramas", a.listarDiagramas)
 
 	privada("GET /admin/api/ajustes", a.leerAjustes)
 	privada("PUT /admin/api/ajustes", a.guardarAjustes)
@@ -155,6 +156,8 @@ func (a *Admin) Handler() http.Handler {
 			api.ServeHTTP(w, r)
 		case strings.HasPrefix(r.URL.Path, "/admin/manual/"):
 			a.conSesion(a.servirManual, false)(w, r)
+		case strings.HasPrefix(r.URL.Path, "/admin/diagramas/"):
+			a.conSesion(a.servirDiagrama, false)(w, r)
 		default:
 			servirEstatico(w, r, estaticos, a.op.Config.Dev.ModoDesarrollo)
 		}

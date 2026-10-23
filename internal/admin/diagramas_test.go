@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"io"
 	"io/fs"
+	"net/http"
 	"path"
 	"regexp"
 	"slices"
@@ -159,5 +160,31 @@ func TestDiagramasSaneados(t *testing.T) {
 				t.Errorf("%s carga algo de afuera: %q", f, m)
 			}
 		}
+	}
+}
+
+func TestServirDiagramas(t *testing.T) {
+	b := nuevoBanco(t)
+	sin := b.nuevoNavegador("127.0.0.1")
+	sin.exigirError("GET", "/admin/diagramas/07-orden-autorizacion.claro.svg", nil, 401, "SESION_REQUERIDA")
+	s := b.configurado()
+
+	r := s.exigir("GET", "/admin/api/diagramas", nil, 200)
+	if !strings.Contains(r.Body.String(), `"id": "07-orden-autorizacion"`) {
+		t.Fatalf("manifiesto: %.200s", r.Body.String())
+	}
+	// Con gzip, tal cual; sin gzip, descomprimido.
+	conGzip := s.pedir("GET", "/admin/diagramas/07-orden-autorizacion.oscuro.svg", nil, func(r *http.Request) { r.Header.Set("Accept-Encoding", "gzip, br") })
+	if conGzip.Code != 200 || conGzip.Header().Get("Content-Encoding") != "gzip" || conGzip.Header().Get("Content-Type") != "image/svg+xml" ||
+		conGzip.Header().Get("Content-Security-Policy") == "" {
+		t.Fatalf("con gzip: %d %v", conGzip.Code, conGzip.Header())
+	}
+	plano := s.exigir("GET", "/admin/diagramas/07-orden-autorizacion.oscuro.svg?descargar=1", nil, 200)
+	if plano.Header().Get("Content-Encoding") != "" || !bytes.HasPrefix(plano.Body.Bytes(), []byte("<svg")) ||
+		!strings.Contains(plano.Header().Get("Content-Disposition"), "07-orden-autorizacion.oscuro.svg") {
+		t.Fatalf("sin gzip: %v %.40q", plano.Header(), plano.Body.String())
+	}
+	for _, ruta := range []string{"07-orden-autorizacion.svg", "manifiesto.json", "../web/panel.js", "07-orden-autorizacion.claro.svg.gz", "99-no-existe.claro.svg"} {
+		s.exigirError("GET", "/admin/diagramas/"+ruta, nil, 404, "NO_ENCONTRADO")
 	}
 }

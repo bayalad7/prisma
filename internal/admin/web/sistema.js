@@ -468,30 +468,65 @@
   // Visor de diagramas (base; la Fase 5 agrega metadatos, variante oscura y galería) y vista de
   // ticket en papel térmico (base; la Fase 6 le da la imagen real de la impresora virtual).
   // ---------------------------------------------------------------------------------------------
-  function visorDiagrama({ src, alt, titulo, descripcion, mermaid }) {
+  // ¿Se ve el panel en oscuro? (el tema elegido o, en «automático», el del sistema).
+  const temaOscuro = () => document.documentElement.dataset.theme === 'dark'
+    || (!document.documentElement.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches);
+
+  // Visor de un diagrama (ADR 0018): la imagen SVG se ajusta al ancho; se acerca, aleja y mueve con
+  // los botones, el teclado, la rueda con Ctrl o los dedos (pellizcar y arrastrar); «Ver en grande»
+  // ocupa la ventana sin la API de pantalla completa. src: una URL o { claro, oscuro } (cambia sola
+  // con el tema). publico: etiquetas de para quién es. explicacion: nodos que van debajo (la
+  // descripción larga, vinculada con aria-describedby). Si la imagen no carga, muestra el código.
+  function visorDiagrama({ src, alt, titulo, descripcion, mermaid, publico = [], descargar, explicacion }) {
     const idDesc = nuevoId('vd');
+    const variantes = typeof src === 'string' ? { claro: src, oscuro: src } : src;
+    const actual = () => variantes[temaOscuro() ? 'oscuro' : 'claro'];
     let escala = 1, x = 0, y = 0;
-    const img = h('img', { src, alt, draggable: 'false' });
+    const img = h('img', { src: actual(), alt, draggable: 'false' });
     const lienzo = h('div', { class: 'visor-lienzo', tabindex: '0', role: 'group', 'aria-label': titulo, 'aria-describedby': idDesc }, img);
     const aplicar = () => { img.style.transform = `translate(${x}px, ${y}px) scale(${escala})`; };
-    const zoom = (f) => { escala = Math.min(6, Math.max(0.4, escala * f)); aplicar(); };
+    const zoom = (f) => { escala = Math.min(8, Math.max(0.4, escala * f)); aplicar(); };
     const restablecer = () => { escala = 1; x = 0; y = 0; aplicar(); };
     const grande = boton({ icono: 'expandir', etiqueta: T.visor.grande, chico: true, 'aria-pressed': 'false' });
+    const enlaceDescarga = h('a', { class: 'boton chico solo-icono', download: '', 'aria-label': T.visor.descargar, title: T.visor.descargar }, icono('descargar'));
+    let montado = false;
+    const conTema = () => {
+      // Si el visor ya salió de la página (otra pantalla), deja de escuchar el tema.
+      if (montado && !fig.isConnected) { observador.disconnect(); consulta.removeEventListener('change', conTema); return; }
+      montado = montado || fig.isConnected;
+      img.src = actual();
+      const d = descargar ? descargar[temaOscuro() ? 'oscuro' : 'claro'] || descargar.claro : actual();
+      enlaceDescarga.href = d;
+    };
+    // El tema puede cambiar con el selector del panel o con el del sistema.
+    const observador = new MutationObserver(conTema);
+    observador.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    const consulta = matchMedia('(prefers-color-scheme: dark)');
+    consulta.addEventListener('change', conTema);
     const fig = h('figure', { class: 'visor' },
       h('div', { class: 'visor-barra', role: 'toolbar', 'aria-label': T.visor.herramientas },
         boton({ icono: 'acercar', etiqueta: T.visor.acercar, chico: true, onclick: () => zoom(1.25) }),
         boton({ icono: 'alejar', etiqueta: T.visor.alejar, chico: true, onclick: () => zoom(0.8) }),
         boton({ icono: 'recargar', etiqueta: T.visor.restablecer, chico: true, onclick: restablecer }),
-        grande,
-        h('a', { class: 'boton chico solo-icono', href: src, download: '', 'aria-label': T.visor.descargar, title: T.visor.descargar }, icono('descargar')),
+        grande, enlaceDescarga,
         mermaid && botonCopiar(mermaid, T.visor.copiarMermaid)),
       lienzo,
-      h('figcaption', {}, h('strong', {}, titulo), h('p', { id: idDesc, class: 'tenue pequeno' }, descripcion, ' ', h('span', { class: 'solo-lector' }, T.visor.ayudaTeclado))));
+      h('figcaption', { id: idDesc },
+        h('strong', {}, titulo),
+        descripcion && h('p', { class: 'tenue pequeno' }, descripcion),
+        publico.length > 0 && h('p', { class: 'fila visor-publico' }, h('span', { class: 'tenue pequeno' }, T.visor.publico),
+          publico.map((p) => h('span', { class: 'chip' }, T.visor.audiencias[p] || p))),
+        explicacion,
+        h('span', { class: 'solo-lector' }, T.visor.ayudaTeclado)));
+    conTema();
     grande.addEventListener('click', () => {
       const activo = fig.classList.toggle('visor-grande');
       grande.setAttribute('aria-pressed', String(activo));
       grande.setAttribute('aria-label', activo ? T.visor.salirGrande : T.visor.grande);
+      grande.title = activo ? T.visor.salirGrande : T.visor.grande;
+      document.documentElement.classList.toggle('sin-desplazar', activo);
       restablecer();
+      lienzo.focus();
     });
     lienzo.addEventListener('keydown', (ev) => {
       const paso = 40;
@@ -520,7 +555,20 @@
     lienzo.addEventListener('pointerup', soltar);
     lienzo.addEventListener('pointercancel', soltar);
     lienzo.addEventListener('wheel', (ev) => { if (ev.ctrlKey) { ev.preventDefault(); zoom(ev.deltaY < 0 ? 1.1 : 0.9); } }, { passive: false });
-    img.addEventListener('error', () => vaciar(lienzo, h('p', { class: 'tenue pequeno' }, T.visor.sinImagen), h('pre', { class: 'codigo', tabindex: '0' }, mermaid || '')));
+    img.addEventListener('error', () => {
+      lienzo.style.height = '';
+      vaciar(lienzo, h('p', { class: 'tenue pequeno' }, T.visor.sinImagen), h('pre', { class: 'codigo', tabindex: '0' }, mermaid || ''));
+    });
+    // El alto del lienzo sigue la proporción del diagrama (entre 200 px y el 70 % de la ventana): uno
+    // ancho no queda diminuto en una caja alta, y uno alto cabe completo.
+    const ajustarAlto = () => {
+      if (!img.naturalWidth || fig.classList.contains('visor-grande')) return;
+      const alto = lienzo.clientWidth * img.naturalHeight / img.naturalWidth;
+      lienzo.style.height = `${Math.round(Math.min(innerHeight * 0.7, Math.max(200, alto)))}px`;
+    };
+    img.addEventListener('load', ajustarAlto);
+    new ResizeObserver(ajustarAlto).observe(fig);
+    grande.addEventListener('click', () => { if (fig.classList.contains('visor-grande')) lienzo.style.height = ''; else ajustarAlto(); });
     return fig;
   }
 
