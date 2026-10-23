@@ -711,3 +711,21 @@ button.enlace { background: none; border: 0; padding: 0; font: inherit; color: v
 .recorrido-arbol li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
 .pregunta-arbol h2, .recorrido-arbol + .tarjeta h2 { font-size: 1.2rem; margin: 0; }
 .pregunta-arbol .acciones .boton { min-width: 7em; }
+
+/* Galería «Cómo funciona PRISMA» */
+.galeria-diagramas { display: grid; gap: var(--e-4); grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); }
+.tarjeta-diagrama { display: grid; gap: 6px; text-decoration: none; color: inherit; align-content: start; }
+.tarjeta-diagrama:hover { border-color: var(--acento); }
+.tarjeta-diagrama:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+.miniatura { height: 150px; border: 1px solid var(--borde); border-radius: var(--radio-chico); background: var(--superficie); position: relative; overflow: hidden; }
+.miniatura img { position: absolute; inset: 0; margin: auto; max-width: 100%; max-height: 100%; padding: 6px; }
+/* Una imagen por tema: el navegador solo carga la que se ve. */
+.solo-oscuro { display: none; }
+:root[data-theme="dark"] .solo-oscuro { display: block; }
+:root[data-theme="dark"] .solo-claro { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .solo-oscuro { display: block; }
+  :root:not([data-theme="light"]) .solo-claro { display: none; }
+}
+.relacionados { margin-top: var(--e-4); padding-top: var(--e-3); border-top: 1px solid var(--borde); }
+.relacionados h3 { margin: 0 0 var(--e-2); font-size: 1rem; }

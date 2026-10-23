@@ -112,7 +112,7 @@
   const seccionDe = (ruta) => {
     const r = ruta.replace(/^\/admin\/?/, '').replace(/\/$/, '');
     if (/^pruebas\/(permisos|rollo\/[^/]+)$/.test(r)) return 'pruebas';
-    if (/^ayuda\/([a-z]+\/[A-Za-z0-9-]+\.md|no-imprime)$/.test(r)) return 'ayuda';
+    if (/^ayuda\/([a-z]+\/[A-Za-z0-9-]+\.md|no-imprime|diagramas)$/.test(r)) return 'ayuda';
     return SECCIONES.find((s) => s.ruta === r)?.id;
   };
 
@@ -283,7 +283,8 @@
   function encabezado(titulo, subtitulo, ...acciones) {
     const destino = ayudaDePantalla();
     const bAyuda = destino && UI.boton({ texto: TAy.botonPantalla, icono: 'ayuda', variante: 'texto', 'aria-haspopup': 'dialog',
-      'aria-label': TAy.botonPantallaEtiqueta, class: 'boton texto boton-ayuda', onclick: () => abrirAyuda(destino).catch(avisoError) });
+      'aria-label': TAy.botonPantallaEtiqueta, class: 'boton texto boton-ayuda',
+      onclick: async () => { await cargarDiagramas().catch(() => null); abrirAyuda(destino, { pantalla: clavePantalla() }).catch(avisoError); } });
     return h('div', { class: 'encabezado' }, h('div', {}, h('h1', {}, titulo), subtitulo && h('p', { class: 'subtitulo' }, subtitulo)),
       (acciones.length > 0 || bAyuda) && h('div', { class: 'acciones' }, acciones, bAyuda));
   }
@@ -1400,6 +1401,7 @@
   const referenciaDe = (t) => t.referencia || t.id;
 
   async function vistaTrabajos(vista) {
+    cargarDiagramas().catch(() => {}); // para «Ver el diagrama» en el detalle de un trabajo
     const [clientes, impresoras, ajustes] = await Promise.all([api.get('/clientes'), api.get('/impresoras'), api.get('/ajustes').catch(() => ({}))]);
     const consulta = new URLSearchParams(location.search);
     // Estado: los del historial más «con aviso», que se filtra aquí (son trabajos impresos).
@@ -1497,7 +1499,8 @@
         h('div', { class: 'pila' }, h('h3', {}, D.que), h('p', {}, c.que)),
         lista(D.porque, c.porque, false),
         lista(D.hacer, c.hacer, true),
-        h('div', { class: 'acciones' }, imp && botonProbar(), irImpresoras(), enlaceManual(t.codigo_error)),
+        h('div', { class: 'acciones' }, imp && botonProbar(), irImpresoras(), enlaceManual(t.codigo_error),
+          TAy.diagramasDeError[t.codigo_error] && botonDiagrama(TAy.diagramasDeError[t.codigo_error])),
         resultado,
         t.codigo_error !== 'PUENTE_REINICIADO' && h('p', { class: 'tenue pequeno' }, D.reintento),
       ];
@@ -2174,7 +2177,7 @@
     IMPRESORA_NO_PERMITIDA: 'aplicaciones', OPERACION_NO_PERMITIDA: 'aplicaciones', IMPRESORA_NO_ENCONTRADA: 'impresoras',
   };
   async function vistaPermisos(vista) {
-    const [clientes, impresoras] = await Promise.all([api.get('/clientes'), api.get('/impresoras')]);
+    const [clientes, impresoras] = await Promise.all([api.get('/clientes'), api.get('/impresoras'), cargarDiagramas().catch(() => null)]);
     agregar(vista, encabezado(TPe.titulo, TPe.subtitulo));
     if (clientes.length === 0) {
       const irAp = UI.boton({ texto: TPe.irAplicaciones, variante: 'primario' });
@@ -2258,10 +2261,11 @@
         resumen = UI.nota({ tipo: 'error', titulo: TPe.rechazo(r.estado_http, r.codigo),
           texto: h('p', {}, h('strong', {}, `${TPe.resolver}: `), TPe.sugerencias[falla.codigo] ? TPe.sugerencias[falla.codigo](elegida.nombre) : falla.sugerencia), acciones: boton });
       }
-      const docs = docsDe(estado.version);
-      vaciar(resultado, resumen, lista, h('p', { class: 'fila pequeno' },
-        h('a', { href: `${docs}diagramas/07-orden-autorizacion.md`, target: '_blank', rel: 'noopener' }, TPe.verDiagrama, UI.icono('externo')),
-        h('a', { href: `${docs}integradores/niveles-de-seguridad.md`, target: '_blank', rel: 'noopener' }, TPe.verManual, UI.icono('externo'))));
+      const niveles = UI.boton({ texto: TPe.verManual, icono: 'libro', chico: true, variante: 'texto' });
+      niveles.addEventListener('click', () => abrirAyuda('integradores/niveles-de-seguridad.md').catch(avisoError));
+      const delError = falla && TAy.diagramasDeError[falla.codigo];
+      vaciar(resultado, resumen, lista, h('div', { class: 'acciones' },
+        botonDiagrama(delError || '07-orden-autorizacion'), delError && delError !== '07-orden-autorizacion' && botonDiagrama('07-orden-autorizacion'), niveles));
     }
 
     selApp.addEventListener('change', proponer);
@@ -2490,7 +2494,6 @@
   // ---------------------------------------------------------------------------------------------
   // La documentación de la versión instalada: la etiqueta v<versión> si es una versión publicada, o
   // main en una compilación de desarrollo (0.0.0-dev) o intermedia (git describe con -N-gabc).
-  const docsDe = (version) => `https://github.com/bayalad7/prisma/blob/${/^\d+\.\d+\.\d+(-rc\.\d+)?$/.test(version || '') ? `v${version}` : 'main'}/docs/`;
 
   // ---------------------------------------------------------------------------------------------
   // 9. Ayuda: el manual de docs/ (docs.Manual), dibujado por manual.js sin innerHTML.
@@ -2586,9 +2589,10 @@
 
   // Panel lateral de ayuda: una sección del manual («ruta#ancla») sin salir de la pantalla, así no se
   // pierde lo que se estaba haciendo. Los enlaces al panel lo cierran y llevan a su pantalla.
-  async function abrirAyuda(destino) {
+  async function abrirAyuda(destino, { pantalla } = {}) {
     const [ruta, ancla = ''] = destino.split('#');
     const { documentos } = await cargarManual();
+    document.querySelector('dialog.panel-ayuda[open]')?.close();
     const doc = documentos.get(ruta);
     if (!doc) return;
     const dibujos = await cargarDiagramas().catch(() => null);
@@ -2619,17 +2623,30 @@
       h('div', { class: 'panel-ayuda-cabeza' },
         h('div', {}, i >= 0 && h('p', { class: 'tenue pequeno' }, doc.titulo), h('h2', { id: idTitulo }, titulo)),
         UI.boton({ icono: 'cerrar', variante: 'texto', etiqueta: TAy.panelCerrar, onclick: () => d.close() })),
-      h('div', { class: 'documento-manual' }, cuerpo),
+      h('div', { class: 'documento-manual' }, cuerpo, relacionadosDe(pantalla, ruta)),
       h('p', { class: 'pequeno' }, h('a', { href: rutaAyuda(ruta, ancla ? `#${ancla}` : '') }, TAy.abrirEnAyuda, UI.icono('derecha'))));
     document.body.append(d);
     d.showModal();
   }
-  // La ayuda de la pantalla actual (las subpantallas de Probar impresión tienen la suya).
-  function ayudaDePantalla() {
+  // La pantalla actual, como clave de ayuda.pantallas (las subpantallas de Probar impresión tienen la suya).
+  function clavePantalla() {
     const r = location.pathname.replace(/^\/admin\/?/, '');
-    if (r.startsWith('pruebas/rollo/')) return TAy.pantallas.rollo;
-    if (r === 'pruebas/permisos') return TAy.pantallas.permisos;
-    return TAy.pantallas[seccionActual()];
+    if (r.startsWith('pruebas/rollo/')) return 'rollo';
+    if (r === 'pruebas/permisos') return 'permisos';
+    return seccionActual();
+  }
+  const ayudaDePantalla = () => TAy.pantallas[clavePantalla()];
+  // «Diagramas de esta pantalla»: los que la nombran en su front-matter, primero los de dueños.
+  function relacionadosDe(pantalla, rutaActual) {
+    if (!pantalla || !diagramas) return null;
+    const lista = diagramas.lista.filter((d) => d.pantallas.includes(pantalla) && d.fuente !== rutaActual).sort(ordenDiagramas);
+    if (!lista.length) return null;
+    return h('section', { class: 'relacionados' }, h('h3', {}, TAy.relacionados),
+      h('ul', { class: 'lista-manual' }, lista.map((d) => {
+        const b = h('button', { type: 'button', class: 'enlace' }, d.titulo);
+        b.addEventListener('click', () => abrirAyuda(d.fuente, { pantalla }).catch(avisoError));
+        return h('li', {}, b, h('span', { class: 'tenue pequeno' }, ` · ${d.descripcion}`));
+      })));
   }
   // Un enlace «Leer en el manual» para un código de error o de aviso, si el manual lo explica.
   function enlaceManual(codigo) {
@@ -2700,14 +2717,71 @@
     pintar(false);
   }
 
+  // Galería «Cómo funciona PRISMA» (/admin/ayuda/diagramas): los diagramas por público, con búsqueda.
+  // «Para el negocio» (dueños e instaladores) va primero, para no abrumar con los técnicos.
+  const PUBLICOS = { negocio: ['usuario', 'instalador'], tecnicos: ['integrador', 'desarrollador'] };
+  // Orden de los diagramas: primero los de dueños; luego, el orden curado del manual (docs/manual.json).
+  const ordenDiagramas = (a, b) => {
+    const dueno = Number(b.audiencia.includes('usuario')) - Number(a.audiencia.includes('usuario'));
+    const lugar = (d) => (manual ? manual.orden.indexOf(d.fuente) : 0);
+    return dueno || lugar(a) - lugar(b);
+  };
+  const plegarTexto = (t) => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  async function vistaGaleria(vista) {
+    const T = TAy.galeria;
+    const [{ lista }] = await Promise.all([cargarDiagramas(), cargarManual()]);
+    const busqueda = UI.entrada({ tipo: 'search', autocomplete: 'off' });
+    const cBusqueda = UI.campo({ id: 'ga-buscar', etiqueta: T.buscar, control: busqueda });
+    const cuenta = h('p', { class: 'tenue pequeno', 'aria-live': 'polite' });
+    const rejilla = h('div', { class: 'galeria-diagramas' });
+    let publico = 'negocio';
+    const tarjeta = (d) => {
+      const url = (v) => `/admin/diagramas/${d.id}.${v}.svg`;
+      return h('a', { class: 'tarjeta tarjeta-diagrama', href: rutaAyuda(d.fuente) },
+        h('div', { class: 'miniatura' }, h('img', { class: 'solo-claro', src: url('claro'), alt: '', loading: 'lazy' }),
+          h('img', { class: 'solo-oscuro', src: url('oscuro'), alt: '', loading: 'lazy' })),
+        h('strong', {}, d.titulo), h('span', { class: 'tenue pequeno' }, d.descripcion),
+        h('span', { class: 'fila' }, d.audiencia.map((a) => h('span', { class: 'chip' }, window.PRISMA_TEXTOS.ui.visor.audiencias[a] || a))));
+    };
+    const pintar = () => {
+      const q = plegarTexto(busqueda.value.trim());
+      const elegidos = lista
+        .filter((d) => d.audiencia.some((a) => PUBLICOS[publico].includes(a)))
+        .filter((d) => !q || plegarTexto(`${d.titulo} ${d.descripcion}`).includes(q))
+        .sort(ordenDiagramas);
+      cuenta.textContent = T.cuenta(elegidos.length);
+      vaciar(rejilla, elegidos.length ? elegidos.map(tarjeta) : UI.vacio({ icono: 'diagrama', titulo: T.vacio, texto: T.vacioTexto }));
+    };
+    busqueda.addEventListener('input', pintar);
+    const pestanas = UI.pestanas([
+      { id: 'negocio', titulo: T.negocio, contenido: () => h('div') },
+      { id: 'tecnicos', titulo: T.tecnicos, contenido: () => h('div') },
+    ], { etiqueta: T.publico, alCambiar: (id) => { publico = id; pintar(); } });
+    agregar(vista, h('a', { href: rutaDe('ayuda'), class: 'volver' }, UI.icono('flecha-izq'), TAy.volver),
+      encabezado(T.titulo, T.subtitulo), cBusqueda, pestanas, cuenta, rejilla);
+    pintar();
+  }
+
+  // Un botón que abre un diagrama en el panel lateral de ayuda.
+  function botonDiagrama(id, { chico = true } = {}) {
+    const d = diagramas && diagramas.porId.get(id);
+    if (!d) return null;
+    const b = UI.boton({ texto: TAy.verDiagramaDe(d.titulo), icono: 'diagrama', chico, variante: 'texto' });
+    b.addEventListener('click', () => abrirAyuda(d.fuente).catch(avisoError));
+    return b;
+  }
+
   async function vistaAyuda(vista) {
     const { grupos, documentos, orden } = await cargarManual();
     const ruta = decodeURIComponent(location.pathname.replace(/^\/admin\/ayuda\/?/, ''));
     if (ruta === 'no-imprime') return vistaNoImprime(vista);
+    if (ruta === 'diagramas') return vistaGaleria(vista);
     if (!ruta) {
       const guiar = h('a', { class: 'boton primario', href: rutaAyuda('no-imprime') }, UI.icono('impresora'), TAy.noImprime.empezar);
+      const galeria = h('a', { class: 'boton', href: rutaAyuda('diagramas') }, UI.icono('diagrama'), TAy.galeria.abrir);
       agregar(vista, encabezado(TAy.titulo, TAy.subtitulo),
         UI.nota({ tipo: 'info', titulo: TAy.noImprime.tarjeta, texto: TAy.noImprime.tarjetaTexto, acciones: guiar }),
+        UI.nota({ tipo: 'info', titulo: TAy.galeria.titulo, texto: TAy.galeria.tarjetaTexto, acciones: galeria }),
         buscadorManual(),
         h('div', { class: 'grupos-manual' }, grupos.map((g) => UI.tarjeta({ titulo: g.titulo, icono: 'libro', nivel: 2 },
           h('ul', { class: 'lista-manual' }, g.documentos.map((d) => h('li', {}, h('a', { href: rutaAyuda(d.ruta) }, d.titulo))))))));

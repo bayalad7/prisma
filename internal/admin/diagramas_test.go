@@ -188,3 +188,20 @@ func TestServirDiagramas(t *testing.T) {
 		s.exigirError("GET", "/admin/diagramas/"+ruta, nil, 404, "NO_ENCONTRADO")
 	}
 }
+
+// TestDiagramasDeLosErrores: cada diagrama que el panel ofrece para un código de error existe.
+func TestDiagramasDeLosErrores(t *testing.T) {
+	ids := map[string]bool{}
+	for _, d := range leerManifiesto(t) {
+		ids[d.ID] = true
+	}
+	errores := destinosDeTextos(t, "diagramasDeError")
+	if len(errores) < 5 {
+		t.Fatalf("diagramasDeError: %v", errores)
+	}
+	for codigo, id := range errores {
+		if !ids[id] {
+			t.Errorf("ayuda.diagramasDeError.%s lleva al diagrama %q, que no existe", codigo, id)
+		}
+	}
+}
