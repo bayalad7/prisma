@@ -510,7 +510,7 @@ window.PRISMA_TEXTOS = {
     general: {
       puente: 'Puente', nombre: 'Nombre del puente', nombreAyuda: 'Aparece en el panel y en la respuesta de salud de la API, por ejemplo «Cafetería La Esperanza».',
       nombreMal: 'Escribe un nombre de 1 a 60 caracteres.',
-      limites: 'Límite de tickets', limitesTexto: 'Cuántas peticiones por minuto acepta el puente, para que un equipo o una aplicación con fallas no lo sature. Admite ráfagas de ese tamaño. 0 quita el límite.',
+      limites: 'Límite de tickets', limitesTexto: 'Cuántas peticiones por minuto acepta el puente, para que un equipo o una aplicación con fallas no lo sature. Admite ráfagas de ese tamaño. 0 quita el límite. El panel lleva su propia cuenta: usarlo no le resta a tus aplicaciones.',
       porEquipo: 'Por equipo (dirección IP)', porAplicacion: 'Por aplicación', limiteMal: 'Escribe un número de 0 a 100000.',
       historial: 'Historial', historialTexto: 'Los trabajos más antiguos se borran solos. Nunca se guarda el contenido de los tickets.',
       dias: 'Días que se conservan', diasMal: 'Escribe un número de días de 1 a 3650.',
