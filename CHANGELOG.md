@@ -6,6 +6,8 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 
 ## [Sin publicar]
 
+## [0.2.0] — 2026-10-23
+
 ### Agregado
 
 - Licencia Apache-2.0 (`LICENSE`, `NOTICE`). El SDK pasa de `UNLICENSED` a `Apache-2.0`.
@@ -40,6 +42,7 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 
 ### Cambiado
 
+- SDK JavaScript 0.2.0: `Impresora` incluye `virtual` en sus tipos, y las sugerencias de error citan las rutas nuevas de la documentación. Las guías, los ejemplos y el código para integrar del panel lo cargan desde `cdn.jsdelivr.net/gh/bayalad7/prisma@v0.2.0/sdk/js/dist/…`.
 - El panel (`/admin`) lleva su propia cuenta de peticiones por IP, fija en 600 por minuto: abrirlo ya no le resta al límite de la API (`peticiones_ip_por_minuto`, que queda solo para `/v1`), y una aplicación que imprime mucho desde el mismo equipo ya no deja el panel sin cargar.
 - Navegación nueva del panel: secciones agrupadas (Operación, Integración, Sistema) con iconos, barra inferior en celular, enlace para saltar al contenido, selector de tema y atajos de teclado (`g` y una letra; se pueden desactivar). Cada sección tiene su dirección (`/admin/impresoras`, `/admin/aplicaciones`…); los enlaces viejos con `#` siguen funcionando.
 - Inicio nuevo: el estado de un vistazo con una acción en cada tarjeta, y **Primeros pasos** (agregar una impresora física o virtual, imprimir una prueba, revisar los acentos, autorizar una aplicación) hasta que el puente esté listo. Los tickets de hoy ya no cuentan las pruebas del panel.
@@ -87,5 +90,6 @@ Primera versión publicada.
 - Los trabajos que llegan por la API pasan directo de `encolado` a `completado` o `fallido`; el estado `imprimiendo` solo lo usa `prisma imprimir`.
 - La *Ayuda* del panel enlaza la documentación de la rama `develop`.
 
-[Sin publicar]: https://github.com/bayalad7/prisma/compare/v0.1.0...develop
+[Sin publicar]: https://github.com/bayalad7/prisma/compare/v0.2.0...develop
+[0.2.0]: https://github.com/bayalad7/prisma/releases/tag/v0.2.0
 [0.1.0]: https://github.com/bayalad7/prisma/releases/tag/v0.1.0

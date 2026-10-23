@@ -26,7 +26,7 @@ El dueño del negocio te entrega esos datos desde el panel de su puente.
 
 | Pieza | Dónde |
 |---|---|
-| SDK JavaScript (navegador y Node.js 18+, sin dependencias, con tipos TypeScript) | [`sdk/js`](../../sdk/js/) · CDN: `https://cdn.jsdelivr.net/gh/bayalad7/prisma@v0.1.0/sdk/js/dist/prisma.umd.js` (npm: ⏳ próximamente) |
+| SDK JavaScript (navegador y Node.js 18+, sin dependencias, con tipos TypeScript) | [`sdk/js`](../../sdk/js/) · CDN: `https://cdn.jsdelivr.net/gh/bayalad7/prisma@v0.2.0/sdk/js/dist/prisma.umd.js` (npm: ⏳ próximamente) |
 | Firmadores de referencia para el nivel 3 | [`sdk/firmadores`](../../sdk/firmadores/): PHP 8.2, Node.js y Python |
 | Vector de prueba de firma | [`testdata/vector-firma`](../../testdata/vector-firma/LEEME.md) |
 | Ejemplos | [`ejemplos/pagina-simple.html`](ejemplos/pagina-simple.html) (nivel 2) · [`ejemplos/backend-php-firmado/`](ejemplos/backend-php-firmado/) (nivel 3) |

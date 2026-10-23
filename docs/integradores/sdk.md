@@ -9,21 +9,21 @@ El SDK se publica con cada versión de PRISMA, en la etiqueta `v<versión>` del 
 **Desde un CDN, con `<script>`** (define la variable global `Prisma`):
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/bayalad7/prisma@v0.1.0/sdk/js/dist/prisma.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/bayalad7/prisma@v0.2.0/sdk/js/dist/prisma.umd.js"></script>
 ```
 
 **Desde un CDN, como módulo ES:**
 
 ```html
 <script type="module">
-  import { Prisma } from "https://cdn.jsdelivr.net/gh/bayalad7/prisma@v0.1.0/sdk/js/dist/prisma.mjs";
+  import { Prisma } from "https://cdn.jsdelivr.net/gh/bayalad7/prisma@v0.2.0/sdk/js/dist/prisma.mjs";
 </script>
 ```
 
 **En Node.js 18+ o con un empaquetador:** copia el archivo al proyecto y impórtalo desde ahí.
 
 ```sh
-curl -fsSLo prisma.mjs https://cdn.jsdelivr.net/gh/bayalad7/prisma@v0.1.0/sdk/js/dist/prisma.mjs
+curl -fsSLo prisma.mjs https://cdn.jsdelivr.net/gh/bayalad7/prisma@v0.2.0/sdk/js/dist/prisma.mjs
 ```
 
 ```js
