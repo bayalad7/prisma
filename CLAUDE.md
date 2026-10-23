@@ -65,8 +65,9 @@ según el perfil de la impresora y lo imprime por USB, red (TCP 9100) o Bluetoot
 - Los instaladores nunca activan `modo_desarrollo` (TestConfiguracionDeLosInstaladores).
 - Ninguna goroutine de la cola sobrevive a Quitar/Cerrar (TestSinFugasDeGoroutines).
 - Los tickets de las impresoras virtuales viven solo en memoria (conector.RollosVirtuales): nunca en la
-  base, la bitácora ni los respaldos, tampoco desde «Probar impresión» (TestImpresoraVirtualDePrincipioAFin,
-  TestProbarImpresionNoGuardaElContenido).
+  base, la bitácora ni los respaldos, tampoco desde «Probar impresión», y no sobreviven a un reinicio
+  (TestImpresoraVirtualDePrincipioAFin, TestProbarImpresionNoGuardaElContenido, e2e/usuario-nuevo.spec.mjs).
+  Su rollo coincide con los golden del renderizador (TestImpresoraVirtualCoincideConLosGolden).
 - Permisos: base y llave del certificado 0600; datos solo para el usuario del servicio
   (en Windows, SYSTEM y Administradores).
 
@@ -88,7 +89,8 @@ según el perfil de la impresora y lo imprime por USB, red (TCP 9100) o Bluetoot
 - Lint: `make lint` / `.\build.ps1 lint` (go vet + staticcheck).
 - SDK y firmadores: `make test-sdk` / `.\build.ps1 test-sdk`. Tras cambiar sdk/js/src: `npm run construir`.
 - Panel de punta a punta: `cd e2e && npm ci && npx playwright install chromium && npm test` (flujos a–g,
-  escritorio y celular, con axe; compila y arranca sus propios puentes; lo corre el CI).
+  escritorio y celular, pantallas en claro y oscuro, teclado y usuario nuevo, con axe; compila y arranca
+  sus propios puentes; lo corre el CI).
 - Archivos generados por pruebas: `go test ./internal/dev -actualizar` (golden) y
   `go test ./internal/servicio -run Deb -actualizar` (unidad de systemd del .deb).
 - Binarios y paquetes: `make build-todo | deb | pkg | checksums` / `.\build.ps1 build-todo | deb | instalador | checksums`.
