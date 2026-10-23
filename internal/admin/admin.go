@@ -110,6 +110,7 @@ func (a *Admin) Handler() http.Handler {
 	privada("GET /admin/api/solicitudes", a.listarSolicitudes)
 	privada("POST /admin/api/solicitudes/aprobar", a.aprobarSolicitud)
 	privada("POST /admin/api/solicitudes/rechazar", a.rechazarSolicitud)
+	privada("POST /admin/api/solicitudes/restaurar", a.restaurarSolicitud)
 	privada("POST /admin/api/solicitudes/olvidar", a.olvidarSolicitud)
 
 	privada("GET /admin/api/trabajos", a.listarTrabajos)

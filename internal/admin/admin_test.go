@@ -665,6 +665,13 @@ func TestSolicitudesAprobarConAplicacionNuevaRechazarYOlvidar(t *testing.T) {
 	if len(lista) != 1 || lista[0].Origen != "https://b.example" || lista[0].Estado != "rechazada" {
 		t.Fatalf("solicitudes: %+v", lista)
 	}
+	// «Deshacer» el rechazo: vuelve a pendientes, y solo una vez.
+	s.exigir("POST", "/admin/api/solicitudes/restaurar", map[string]any{"origen": "https://b.example"}, 200)
+	s.exigirError("POST", "/admin/api/solicitudes/restaurar", map[string]any{"origen": "https://b.example"}, 404, "SOLICITUD_NO_ENCONTRADA")
+	json.Unmarshal(s.exigir("GET", "/admin/api/solicitudes", nil, 200).Body.Bytes(), &lista)
+	if len(lista) != 1 || lista[0].Estado != "pendiente" {
+		t.Fatalf("restaurada: %+v", lista)
+	}
 }
 
 func TestRecursos(t *testing.T) {

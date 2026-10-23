@@ -63,6 +63,8 @@ window.PRISMA_TEXTOS = {
     },
     pendientes: (n) => (n === 1 ? '1 solicitud pendiente' : `${n} solicitudes pendientes`),
     tituloPagina: (seccion, puente) => `${seccion} · ${puente}`,
+    // Mientras el puente conserve el nombre predeterminado («PRISMA»), para no repetir la marca.
+    sinNombre: 'Puente de impresión',
     version: (v) => `Versión ${v}`,
     cerrarSesion: 'Cerrar sesión',
     cargando: 'Cargando…',
@@ -79,6 +81,8 @@ window.PRISMA_TEXTOS = {
   // Inicio (Fase 3, entrega 2).
   inicio: {
     subtitulo: 'Estado del puente de impresión de este negocio.',
+    ponerNombre: 'Ponerle nombre',
+    ponerNombreEtiqueta: 'Ponerle nombre a este puente, en Ajustes',
     todoBien: 'Todo en orden',
     porRevisar: (n) => (n === 1 ? '1 cosa por revisar' : `${n} cosas por revisar`),
     pasos: {
@@ -396,6 +400,8 @@ window.PRISMA_TEXTOS = {
     intentos: (n, cuando) => `${n === 1 ? '1 intento' : `${n} intentos`} · último ${cuando}`,
     aprobar: 'Aprobar', rechazar: 'Rechazar', olvidar: 'Olvidar',
     rechazada: (o) => `${o} rechazado. Si vuelve a intentarlo, no te avisará.`,
+    deshacer: 'Deshacer',
+    restaurada: (o) => `${o} volvió a las solicitudes pendientes.`,
     olvidada: 'Solicitud olvidada. Si vuelve a intentarlo, aparecerá de nuevo.',
     muchas: (n) => `Hay ${n} solicitudes guardadas (el máximo es 200). Muchas páginas desconocidas pueden indicar que un equipo de la red intenta imprimir sin permiso. Al llegar al máximo, cada solicitud nueva reemplaza a la más antigua; las que no vuelven a intentarlo se olvidan solas a los 30 días.`,
     dialogo: {

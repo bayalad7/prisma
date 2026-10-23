@@ -526,6 +526,8 @@ dialog::backdrop { background: var(--velo); }
 }
 .toast > .icono { color: var(--acento); margin-top: 1px; }
 .toast .boton { margin: -4px 0; }
+/* Con una acción (Deshacer, Cómo resolverlo), la X sigue en el mismo renglón. */
+.toast:has(> .boton + .boton) { grid-template-columns: auto minmax(0, 1fr) auto auto; }
 .toast-texto { padding-top: 1px; }
 .toast.error { border-left-color: var(--error); }
 .toast.error > .icono { color: var(--error); }
@@ -731,3 +733,6 @@ button.enlace { background: none; border: 0; padding: 0; font: inherit; color: v
 }
 .relacionados { margin-top: var(--e-4); padding-top: var(--e-3); border-top: 1px solid var(--borde); }
 .relacionados h3 { margin: 0 0 var(--e-2); font-size: 1rem; }
+
+/* Contenido que se vuelve a dibujar solo (Inicio): no cambia la rejilla de la vista. */
+.contenido-vivo { display: contents; }

@@ -351,14 +351,15 @@
     return contAvisos;
   }
   // tipo: '' (información), ok, aviso o error. Los errores duran más; persistente no se cierra solo.
-  // accion: { texto, alPulsar } agrega un botón (y el aviso no se va solo: hay algo que hacer).
-  function aviso(texto, tipo = '', { persistente, accion } = {}) {
+  // accion: { texto, alPulsar } agrega un botón (y el aviso no se va solo: hay algo que hacer), salvo
+  // que traiga duracion (ms): un «Deshacer» que también se puede hacer de otra forma.
+  function aviso(texto, tipo = '', { persistente, accion, duracion } = {}) {
     const boton2 = accion && boton({ texto: accion.texto, variante: 'texto', chico: true, onclick: () => { t.remove(); accion.alPulsar(); } });
     const t = h('div', { class: `toast ${tipo}`, role: tipo === 'error' ? 'alert' : 'status' },
       icono(ICONO_ESTADO[tipo] || 'info'), h('span', { class: 'toast-texto' }, texto), boton2,
       boton({ icono: 'cerrar', variante: 'texto', chico: true, etiqueta: T.cerrarAviso, onclick: () => t.remove() }));
     contenedorAvisos().append(t);
-    if (!persistente && !accion) setTimeout(() => t.remove(), tipo === 'error' ? 9000 : 5000);
+    if (!persistente && (!accion || duracion)) setTimeout(() => t.remove(), duracion || (tipo === 'error' ? 9000 : 5000));
     return t;
   }
   // Un error con código conocido ofrece «Cómo resolverlo»: la sección del manual que lo explica.
@@ -445,6 +446,10 @@
     });
     barra.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && barra.classList.contains('abierta')) { cerrarMenu(); menu.focus(); } });
     nav.addEventListener('click', (ev) => { if (ev.target.closest('a')) cerrarMenu(); });
+    // Tocar fuera del menú abierto lo cierra. El foco queda donde se tocó (con Escape vuelve al botón).
+    document.addEventListener('pointerdown', (ev) => {
+      if (barra.isConnected && barra.classList.contains('abierta') && !barra.contains(ev.target)) cerrarMenu();
+    });
     const principal = h('main', { class: 'contenido', id: 'principal', tabindex: '-1' });
     const abajo = inferior.length > 0 && h('nav', { class: 'nav-inferior', 'aria-label': T.navegacionInferior },
       inferior.map((id) => todas.find((s) => s.id === id)).filter(Boolean).map((s) => enlace(s, true)));

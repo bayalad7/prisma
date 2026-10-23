@@ -92,6 +92,9 @@
   // Estado, acceso y enrutado
   // ---------------------------------------------------------------------------------------------
   const estado = { sesion: null, pendientes: 0, nombrePuente: 'PRISMA', direccion: '', version: '' };
+  // El nombre que se muestra: con el predeterminado, «Puente de impresión» en lugar de repetir «PRISMA».
+  const NOMBRE_PREDETERMINADO = 'PRISMA';
+  const nombreVisible = (n) => (!n || n === NOMBRE_PREDETERMINADO ? TN.sinNombre : n);
   const TN = window.PRISMA_TEXTOS.nav;
   // Secciones del panel: cada una tiene su ruta bajo /admin/ (el puente sirve el panel en todas), su
   // grupo en la navegación y la tecla de su atajo (g y la letra).
@@ -244,7 +247,7 @@
     });
     app = UI.marco({
       marca: h('a', { class: 'marca', href: rutaDe('inicio') }, logo(30), h('span', { class: 'marca-texto' },
-        h('span', { class: 'marca-nombre' }, 'PRISMA'), h('span', { class: 'marca-puente', id: 'nombre-puente' }, estado.nombrePuente))),
+        h('span', { class: 'marca-nombre' }, 'PRISMA'), h('span', { class: 'marca-puente', id: 'nombre-puente' }, nombreVisible(estado.nombrePuente)))),
       grupos, actual: seccionActual(), inferior: ['inicio', 'impresoras', 'solicitudes', 'trabajos', 'ayuda'],
       pie: [UI.selectorTema(), h('span', { id: 'version' }, estado.version && TN.version(estado.version)), botonAtajos(), salir],
     });
@@ -262,7 +265,7 @@
   async function navegar() {
     const id = seccionActual();
     app.marcar(id);
-    document.title = TN.tituloPagina(TN.secciones[id], estado.nombrePuente);
+    document.title = TN.tituloPagina(TN.secciones[id], nombreVisible(estado.nombrePuente));
     const vista = h('div', { class: 'vista' }, cintaDemo(), UI.esqueleto({ lineas: 4 }));
     vaciar(app.principal, vista);
     try {
@@ -292,8 +295,8 @@
   function actualizarContador() {
     if (app) app.contador('solicitudes', estado.pendientes, TN.pendientes(estado.pendientes));
   }
-  // Pide el resumen al entrar y al volver a la pestaña (no cada tanto: eso mantendría viva la sesión
-  // y anularía el cierre por inactividad).
+  // Pide el resumen al entrar y al volver a la pestaña. El Inicio además se actualiza solo, como
+  // sondeo (X-Prisma-Sondeo): una petición normal cada tanto mantendría viva la sesión.
   async function refrescarPendientes() {
     try {
       const r = await api.get('/resumen');
@@ -301,7 +304,7 @@
       estado.nombrePuente = r.puente.nombre;
       estado.version = r.puente.version;
       const nombre = document.getElementById('nombre-puente');
-      if (nombre) nombre.textContent = r.puente.nombre;
+      if (nombre) nombre.textContent = nombreVisible(r.puente.nombre);
       const version = document.getElementById('version');
       if (version) version.textContent = TN.version(r.puente.version);
     } catch { /* sin cambios */ }
@@ -365,12 +368,48 @@
   const insigniaImpresora = (estadoImp) => UI.insignia(ESTADO_INSIGNIA_IMPRESORA[estadoImp] || 'desconocido', TI.impresoras.estados[estadoImp] || estadoImp);
   const enlaceBoton = (seccion, texto, variante = '', consulta = '') => h('a', { class: `boton chico ${variante}`, href: rutaDe(seccion) + consulta }, texto);
 
-  async function vistaInicio(vista) {
-    const r = await api.get('/resumen');
-    estado.pendientes = r.solicitudes_pendientes;
-    estado.direccion = r.puente.direccion;
-    actualizarContador();
+  // Cada cuánto se actualiza el Inicio mientras se ve (con la cabecera de sondeo: no renueva la sesión).
+  const INICIO_CADA_MS = 15_000;
+  const CONTROLES = 'a[href], button, input, select, textarea, summary, [contenteditable], [tabindex]:not([tabindex="-1"])';
 
+  async function vistaInicio(vista) {
+    const caja = h('div', { class: 'contenido-vivo' });
+    let ultimo = '';
+    const pintar = (r) => {
+      ultimo = JSON.stringify(r);
+      estado.pendientes = r.solicitudes_pendientes;
+      estado.direccion = r.puente.direccion;
+      actualizarContador();
+      vaciar(caja, contenidoInicio(r));
+    };
+    pintar(await api.get('/resumen'));
+    agregar(vista, caja);
+
+    // Se vuelve a dibujar solo si algo cambió, con la pestaña visible y sin estorbar: no mientras
+    // la persona usa un control de la pantalla o tiene un diálogo abierto.
+    let ocupado = false;
+    const revisar = async () => {
+      if (ocupado || document.visibilityState !== 'visible' || document.querySelector('dialog[open]')) return;
+      const enfocado = caja.contains(document.activeElement) ? document.activeElement : null;
+      if (enfocado && enfocado.matches(CONTROLES)) return;
+      ocupado = true;
+      try {
+        const r = await api.get('/resumen', { sondeo: true });
+        if (!vista.isConnected || JSON.stringify(r) === ultimo) return;
+        pintar(r);
+        // El foco estaba en el título (al llegar a la pantalla): sigue en el título nuevo.
+        if (enfocado && enfocado.tagName === 'H1') caja.querySelector('h1')?.focus({ preventScroll: true });
+      } catch { /* se intenta en la siguiente vuelta */ } finally { ocupado = false; }
+    };
+    const reloj = setInterval(() => {
+      if (!vista.isConnected) { clearInterval(reloj); document.removeEventListener('visibilitychange', alVolver); return; }
+      revisar();
+    }, INICIO_CADA_MS);
+    function alVolver() { if (vista.isConnected) revisar(); }
+    document.addEventListener('visibilitychange', alVolver);
+  }
+
+  function contenidoInicio(r) {
     const imps = r.impresoras;
     const listas = imps.filter((i) => i.estado === 'en_linea').length;
     const sinRespuesta = imps.filter((i) => i.estado === 'fuera_de_linea');
@@ -378,8 +417,9 @@
     const certMal = cert && cert.estado !== 'vigente';
     const porRevisar = sinRespuesta.length + (r.solicitudes_pendientes > 0 ? 1 : 0) + (r.trabajos_hoy.fallidos > 0 ? 1 : 0) + (certMal ? 1 : 0);
 
-    agregar(vista,
-      encabezado(r.puente.nombre, TI.subtitulo, porRevisar === 0 ? UI.insignia('ok', TI.todoBien) : UI.insignia('aviso', TI.porRevisar(porRevisar))),
+    return [
+      encabezado(nombreVisible(r.puente.nombre), TI.subtitulo, porRevisar === 0 ? UI.insignia('ok', TI.todoBien) : UI.insignia('aviso', TI.porRevisar(porRevisar)),
+        r.puente.nombre === NOMBRE_PREDETERMINADO && h('a', { class: 'boton chico texto', href: rutaDe('ajustes'), 'aria-label': TI.ponerNombreEtiqueta }, UI.icono('lapiz'), TI.ponerNombre)),
       r.certificado && UI.nota({
         tipo: r.certificado.estado === 'vencido' ? 'error' : 'aviso',
         titulo: r.certificado.estado === 'vencido' ? TI.certificado.avisoVencido(r.certificado.vence)
@@ -408,7 +448,8 @@
         tarjetaCertificado(cert, r.puente.modo_tls)),
       h('section', { class: 'pila', 'aria-labelledby': 't-ultimos' },
         h('div', { class: 'fila-entre' }, h('h2', { id: 't-ultimos' }, TI.ultimos.titulo), r.ultimos_trabajos.length > 0 && h('a', { href: rutaDe('trabajos'), class: 'pequeno' }, TI.ultimos.verTodos)),
-        tablaUltimos(r.ultimos_trabajos)));
+        tablaUltimos(r.ultimos_trabajos)),
+    ];
   }
 
   function tarjetaCifra(ic, tipo, titulo, cifra, texto, detalle, accion) {
@@ -1386,15 +1427,20 @@
         b.addEventListener('click', () => f(b));
         return b;
       };
-      const quitar = (b, ruta, mensaje) => async () => {
-        try { await conEspera(b, () => api.post(ruta, { origen: s.origen })); aviso(mensaje, 'ok'); refrescarPendientes(); recargar(); } catch (e) { avisoError(e); }
+      const quitar = (b, ruta, mensaje, opciones) => async () => {
+        try { await conEspera(b, () => api.post(ruta, { origen: s.origen })); aviso(mensaje, 'ok', opciones); refrescarPendientes(); recargar(); } catch (e) { avisoError(e); }
       };
+      // Rechazar no pide confirmación (se puede revertir); el aviso ofrece deshacerlo durante 10 s, y
+      // después sigue en «Rechazadas».
+      const deshacer = { duracion: 10_000, accion: { texto: TS.deshacer, alPulsar: async () => {
+        try { await api.post('/solicitudes/restaurar', { origen: s.origen }); aviso(TS.restaurada(s.origen), 'ok'); refrescarPendientes(); if (enElPanel()) recargar(); } catch (e) { avisoError(e); }
+      } } };
       return h('article', { class: 'tarjeta' },
         h('div', { class: 'fila-entre' }, h('span', { class: 'mono solicitud-origen' }, s.origen), h('span', { class: 'fila' }, ctx.insignias)),
         h('p', { class: 'tenue pequeno numeros' }, TS.intentos(s.intentos, hace(s.ultima_vez))),
         h('div', { class: 'acciones' },
           accion(TS.aprobar, 'primario', () => aprobar(s, clientes, impresoras)),
-          !rechazada && accion(TS.rechazar, '', (b) => quitar(b, '/solicitudes/rechazar', TS.rechazada(s.origen))()),
+          !rechazada && accion(TS.rechazar, '', (b) => quitar(b, '/solicitudes/rechazar', TS.rechazada(s.origen), deshacer)()),
           rechazada && accion(TS.olvidar, 'texto', (b) => quitar(b, '/solicitudes/olvidar', TS.olvidada)())));
     };
     agregar(vista, encabezado(TS.titulo, TS.subtitulo),
@@ -2128,7 +2174,7 @@
           : UI.vacio({ icono: 'virtual', titulo: TR.sinVirtuales, texto: TR.sinVirtualesTexto, accion: botonCrearVirtual() }));
       return;
     }
-    document.title = TN.tituloPagina(TR.titulo(alias), estado.nombrePuente);
+    document.title = TN.tituloPagina(TR.titulo(alias), nombreVisible(estado.nombrePuente));
     const ruta = `/impresoras/${enc(alias)}/rollo`;
     const sondeo = { sondeo: true };
 
@@ -2894,7 +2940,7 @@
       history.replaceState(null, '', a.getAttribute('href'));
       enfocarAncla(destino);
     });
-    document.title = TN.tituloPagina(doc.titulo, estado.nombrePuente);
+    document.title = TN.tituloPagina(doc.titulo, nombreVisible(estado.nombrePuente));
     agregar(vista, h('div', { class: 'manual' }, indice, articulo));
   }
   // Buscador del manual. En la portada de la Ayuda muestra los resultados al escribir (y deja la
