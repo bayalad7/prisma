@@ -25,6 +25,10 @@ export async function sinViolaciones(page, donde) {
   expect(graves, `axe en ${donde}`).toEqual([]);
   // Y nada se sale de la pantalla a lo ancho.
   expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth), `desborde en ${donde}`).toBeLessThanOrEqual(0);
+  // Ni un valor aplastado en una lista de datos (con otras fuentes, una etiqueta larga lo dejaba en 0 px).
+  const aplastados = await page.evaluate(() => [...document.querySelectorAll('.datos dd')]
+    .filter((d) => d.offsetParent && d.textContent.trim() && d.getBoundingClientRect().width < 80).map((d) => d.textContent.trim().slice(0, 30)));
+  expect(aplastados, `valores aplastados en ${donde}`).toEqual([]);
 }
 
 // Imprime como lo haría una aplicación: POST /v1/imprimir con su origen y su llave.
