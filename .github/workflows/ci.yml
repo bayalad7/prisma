@@ -178,6 +178,21 @@ jobs:
           done
           echo "el panel no respondió (último código: $codigo)"; exit 1
 
+      # Reinstalar con el servicio en marcha (como una actualización) no debe dejar el equipo sin
+      # servicio: en 0.3.0, Windows lo dejaba «marcado para eliminación» y no se volvía a crear.
+      - name: Reinstalar con el servicio en marcha
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = Windows ]; then P="/c/Program Files/PRISMA/prisma.exe"; S=""; else P=prisma; S=sudo; fi
+          $S "$P" servicio instalar
+          $S "$P" servicio iniciar
+          for _ in $(seq 1 30); do
+            codigo=$(curl -sk -o /dev/null -w '%{http_code}' https://localhost:8443/admin/ || true)
+            [ "$codigo" = 200 ] && { echo "panel 200 tras reinstalar"; exit 0; }
+            sleep 2
+          done
+          echo "el panel no respondió tras reinstalar (último código: $codigo)"; exit 1
+
       # ADR 0020: el certificado limitado a la red local, una vez en el almacén del sistema, lo
       # acepta la validación del propio sistema (sin -k), y deja de aceptarlo al quitarlo.
       - name: Este equipo confía en el certificado (Linux y macOS)
