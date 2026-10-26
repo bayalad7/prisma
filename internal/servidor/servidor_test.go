@@ -636,7 +636,7 @@ func TestAutofirmadoYArchivos(t *testing.T) {
 	// Al regenerar, el proveedor recarga los archivos sin reiniciar.
 	prov.revisado = time.Time{}
 	time.Sleep(20 * time.Millisecond)
-	if _, err := GenerarAutofirmado(dir); err != nil {
+	if _, err := GenerarAutofirmado(dir, false); err != nil {
 		t.Fatal(err)
 	}
 	os.Chtimes(prov.Certificado, time.Now().Add(time.Second), time.Now().Add(time.Second))

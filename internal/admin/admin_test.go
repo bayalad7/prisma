@@ -718,16 +718,29 @@ func TestAjustesYLimites(t *testing.T) {
 	s.exigirError("PUT", "/admin/api/ajustes", map[string]any{"nombre_puente": " "}, 400, "DATOS_INVALIDOS")
 
 	// Certificado autofirmado: se regenera y se descarga.
-	s.exigir("POST", "/admin/api/tls/regenerar", nil, 200)
-	r = s.exigir("GET", "/admin/api/ajustes", nil, 200)
-	cert, _ := r.datos["tls"].(map[string]any)["certificado"].(map[string]any)
-	// El regenerado está limitado a la red local (ADR 0020): el panel lo dice.
-	if cert == nil || cert["huella"] == "" || cert["limitado"] != true {
-		t.Fatalf("tls: %v", r.datos["tls"])
+	// La primera vez crea la autoridad local; la segunda la conserva (ADR 0021).
+	if r := s.exigir("POST", "/admin/api/tls/regenerar", nil, 200); r.datos["autoridad_nueva"] != true {
+		t.Fatalf("regenerar: %v", r.datos)
 	}
+	if r := s.exigir("POST", "/admin/api/tls/regenerar", nil, 200); r.datos["autoridad_nueva"] != false {
+		t.Fatalf("regenerar con la misma autoridad: %v", r.datos)
+	}
+	r = s.exigir("GET", "/admin/api/ajustes", nil, 200)
+	tlsDatos := r.datos["tls"].(map[string]any)
+	cert, _ := tlsDatos["certificado"].(map[string]any)
+	autoridad, _ := tlsDatos["autoridad"].(map[string]any)
+	// Lo firma una autoridad local limitada a la red local (ADR 0020 y 0021): el panel lo dice.
+	if cert == nil || cert["huella"] == "" || cert["limitado"] != true || autoridad == nil || autoridad["huella"] == cert["huella"] {
+		t.Fatalf("tls: %v", tlsDatos)
+	}
+	// Lo que se descarga para instalar en los equipos es la autoridad, no el certificado del servidor.
 	r = s.exigir("GET", "/admin/api/tls/certificado", nil, 200)
-	if !strings.Contains(r.Body.String(), "BEGIN CERTIFICATE") || !strings.Contains(r.Header().Get("Content-Disposition"), "prisma.crt") {
+	bloque, resto := pem.Decode(r.Body.Bytes())
+	if bloque == nil || len(bytes.TrimSpace(resto)) != 0 || !strings.Contains(r.Header().Get("Content-Disposition"), "prisma.crt") {
 		t.Fatalf("descarga: %v", r.Header())
+	}
+	if ca, err := x509.ParseCertificate(bloque.Bytes); err != nil || !ca.IsCA || servidor.Huella(ca) != autoridad["huella"] {
+		t.Fatalf("la descarga debe ser la autoridad local: %v", err)
 	}
 }
 

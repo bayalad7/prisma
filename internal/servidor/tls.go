@@ -87,33 +87,73 @@ func (a *Archivos) ObtenerCertificado(*tls.ClientHelloInfo) (*tls.Certificate, e
 }
 
 // Archivos del certificado autofirmado dentro de la carpeta de datos.
+// Certificado «autofirmado» del puente (ADR 0021): una autoridad local, limitada a la red local, que
+// es en lo único que confían los equipos, y un certificado del servidor firmado por ella, que el
+// puente presenta junto con la autoridad. Firefox no acepta que la autoridad misma sea el
+// certificado del sitio (MOZILLA_PKIX_ERROR_CA_CERT_USED_AS_END_ENTITY).
 const (
-	carpetaTLS          = "tls"
-	archivoCertificado  = "certificado.pem"
-	archivoLlave        = "llave.pem"
-	vigenciaAutofirmado = 825 * 24 * time.Hour // máximo que aceptan macOS e iOS
+	carpetaTLS            = "tls"
+	archivoCertificado    = "certificado.pem" // el del servidor, seguido de la autoridad (la cadena)
+	archivoLlave          = "llave.pem"
+	archivoAutoridad      = "autoridad.pem"
+	archivoLlaveAutoridad = "autoridad-llave.pem"
+	vigenciaAutofirmado   = 825 * 24 * time.Hour      // máximo que aceptan macOS e iOS
+	vigenciaAutoridad     = 10 * 365 * 24 * time.Hour // los equipos confían en ella una sola vez
+	// OrganizacionAutoridad identifica la autoridad del puente en los almacenes de confianza (igual
+	// que servicio.OrganizacionCertificado).
+	OrganizacionAutoridad = "PRISMA (autofirmado)"
 )
 
-// RutasAutofirmado devuelve dónde se guarda el certificado autofirmado.
+// RutasAutofirmado devuelve dónde se guarda el certificado del servidor (con la cadena) y su llave.
 func RutasAutofirmado(dirDatos string) (certificado, llave string) {
 	dir := filepath.Join(dirDatos, carpetaTLS)
 	return filepath.Join(dir, archivoCertificado), filepath.Join(dir, archivoLlave)
 }
 
-// CargarAutofirmado usa el certificado autofirmado de la carpeta de datos; lo genera la primera vez.
-// Si el que hay ya venció, genera otro: uno vencido no le sirve a ningún cliente (habrá que volver
-// a instalarlo en las cajas, y el panel lo avisa).
+// RutasAutoridad devuelve dónde se guarda la autoridad local y su llave.
+func RutasAutoridad(dirDatos string) (certificado, llave string) {
+	dir := filepath.Join(dirDatos, carpetaTLS)
+	return filepath.Join(dir, archivoAutoridad), filepath.Join(dir, archivoLlaveAutoridad)
+}
+
+// AutoridadLocal devuelve la autoridad del puente si existe y está limitada a la red local. Los
+// puentes de antes de 0.3.1 no tienen: su certificado es la autoridad misma.
+func AutoridadLocal(dirDatos string) (*x509.Certificate, error) {
+	ruta, _ := RutasAutoridad(dirDatos)
+	ca, err := LeerCertificado(ruta)
+	if err != nil {
+		return nil, err
+	}
+	if !ca.IsCA || !LimitadoALaRedLocal(ca) {
+		return nil, fmt.Errorf("%s no es una autoridad limitada a la red local", ruta)
+	}
+	return ca, nil
+}
+
+// CargarAutofirmado usa el certificado del servidor de la carpeta de datos; lo genera la primera vez.
+// Si venció, está por vencer o no incluye alguna IP actual, y el puente tiene autoridad local, lo
+// renueva con la misma autoridad: los equipos que confían en ella no tienen que hacer nada. Sin
+// autoridad (antes de 0.3.1), solo lo genera si venció (habrá que volver a instalarlo, y el panel lo
+// avisa).
 func CargarAutofirmado(dirDatos string) (*Archivos, error) {
 	cert, llave := RutasAutofirmado(dirDatos)
 	_, err := os.Stat(cert)
 	generar := errors.Is(err, fs.ErrNotExist)
 	if c, err := LeerCertificado(cert); err == nil {
-		if estado, _ := Vencimiento(c, time.Now()); estado == CertificadoVencido {
+		estado, _ := Vencimiento(c, time.Now())
+		_, conAutoridad := AutoridadLocal(dirDatos)
+		renovable := conAutoridad == nil && (estado != CertificadoVigente || len(IPsSinCubrir(c)) > 0)
+		if estado == CertificadoVencido {
 			generar = true
+		} else if renovable {
+			// Solo con la misma autoridad; si cambió el nombre del equipo, lo decide el dueño.
+			if _, err := RenovarConLaMismaAutoridad(dirDatos); err != nil && !errors.Is(err, ErrAutoridadNoCubre) {
+				return nil, err
+			}
 		}
 	}
 	if generar {
-		if _, err := GenerarAutofirmado(dirDatos); err != nil {
+		if _, err := GenerarAutofirmado(dirDatos, false); err != nil {
 			return nil, err
 		}
 	}
@@ -185,63 +225,212 @@ func redesPermitidas(ips []net.IP) []*net.IPNet {
 	return redes
 }
 
-// LimitadoALaRedLocal dice si el certificado lleva las restricciones de nombre de PRISMA 0.3.0 o
-// posterior. Solo en uno así se puede confiar como raíz en un equipo sin riesgo (prisma tls confiar).
+// LimitadoALaRedLocal dice si el certificado lleva las restricciones de nombre de la autoridad local
+// (desde 0.3.0). Solo en uno así se puede confiar como raíz en un equipo sin riesgo.
 func LimitadoALaRedLocal(c *x509.Certificate) bool {
 	return c.PermittedDNSDomainsCritical && len(c.PermittedDNSDomains) > 0 && len(c.PermittedIPRanges) > 0
 }
 
-// GenerarAutofirmado crea (o reemplaza) el certificado autofirmado con el hostname y las IPs
-// actuales de este equipo. Usa ECDSA P-256, dura 825 días y está limitado a la red local.
-func GenerarAutofirmado(dirDatos string) (*x509.Certificate, error) {
-	llave, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+// Autofirmado es el resultado de generar: el certificado del servidor, la autoridad que lo firmó y si
+// esa autoridad es nueva (entonces los equipos deben volver a confiar en ella).
+type Autofirmado struct {
+	Servidor, Autoridad *x509.Certificate
+	AutoridadNueva      bool
+}
+
+// ErrAutoridadNoCubre: los nombres o IPs actuales del equipo quedan fuera de la autoridad local (por
+// ejemplo, cambió el nombre del equipo); hace falta una autoridad nueva.
+var ErrAutoridadNoCubre = errors.New("la autoridad local no cubre los nombres o IPs actuales del equipo")
+
+// GenerarAutofirmado crea un certificado del servidor nuevo con el hostname y las IPs actuales,
+// firmado por la autoridad local. Reutiliza la autoridad si existe, está vigente y cubre los nombres
+// actuales; si no (o con nuevaAutoridad), crea otra.
+func GenerarAutofirmado(dirDatos string, nuevaAutoridad bool) (*Autofirmado, error) {
+	if !nuevaAutoridad {
+		a, err := RenovarConLaMismaAutoridad(dirDatos)
+		if err == nil {
+			return a, nil
+		}
+		if !errors.Is(err, ErrAutoridadNoCubre) && !errors.Is(err, fs.ErrNotExist) {
+			return nil, err
+		}
+	}
+	ca, llaveCA, err := crearAutoridad(dirDatos)
 	if err != nil {
 		return nil, err
 	}
-	serie, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
+	hoja, err := emitirServidor(dirDatos, ca, llaveCA)
 	if err != nil {
 		return nil, err
+	}
+	return &Autofirmado{Servidor: hoja, Autoridad: ca, AutoridadNueva: true}, nil
+}
+
+// RenovarConLaMismaAutoridad emite un certificado del servidor nuevo con la autoridad que ya hay.
+// Devuelve fs.ErrNotExist si no hay autoridad y ErrAutoridadNoCubre si no sirve para los nombres
+// actuales o vence antes de un día.
+func RenovarConLaMismaAutoridad(dirDatos string) (*Autofirmado, error) {
+	ca, err := AutoridadLocal(dirDatos)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, err
+		}
+		return nil, fmt.Errorf("%w: %v", ErrAutoridadNoCubre, err)
+	}
+	if time.Until(ca.NotAfter) < 24*time.Hour {
+		return nil, ErrAutoridadNoCubre
+	}
+	_, rutaLlave := RutasAutoridad(dirDatos)
+	datos, err := os.ReadFile(rutaLlave)
+	if err != nil {
+		return nil, err
+	}
+	b, _ := pem.Decode(datos)
+	if b == nil {
+		return nil, fmt.Errorf("%s no contiene una llave PEM", rutaLlave)
+	}
+	llave, err := x509.ParsePKCS8PrivateKey(b.Bytes)
+	if err != nil {
+		return nil, err
+	}
+	firmante, ok := llave.(*ecdsa.PrivateKey)
+	if !ok {
+		return nil, fmt.Errorf("%s no es una llave ECDSA", rutaLlave)
+	}
+	// Antes de escribir nada: ¿la autoridad cubre los nombres y las IPs actuales?
+	dns, ips := NombresLocales()
+	if !cubre(ca, dns, ips) {
+		return nil, ErrAutoridadNoCubre
+	}
+	hoja, err := emitirServidor(dirDatos, ca, firmante)
+	if err != nil {
+		return nil, err
+	}
+	return &Autofirmado{Servidor: hoja, Autoridad: ca}, nil
+}
+
+// cubre dice si un certificado del servidor con esos nombres e IPs sería válido bajo la autoridad.
+func cubre(ca *x509.Certificate, dns []string, ips []net.IP) bool {
+	for _, d := range dns {
+		permitido := false
+		for _, p := range ca.PermittedDNSDomains {
+			permitido = permitido || d == p || strings.HasSuffix(d, "."+p)
+		}
+		if !permitido {
+			return false
+		}
+	}
+	for _, ip := range ips {
+		permitida := false
+		for _, red := range ca.PermittedIPRanges {
+			permitida = permitida || red.Contains(ip)
+		}
+		if !permitida {
+			return false
+		}
+	}
+	return true
+}
+
+func nuevaSerie() (*big.Int, error) {
+	return rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
+}
+
+// crearAutoridad crea la autoridad local, limitada a la red local (ADR 0020): aunque un equipo confíe
+// en ella, su llave no sirve para hacerse pasar por ningún sitio de Internet.
+func crearAutoridad(dirDatos string) (*x509.Certificate, *ecdsa.PrivateKey, error) {
+	llave, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return nil, nil, err
+	}
+	serie, err := nuevaSerie()
+	if err != nil {
+		return nil, nil, err
 	}
 	dns, ips := NombresLocales()
 	ahora := time.Now()
 	plantilla := &x509.Certificate{
-		SerialNumber: serie,
-		Subject:      pkix.Name{CommonName: "PRISMA " + dns[len(dns)-1], Organization: []string{"PRISMA (autofirmado)"}},
-		NotBefore:    ahora.Add(-time.Hour),
-		NotAfter:     ahora.Add(vigenciaAutofirmado),
-		// Autofirmado como CA: es la forma que aceptan todos los almacenes de confianza al importarlo.
-		IsCA:                  true,
-		BasicConstraintsValid: true,
-		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		DNSNames:              dns,
-		IPAddresses:           ips,
-		// Limitado a la red local (ADR 0020): aunque un equipo confíe en él como raíz, su llave no
-		// sirve para hacerse pasar por ningún sitio de Internet.
+		SerialNumber:                serie,
+		Subject:                     pkix.Name{CommonName: "PRISMA autoridad local " + dns[len(dns)-1], Organization: []string{OrganizacionAutoridad}},
+		NotBefore:                   ahora.Add(-time.Hour),
+		NotAfter:                    ahora.Add(vigenciaAutoridad),
+		IsCA:                        true,
+		BasicConstraintsValid:       true,
+		MaxPathLenZero:              true, // solo firma certificados de servidor, nunca otras autoridades
+		KeyUsage:                    x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
 		PermittedDNSDomainsCritical: true,
 		PermittedDNSDomains:         dominiosPermitidos(dns),
 		PermittedIPRanges:           redesPermitidas(ips),
 	}
 	der, err := x509.CreateCertificate(rand.Reader, plantilla, plantilla, &llave.PublicKey, llave)
 	if err != nil {
+		return nil, nil, err
+	}
+	rutaCert, rutaLlave := RutasAutoridad(dirDatos)
+	if err := escribirPar(rutaCert, rutaLlave, [][]byte{der}, llave); err != nil {
+		return nil, nil, err
+	}
+	ca, err := x509.ParseCertificate(der)
+	return ca, llave, err
+}
+
+// emitirServidor crea el certificado del servidor (no es autoridad) con los nombres e IPs actuales,
+// firmado por la autoridad, y lo guarda seguido de la autoridad para presentar la cadena completa.
+func emitirServidor(dirDatos string, ca *x509.Certificate, llaveCA *ecdsa.PrivateKey) (*x509.Certificate, error) {
+	llave, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
 		return nil, err
 	}
-	llaveDER, err := x509.MarshalPKCS8PrivateKey(llave)
+	serie, err := nuevaSerie()
+	if err != nil {
+		return nil, err
+	}
+	dns, ips := NombresLocales()
+	ahora := time.Now()
+	vence := ahora.Add(vigenciaAutofirmado)
+	if ca.NotAfter.Before(vence) {
+		vence = ca.NotAfter
+	}
+	plantilla := &x509.Certificate{
+		SerialNumber:          serie,
+		Subject:               pkix.Name{CommonName: "PRISMA " + dns[len(dns)-1], Organization: []string{"PRISMA"}},
+		NotBefore:             ahora.Add(-time.Hour),
+		NotAfter:              vence,
+		BasicConstraintsValid: true,
+		KeyUsage:              x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		DNSNames:              dns,
+		IPAddresses:           ips,
+	}
+	der, err := x509.CreateCertificate(rand.Reader, plantilla, ca, &llave.PublicKey, llaveCA)
 	if err != nil {
 		return nil, err
 	}
 	rutaCert, rutaLlave := RutasAutofirmado(dirDatos)
-	if err := os.MkdirAll(filepath.Dir(rutaCert), 0o700); err != nil {
-		return nil, err
-	}
-	// La llave primero y con permisos restringidos; el certificado es público.
-	if err := os.WriteFile(rutaLlave, pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: llaveDER}), 0o600); err != nil {
-		return nil, err
-	}
-	if err := os.WriteFile(rutaCert, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}), 0o644); err != nil {
+	if err := escribirPar(rutaCert, rutaLlave, [][]byte{der, ca.Raw}, llave); err != nil {
 		return nil, err
 	}
 	return x509.ParseCertificate(der)
+}
+
+// escribirPar guarda la llave (primero y solo para el usuario del servicio) y los certificados (PEM,
+// públicos).
+func escribirPar(rutaCert, rutaLlave string, certificados [][]byte, llave *ecdsa.PrivateKey) error {
+	llaveDER, err := x509.MarshalPKCS8PrivateKey(llave)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(rutaCert), 0o700); err != nil {
+		return err
+	}
+	if err := os.WriteFile(rutaLlave, pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: llaveDER}), 0o600); err != nil {
+		return err
+	}
+	var pemCerts []byte
+	for _, der := range certificados {
+		pemCerts = append(pemCerts, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})...)
+	}
+	return os.WriteFile(rutaCert, pemCerts, 0o644)
 }
 
 // LeerCertificado lee el primer certificado de un archivo PEM.
