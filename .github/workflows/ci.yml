@@ -193,11 +193,12 @@ jobs:
           else
             curl -sS -o /dev/null -w 'salud %{http_code}\n' https://localhost:8443/v1/salud
           fi
-          sudo prisma tls confiar --quitar
           if [ "$RUNNER_OS" = macOS ]; then
-            if security dump-trust-settings -d 2>/dev/null | grep "PRISMA "; then echo "la confianza debía quitarse"; exit 1; fi
-            if security find-certificate -c "PRISMA " /Library/Keychains/System.keychain >/dev/null 2>&1; then echo "el certificado debía quitarse"; exit 1; fi
+            # Confiar otra vez (una actualización) no hace nada ni se cuelga. Quitar la confianza
+            # de administrador pide autorizar en una ventana: sin pantalla no se puede probar.
+            perl -e 'alarm 30; exec @ARGV' sudo prisma tls confiar
           else
+            sudo prisma tls confiar --quitar
             if curl -sS -o /dev/null https://localhost:8443/v1/salud; then echo "sin la raíz debía fallar"; exit 1; fi
           fi
       - name: Este equipo confía en el certificado (Windows)
