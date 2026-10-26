@@ -6,6 +6,14 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 
 ## [Sin publicar]
 
+### Cambiado
+
+- **Una autoridad local firma el certificado del servidor** (ADR 0021). Es lo único que se instala en los equipos: la agregan `prisma tls confiar` y los instaladores, y la entrega *Descargar certificado* del panel. Está limitada a la red local y dura 10 años. Regenerar el certificado (panel o `prisma tls regenerar`) conserva la autoridad, así que un cambio de IP o un vencimiento ya no obliga a reinstalar nada en las cajas. Al arrancar, el puente lo renueva solo si está por vencer o le falta una IP. `prisma tls regenerar --nueva-autoridad` crea otra.
+
+### Corregido
+
+- Firefox rechazaba el certificado de 0.3.0 aunque el equipo confiara en él (`MOZILLA_PKIX_ERROR_CA_CERT_USED_AS_END_ENTITY`): el certificado del sitio era también la autoridad. Si vienes de 0.2.0 o 0.3.0, *Ajustes → HTTPS* pide regenerarlo una vez (se crea la autoridad); después, `prisma tls confiar` como administrador e instalar la autoridad en los demás equipos.
+
 ## [0.3.0] — 2026-10-26
 
 ### Agregado
