@@ -23,8 +23,8 @@ El certificado es una CA (así lo aceptan todos los almacenes al importarlo). Co
   
   Aunque un equipo confíe en él como raíz, su llave no sirve para hacerse pasar por un sitio de Internet. `TestCertificadoLimitadoALaRedLocal` lo comprueba firmando con esa llave un certificado para un dominio público y para `8.8.8.8`.
 - **`prisma tls confiar`** agrega el certificado al almacén de confianza del sistema de ese equipo, después de quitar los que PRISMA haya puesto antes; con `--quitar`, los quita. Requiere administrador.
-  - Windows: «Entidades de certificación raíz de confianza» del equipo, con `certutil`.
-  - macOS: el llavero del sistema, con `security add-trusted-cert`.
+  - Windows: «Entidades de certificación raíz de confianza» del equipo, con la API de certificados de Windows (sin PowerShell ni `certutil`, cuya salida cambia con el idioma).
+  - macOS: el llavero del sistema, con `security add-trusted-cert`. Al quitarlo, se quita también su configuración de confianza (`remove-trusted-cert`), que macOS guarda aparte.
   - Linux: `ca-certificates`.
   
   Chrome, Edge, Safari y Firefox (que importa las raíces del sistema en Windows y macOS) dejan de avisar en ese equipo.
