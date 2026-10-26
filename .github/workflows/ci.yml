@@ -175,6 +175,42 @@ jobs:
           done
           echo "el panel no respondió (último código: $codigo)"; exit 1
 
+      # ADR 0020: el certificado limitado a la red local, una vez en el almacén del sistema, lo
+      # acepta la validación del propio sistema (sin -k), y deja de aceptarlo al quitarlo.
+      - name: Este equipo confía en el certificado (Linux y macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          sudo prisma tls confiar --esperar 30s
+          cert=$(sudo prisma tls info | sed -n 's/^archivo: *//p')
+          sudo prisma tls info | grep "limitado a la red local: sí"
+          if [ "$RUNNER_OS" = macOS ]; then
+            sudo cp "$cert" /tmp/prisma.pem
+            security verify-cert -c /tmp/prisma.pem -p ssl -s localhost
+          else
+            curl -sS -o /dev/null -w 'salud %{http_code}\n' https://localhost:8443/v1/salud
+          fi
+          sudo prisma tls confiar --quitar
+          if [ "$RUNNER_OS" = macOS ]; then
+            ! security verify-cert -c /tmp/prisma.pem -p ssl -s localhost
+          else
+            ! curl -sS -o /dev/null https://localhost:8443/v1/salud
+          fi
+      - name: Este equipo confía en el certificado (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $p = "$env:ProgramFiles\PRISMA\prisma.exe"
+          & $p tls confiar --esperar 30s
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          & $p tls info | Select-String "limitado a la red local: sí"
+          (Invoke-WebRequest https://localhost:8443/v1/salud -UseBasicParsing).StatusCode
+          & $p tls confiar --quitar
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $acepto = $true
+          try { Invoke-WebRequest https://localhost:8443/v1/salud -UseBasicParsing | Out-Null } catch { $acepto = $false }
+          if ($acepto) { Write-Host "sin la raíz debía fallar"; exit 1 }
+
       - name: Estado, reinicio y desinstalación
         shell: bash
         run: |
