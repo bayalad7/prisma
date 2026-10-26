@@ -1328,7 +1328,7 @@
       ],
       [K.pestanas.curl]: [
         `prisma dev firmar documento.json --llave privada.pem --cliente ${cliente.id} --nuevo-id -o firmado.json`,
-        `curl --cacert certificado.pem ${url}/v1/imprimir \\`,
+        `curl --cacert prisma.crt ${url}/v1/imprimir \\`,
         conLlave && `  -H "Authorization: Bearer ${valorLlave}" \\`,
         '  -H "Content-Type: application/json" --data-binary @firmado.json',
       ],
@@ -1365,7 +1365,7 @@
           'const resultado = await respuesta.json();',
         ],
         [K.pestanas.curl]: [
-          `curl --cacert certificado.pem ${url}/v1/imprimir \\`,
+          `curl --cacert prisma.crt ${url}/v1/imprimir \\`,
           conLlave && `  -H "Authorization: Bearer ${valorLlave}" \\`,
           '  -H "Content-Type: application/json" \\',
           '  --data-binary @documento.json',

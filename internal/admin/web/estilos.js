@@ -142,7 +142,7 @@
   // Datos de ejemplo
   // ---------------------------------------------------------------------------------------------
   const CODIGO_SDK = 'import { Prisma } from "@bayalad7/prisma";\n\nconst prisma = new Prisma({\n  url: "https://192.168.1.10:8443",\n  llave: "pk_…",\n});\n\nawait prisma.imprimir("caja", [\n  { tipo: "texto", valor: "¡Hola desde mi app!", alineacion: "centro" },\n  { tipo: "cortar" },\n]);';
-  const CODIGO_CURL = 'curl --cacert certificado.pem https://192.168.1.10:8443/v1/imprimir \\\n  -H "Authorization: Bearer pk_…" \\\n  -H "Content-Type: application/json" \\\n  --data-binary @documento.json';
+  const CODIGO_CURL = 'curl --cacert prisma.crt https://192.168.1.10:8443/v1/imprimir \\\n  -H "Authorization: Bearer pk_…" \\\n  -H "Content-Type: application/json" \\\n  --data-binary @documento.json';
   const TRABAJOS = [
     { hora: 'hoy 13:42', app: 'Punto de venta web', imp: 'caja', estado: 'ok', ref: 'VTA-1042', dur: '0.4 s' },
     { hora: 'hoy 13:40', app: 'Menú digital', imp: 'cocina', estado: 'aviso', ref: 'PED-0187', dur: '0.9 s', adv: 'Un carácter no existe en la impresora' },
