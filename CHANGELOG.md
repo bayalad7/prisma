@@ -12,6 +12,7 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 
 ### Corregido
 
+- Reinstalar o actualizar PRISMA en Windows podía dejar el equipo sin servicio: Windows deja el servicio anterior «marcado para eliminación» mientras algo lo tenga abierto, y crearlo de nuevo fallaba. Ahora `prisma servicio instalar` espera a que se borre y reintenta.
 - Firefox rechazaba el certificado de 0.3.0 aunque el equipo confiara en él (`MOZILLA_PKIX_ERROR_CA_CERT_USED_AS_END_ENTITY`): el certificado del sitio era también la autoridad. Si vienes de 0.2.0 o 0.3.0, *Ajustes → HTTPS* pide regenerarlo una vez (se crea la autoridad); después, `prisma tls confiar` como administrador e instalar la autoridad en los demás equipos.
 
 ## [0.3.0] — 2026-10-26
