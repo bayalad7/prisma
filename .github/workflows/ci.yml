@@ -185,16 +185,20 @@ jobs:
           cert=$(sudo prisma tls info | sed -n 's/^archivo: *//p')
           sudo prisma tls info | grep "limitado a la red local: sí"
           if [ "$RUNNER_OS" = macOS ]; then
+            # La confianza de administrador está registrada para el certificado del puente, y el
+            # sistema lo valida como servidor de localhost.
             sudo cp "$cert" /tmp/prisma.pem
+            security dump-trust-settings -d | grep "PRISMA "
             security verify-cert -c /tmp/prisma.pem -p ssl -s localhost
           else
             curl -sS -o /dev/null -w 'salud %{http_code}\n' https://localhost:8443/v1/salud
           fi
           sudo prisma tls confiar --quitar
           if [ "$RUNNER_OS" = macOS ]; then
-            ! security verify-cert -c /tmp/prisma.pem -p ssl -s localhost
+            if security dump-trust-settings -d 2>/dev/null | grep "PRISMA "; then echo "la confianza debía quitarse"; exit 1; fi
+            if security find-certificate -c "PRISMA " /Library/Keychains/System.keychain >/dev/null 2>&1; then echo "el certificado debía quitarse"; exit 1; fi
           else
-            ! curl -sS -o /dev/null https://localhost:8443/v1/salud
+            if curl -sS -o /dev/null https://localhost:8443/v1/salud; then echo "sin la raíz debía fallar"; exit 1; fi
           fi
       - name: Este equipo confía en el certificado (Windows)
         if: runner.os == 'Windows'
