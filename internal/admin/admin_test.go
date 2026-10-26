@@ -721,7 +721,8 @@ func TestAjustesYLimites(t *testing.T) {
 	s.exigir("POST", "/admin/api/tls/regenerar", nil, 200)
 	r = s.exigir("GET", "/admin/api/ajustes", nil, 200)
 	cert, _ := r.datos["tls"].(map[string]any)["certificado"].(map[string]any)
-	if cert == nil || cert["huella"] == "" {
+	// El regenerado está limitado a la red local (ADR 0020): el panel lo dice.
+	if cert == nil || cert["huella"] == "" || cert["limitado"] != true {
 		t.Fatalf("tls: %v", r.datos["tls"])
 	}
 	r = s.exigir("GET", "/admin/api/tls/certificado", nil, 200)

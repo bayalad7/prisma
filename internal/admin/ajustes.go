@@ -394,6 +394,10 @@ func (a *Admin) estadoTLS() map[string]any {
 	estado, dias := servidor.Vencimiento(c, a.op.Ahora())
 	resp["certificado"] = map[string]any{"vence": c.NotAfter.Format("02/01/2006"), "nombres": c.DNSNames, "ips": ips,
 		"ips_sin_cubrir": sinCubrir, "huella": servidor.Huella(c), "estado": estado, "dias_restantes": dias}
+	if a.op.Config.Servidor.ModoTLS == config.TLSAutofirmado {
+		// Los de 0.2.0 no están limitados a la red local: prisma tls confiar los rechaza (ADR 0020).
+		resp["certificado"].(map[string]any)["limitado"] = servidor.LimitadoALaRedLocal(c)
+	}
 	return resp
 }
 

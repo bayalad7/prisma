@@ -546,7 +546,10 @@ window.PRISMA_TEXTOS = {
       regenerarTitulo: '¿Regenerar el certificado?',
       regenerarTexto: 'Se crea uno nuevo con el nombre y las direcciones actuales de este equipo, y el puente lo usa de inmediato.',
       regenerarConsecuencias: ['Cada equipo o teléfono que imprime tendrá que volver a confiar en el certificado.', 'Hasta entonces, las aplicaciones de esos equipos no podrán imprimir.'],
-      regenerado: 'Certificado regenerado. Ahora instálalo de nuevo en cada equipo que imprime.',
+      regenerado: 'Certificado regenerado. En este equipo, ejecuta como administrador «prisma tls confiar»; después, instálalo de nuevo en cada equipo que imprime.',
+      limitado: 'Limitado a la red local', limitadoSi: 'Sí', limitadoNo: 'No (de una versión anterior)',
+      sinLimites: 'Este certificado es de una versión anterior de PRISMA',
+      sinLimitesTexto: 'No está limitado a la red local, así que el instalador no hizo que este equipo confíe en él y el navegador muestra una advertencia. Regenéralo aquí y luego, en este equipo, ejecuta como administrador «prisma tls confiar». Después, los demás equipos deben volver a confiar en él.',
       archivos: 'El certificado sale de los archivos configurados en config.toml; para renovarlo, reemplaza esos archivos: el puente los toma sin reiniciar.',
     },
     respaldo: {
