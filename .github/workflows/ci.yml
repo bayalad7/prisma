@@ -81,7 +81,10 @@ jobs:
           node-version: 22
       - name: Dependencias y Chromium
         working-directory: e2e
-        run: npm ci --no-audit --no-fund && npx playwright install --with-deps chromium
+        # Firefox y certutil (libnss3-tools): la prueba de la autoridad local en un Firefox real (ADR 0021).
+        run: |
+          npm ci --no-audit --no-fund && npx playwright install --with-deps chromium firefox
+          sudo apt-get install -y --no-install-recommends libnss3-tools
       - name: Flujos a)–g) en escritorio y celular, con axe
         working-directory: e2e
         env:
@@ -182,8 +185,9 @@ jobs:
         shell: bash
         run: |
           sudo prisma tls confiar --esperar 30s
-          cert=$(sudo prisma tls info | sed -n 's/^archivo: *//p')
-          sudo prisma tls info | grep "limitado a la red local: sí"
+          # El certificado del servidor (con la cadena) es el primer archivo; el segundo es la autoridad.
+          cert=$(sudo prisma tls info | sed -n 's/^archivo: *//p' | head -1)
+          sudo prisma tls info | grep "limitada a la red local: sí"
           if [ "$RUNNER_OS" = macOS ]; then
             # La confianza de administrador está registrada para el certificado del puente, y el
             # sistema lo valida como servidor de localhost.
@@ -208,7 +212,7 @@ jobs:
           $p = "$env:ProgramFiles\PRISMA\prisma.exe"
           & $p tls confiar --esperar 30s
           if ($LASTEXITCODE -ne 0) { exit 1 }
-          & $p tls info | Select-String "limitado a la red local: sí"
+          if (-not (& $p tls info | Select-String "limitada a la red local: sí")) { exit 1 }
           (Invoke-WebRequest https://localhost:8443/v1/salud -UseBasicParsing).StatusCode
           & $p tls confiar --quitar
           if ($LASTEXITCODE -ne 0) { exit 1 }
