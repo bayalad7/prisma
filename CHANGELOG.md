@@ -6,11 +6,13 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 
 ## [Sin publicar]
 
+## [0.3.0] — 2026-10-25
+
 ### Agregado
 
 - `prisma tls confiar` agrega el certificado autofirmado al almacén de confianza de ese equipo (Windows, macOS y `ca-certificates` en Linux), y `--quitar` lo quita (ADR 0020).
 - Guía para usar un certificado de Let's Encrypt con tu propio dominio (`modo_tls = "archivos"`).
-- **Los instaladores hacen que el equipo donde se instala confíe en el certificado del puente** (Windows, macOS y `.deb`, también el de Raspberry Pi): el panel se abre sin la advertencia «la conexión no es privada». Al desinstalar, lo quitan. Si el certificado es de 0.2.0, sin límites, *Ajustes → HTTPS* lo avisa y explica cómo regenerarlo y confiar en él.
+- **Los instaladores hacen que el equipo donde se instala confíe en el certificado del puente** (Windows, macOS y `.deb`, también el de Raspberry Pi): el panel se abre sin la advertencia «la conexión no es privada». Al desinstalar, lo quitan; en macOS, `sudo prisma tls confiar --quitar` desde la Terminal, porque macOS pide autorizarlo en una ventana. Si el certificado es de 0.2.0, sin límites, *Ajustes → HTTPS* lo avisa y explica cómo regenerarlo y confiar en él.
 
 ### Cambiado
 
@@ -100,6 +102,7 @@ Primera versión publicada.
 - Los trabajos que llegan por la API pasan directo de `encolado` a `completado` o `fallido`; el estado `imprimiendo` solo lo usa `prisma imprimir`.
 - La *Ayuda* del panel enlaza la documentación de la rama `develop`.
 
-[Sin publicar]: https://github.com/bayalad7/prisma/compare/v0.2.0...develop
+[Sin publicar]: https://github.com/bayalad7/prisma/compare/v0.3.0...develop
+[0.3.0]: https://github.com/bayalad7/prisma/releases/tag/v0.3.0
 [0.2.0]: https://github.com/bayalad7/prisma/releases/tag/v0.2.0
 [0.1.0]: https://github.com/bayalad7/prisma/releases/tag/v0.1.0
