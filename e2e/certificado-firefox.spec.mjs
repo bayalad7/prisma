@@ -22,7 +22,9 @@ test('Firefox abre el puente sin advertencia solo si confía en su autoridad loc
   const perfil = fs.mkdtempSync(path.join(os.tmpdir(), 'prisma-firefox-'));
   execFileSync('certutil', ['-N', '-d', `sql:${perfil}`, '--empty-password']);
   const abrir = async () => {
-    const ctx = await firefox.launchPersistentContext(perfil);
+    // Explícito: el ejecutor de pruebas aplica las opciones de la configuración, que ignoran los
+    // errores de certificado, y así la prueba no validaría nada.
+    const ctx = await firefox.launchPersistentContext(perfil, { ignoreHTTPSErrors: false });
     try {
       const r = await ctx.pages()[0].goto(`https://localhost:${puerto}/v1/salud`, { timeout: 15_000 });
       return `abrió ${r.status()}`;
