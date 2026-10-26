@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/kardianos/service"
@@ -144,6 +145,18 @@ func Instalar(op Opciones) error {
 	if err != nil {
 		return err
 	}
+	return reinstalar(s, esperaBorrado)
+}
+
+// esperaBorrado: cuánto se espera a que el sistema termine de borrar el servicio anterior.
+const esperaBorrado = 30 * time.Second
+
+// reinstalar instala el servicio, y si ya existía, lo detiene y lo quita antes. En Windows, un
+// servicio borrado queda «marcado para eliminación» mientras algo lo tenga abierto (el proceso que se
+// detiene, la consola de Servicios): crear otro en ese momento falla, y antes eso dejaba el equipo
+// sin servicio al reinstalar o actualizar. Por eso espera a que desaparezca y reintenta.
+func reinstalar(s service.Service, espera time.Duration) error {
+	limite := time.Now().Add(espera)
 	if st, err := s.Status(); err == nil {
 		if st == service.StatusRunning {
 			if err := s.Stop(); err != nil {
@@ -153,8 +166,25 @@ func Instalar(op Opciones) error {
 		if err := s.Uninstall(); err != nil {
 			return traducir("reinstalar", err)
 		}
+		for time.Now().Before(limite) {
+			if _, err := s.Status(); errors.Is(err, service.ErrNotInstalled) {
+				break
+			}
+			time.Sleep(250 * time.Millisecond)
+		}
 	}
-	return traducir("instalar", s.Install())
+	for {
+		err := s.Install()
+		if err == nil || !borrandoseAun(err) || !time.Now().Before(limite) {
+			return traducir("instalar", err)
+		}
+		time.Sleep(250 * time.Millisecond)
+	}
+}
+
+// borrandoseAun dice si crear el servicio falló porque el anterior todavía se está borrando.
+func borrandoseAun(err error) bool {
+	return marcadoParaEliminacion(err) || strings.Contains(err.Error(), "already exists")
 }
 
 // Desinstalar detiene el servicio y lo quita del sistema. Conserva datos, configuración y bitácoras.
