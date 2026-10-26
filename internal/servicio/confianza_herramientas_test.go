@@ -27,6 +27,6 @@ func simularHerramientas(t *testing.T, respuestas map[string]string) (corridos *
 		return nil, nil
 	}
 	pem = filepath.Join(t.TempDir(), "certificado.pem")
-	os.WriteFile(pem, []byte("-----BEGIN CERTIFICATE-----\nx\n-----END CERTIFICATE-----\n"), 0o644)
+	os.WriteFile(pem, []byte("-----BEGIN CERTIFICATE-----\nAAAA\n-----END CERTIFICATE-----\n"), 0o644)
 	return &lista, pem
 }

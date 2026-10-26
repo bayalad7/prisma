@@ -9,14 +9,11 @@ package servicio
 // los anteriores al confiar en uno nuevo y todos al desinstalar.
 const OrganizacionCertificado = "PRISMA (autofirmado)"
 
-// ConfiarCertificado agrega el certificado (PEM) al almacén de confianza del sistema, después de
-// quitar los que PRISMA haya puesto antes. Requiere permisos de administrador.
-func ConfiarCertificado(rutaPEM string) error {
-	if err := QuitarConfianza(); err != nil {
-		return err
-	}
-	return confiarEnSistema(rutaPEM)
-}
+// ConfiarCertificado agrega el certificado (PEM) al almacén de confianza del sistema. Requiere
+// permisos de administrador. En Windows y Linux reemplaza a los que PRISMA haya puesto antes; en
+// macOS no los quita, porque quitar una confianza de administrador pide autorización con una
+// ventana, y un instalador no puede quedarse esperándola (para eso está QuitarConfianza).
+func ConfiarCertificado(rutaPEM string) error { return confiarEnSistema(rutaPEM) }
 
 // QuitarConfianza quita del almacén de confianza del sistema los certificados que puso PRISMA. No
 // falla si no había ninguno.

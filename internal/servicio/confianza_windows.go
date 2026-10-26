@@ -40,6 +40,10 @@ func confiarEnSistema(rutaPEM string) error {
 	if bloque == nil || bloque.Type != "CERTIFICATE" {
 		return fmt.Errorf("%s no es un certificado PEM", rutaPEM)
 	}
+	// Antes, los que PRISMA haya puesto: así no quedan raíces de certificados regenerados.
+	if err := quitarDeSistema(); err != nil {
+		return err
+	}
 	raices, err := abrirRaices()
 	if err != nil {
 		return fmt.Errorf("no se pudo abrir el almacén raíz del equipo: %w", err)
