@@ -10,6 +10,7 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 
 - `prisma tls confiar` agrega el certificado autofirmado al almacén de confianza de ese equipo (Windows, macOS y `ca-certificates` en Linux), y `--quitar` lo quita (ADR 0020).
 - Guía para usar un certificado de Let's Encrypt con tu propio dominio (`modo_tls = "archivos"`).
+- **Los instaladores hacen que el equipo donde se instala confíe en el certificado del puente** (Windows, macOS y `.deb`, también el de Raspberry Pi): el panel se abre sin la advertencia «la conexión no es privada». Al desinstalar, lo quitan. Si el certificado es de 0.2.0, sin límites, *Ajustes → HTTPS* lo avisa y explica cómo regenerarlo y confiar en él.
 
 ### Cambiado
 

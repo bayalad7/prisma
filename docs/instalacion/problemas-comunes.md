@@ -25,7 +25,7 @@ Nunca abras el puerto 8443 hacia Internet en el router.
 
 ## El navegador dice que la conexión no es privada
 
-El puente usa un certificado propio, que tu navegador todavía no conoce. Para entrar al panel basta con *Configuración avanzada → Continuar*. Para que las **aplicaciones** puedan imprimir desde ese equipo, en cambio, hay que instalar el certificado: el aviso aceptado solo vale para navegar ([instalacion/https-y-certificados.md](https-y-certificados.md#confiar-en-el-certificado)).
+El puente usa un certificado propio. En el equipo donde lo instalaste, el instalador ya confía en él; si aun así avisa, el certificado es de antes de 0.3.0: *Ajustes → HTTPS* explica cómo regenerarlo y ejecutar `prisma tls confiar`. En los demás equipos, el navegador todavía no lo conoce. Para entrar al panel basta con *Configuración avanzada → Continuar*. Para que las **aplicaciones** puedan imprimir desde ese equipo, en cambio, hay que instalar el certificado: el aviso aceptado solo vale para navegar ([instalacion/https-y-certificados.md](https-y-certificados.md#confiar-en-el-certificado)).
 
 Si el aviso aparece en equipos que antes funcionaban, cambió la IP del equipo de PRISMA: regenera el certificado en *Ajustes → HTTPS* y vuelve a instalarlo en los equipos. Para evitarlo, dale IP fija.
 
