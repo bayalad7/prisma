@@ -16,6 +16,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -145,8 +146,53 @@ func NombresLocales() (dns []string, ips []net.IP) {
 	return dns, ips
 }
 
+// redesPrivadas son los rangos en los que puede estar el puente: loopback, redes privadas
+// (RFC 1918 y fc00::/7) y enlace local.
+var redesPrivadas = []string{"127.0.0.0/8", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "169.254.0.0/16",
+	"::1/128", "fc00::/7", "fe80::/10"}
+
+// dominiosPermitidos: localhost, los nombres .local (mDNS) y los nombres de este equipo.
+func dominiosPermitidos(dns []string) []string {
+	permitidos := []string{"localhost", "local"}
+	for _, d := range dns {
+		if d != "localhost" && !strings.HasSuffix(d, ".local") && !slices.Contains(permitidos, d) {
+			permitidos = append(permitidos, d)
+		}
+	}
+	return permitidos
+}
+
+// redesPermitidas: las redes privadas y, por si el equipo tiene una IP pública, sus propias IPs.
+func redesPermitidas(ips []net.IP) []*net.IPNet {
+	var redes []*net.IPNet
+	for _, r := range redesPrivadas {
+		_, red, _ := net.ParseCIDR(r)
+		redes = append(redes, red)
+	}
+	for _, ip := range ips {
+		dentro := false
+		for _, red := range redes {
+			dentro = dentro || red.Contains(ip)
+		}
+		if !dentro {
+			bits := 128
+			if ip.To4() != nil {
+				ip, bits = ip.To4(), 32
+			}
+			redes = append(redes, &net.IPNet{IP: ip, Mask: net.CIDRMask(bits, bits)})
+		}
+	}
+	return redes
+}
+
+// LimitadoALaRedLocal dice si el certificado lleva las restricciones de nombre de PRISMA 0.3.0 o
+// posterior. Solo en uno así se puede confiar como raíz en un equipo sin riesgo (prisma tls confiar).
+func LimitadoALaRedLocal(c *x509.Certificate) bool {
+	return c.PermittedDNSDomainsCritical && len(c.PermittedDNSDomains) > 0 && len(c.PermittedIPRanges) > 0
+}
+
 // GenerarAutofirmado crea (o reemplaza) el certificado autofirmado con el hostname y las IPs
-// actuales de este equipo. Usa ECDSA P-256 y dura 825 días.
+// actuales de este equipo. Usa ECDSA P-256, dura 825 días y está limitado a la red local.
 func GenerarAutofirmado(dirDatos string) (*x509.Certificate, error) {
 	llave, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
@@ -170,6 +216,11 @@ func GenerarAutofirmado(dirDatos string) (*x509.Certificate, error) {
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		DNSNames:              dns,
 		IPAddresses:           ips,
+		// Limitado a la red local (ADR 0020): aunque un equipo confíe en él como raíz, su llave no
+		// sirve para hacerse pasar por ningún sitio de Internet.
+		PermittedDNSDomainsCritical: true,
+		PermittedDNSDomains:         dominiosPermitidos(dns),
+		PermittedIPRanges:           redesPermitidas(ips),
 	}
 	der, err := x509.CreateCertificate(rand.Reader, plantilla, plantilla, &llave.PublicKey, llave)
 	if err != nil {

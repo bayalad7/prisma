@@ -1,6 +1,9 @@
 #!/bin/sh
 # Crea el usuario _prisma, las carpetas y el LaunchDaemon (arranca con el equipo), y lo inicia.
+# Después, este Mac confía en el certificado del puente (limitado a la red local, ADR 0020); con un
+# certificado de 0.2.0 eso falla sin detener la instalación y el panel lo avisa.
 set -e
 /usr/local/bin/prisma servicio instalar
 /usr/local/bin/prisma servicio iniciar
+/usr/local/bin/prisma tls confiar --esperar 60s || echo "Aviso: no se confió en el certificado; revisa Ajustes → HTTPS en el panel." >&2
 exit 0

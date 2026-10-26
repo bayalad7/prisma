@@ -68,6 +68,8 @@ según el perfil de la impresora y lo imprime por USB, red (TCP 9100) o Bluetoot
   base, la bitácora ni los respaldos, tampoco desde «Probar impresión», y no sobreviven a un reinicio
   (TestImpresoraVirtualDePrincipioAFin, TestProbarImpresionNoGuardaElContenido, e2e/usuario-nuevo.spec.mjs).
   Su rollo coincide con los golden del renderizador (TestImpresoraVirtualCoincideConLosGolden).
+- El certificado autofirmado está limitado a la red local (nameConstraints) y `prisma tls confiar` solo
+  confía en uno así (TestCertificadoLimitadoALaRedLocal, TestTLSConfiarSoloConCertificadoLimitado; ADR 0020).
 - Permisos: base y llave del certificado 0600; datos solo para el usuario del servicio
   (en Windows, SYSTEM y Administradores).
 
@@ -79,7 +81,7 @@ según el perfil de la impresora y lo imprime por USB, red (TCP 9100) o Bluetoot
 - Interfaz y mensajes al usuario en español (preparar i18n para inglés en el futuro).
 - Logs estructurados (log/slog, JSON). NUNCA registrar el contenido de los tickets ni las llaves.
 - Documentación: en español, fiel al código (si no coinciden, manda el código y se corrige la doc).
-  Versiones distintas: programa (0.2.0), API (/v1) y documento ("1").
+  Versiones distintas: programa (0.3.0), API (/v1) y documento ("1").
 - `go test ./...` debe pasar en Windows, Linux y macOS. Cambios incrementales; pregunta antes de reestructurar.
 - Ramas: `main` (producción) y `develop` (trabajo). Commits en español: `tipo(ámbito): asunto`, con cuerpo,
   líneas ≤100 caracteres, un commit por ámbito, y cada commit debe compilar y pasar las pruebas.

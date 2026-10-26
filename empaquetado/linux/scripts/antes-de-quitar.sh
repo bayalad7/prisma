@@ -6,3 +6,6 @@ set -e
 if [ "$1" = "remove" ] && [ -d /run/systemd/system ]; then
 	systemctl disable --now prisma.service >/dev/null 2>&1 || true
 fi
+if [ "$1" = "remove" ]; then
+	prisma tls confiar --quitar >/dev/null 2>&1 || true
+fi

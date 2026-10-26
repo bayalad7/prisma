@@ -39,6 +39,7 @@ El paquete:
 
 - crea el usuario de sistema `prisma`, con acceso a impresoras USB (grupo `lp`) y Bluetooth (grupo `dialout`);
 - instala el servicio `prisma`, que arranca con el equipo y se reinicia si falla;
+- agrega el certificado del puente, limitado a la red local, a `ca-certificates` de **este** equipo (`prisma tls confiar`), para las herramientas que lo usan, como `curl`. Chrome y Firefox en Linux tienen su propia base: ver [HTTPS y certificados](https-y-certificados.md#confiar-en-el-certificado). Al desinstalar, se quita;
 - muestra la dirección del panel.
 
 Una Raspberry Pi suele no tener pantalla, así que el panel se abre desde otra computadora: `https://<ip-de-la-pi>:8443/admin`. La primera vez pide un código de configuración; genéralo en la Pi con:

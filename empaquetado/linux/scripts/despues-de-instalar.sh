@@ -11,6 +11,10 @@ if [ -d /run/systemd/system ]; then
 	if ! systemctl restart prisma.service; then
 		echo "Aviso: el servicio no arrancó. Revisa: journalctl -u prisma -n 50" >&2
 	fi
+	# Este equipo confía en el certificado del puente (limitado a la red local, ADR 0020). Con un
+	# certificado de 0.2.0 falla sin detener la instalación: el panel explica cómo regenerarlo.
+	prisma tls confiar --esperar 60s >/dev/null 2>&1 ||
+		echo "Aviso: no se confió en el certificado del puente; revisa Ajustes → HTTPS en el panel." >&2
 fi
 
 ip=$(hostname -I 2>/dev/null | awk '{print $1}')
