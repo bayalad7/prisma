@@ -14,7 +14,7 @@ El equipo no confía en el certificado autofirmado del puente. Instálalo como c
 
 ### Error de certificado con la IP correcta
 
-Si el equipo del puente cambió de IP, el certificado no la incluye: el puente lo avisa al arrancar, y `prisma tls info` y el panel (*Ajustes → HTTPS*) lo muestran. Regenéralo en el panel o con `prisma tls regenerar` y vuelve a confiar en él. Para que no se repita, dale una IP fija al equipo.
+Si el equipo del puente cambió de IP, el certificado no la incluye: el puente lo avisa al arrancar, y `prisma tls info` y el panel (*Ajustes → HTTPS*) lo muestran. Reinicia el servicio (desde 0.3.1, el puente lo renueva solo al arrancar) o regenéralo en el panel o con `prisma tls regenerar`. Lo firma la misma autoridad local, así que los equipos no tienen que hacer nada; con un certificado de antes de 0.3.1, hay que volver a confiar en él. Para que no se repita, dale una IP fija al equipo.
 
 ### `fetch` falla con «TypeError: Failed to fetch» y la consola menciona CORS
 
@@ -52,7 +52,7 @@ Otro programa tiene bloqueada la base de datos del puente, por ejemplo un visor 
 
 ### Todas las aplicaciones dejaron de conectarse el mismo día
 
-Lo más probable es que **venciera el certificado** del puente. *Inicio* lo avisa desde 60 días antes. Con el certificado autofirmado, el puente genera uno nuevo al arrancar: reinicia el servicio y vuelve a instalarlo en cada equipo que imprime ([instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md#vencimiento)).
+Lo más probable es que **venciera el certificado** del puente. *Inicio* lo avisa desde 60 días antes. Con el certificado autofirmado, el puente genera uno nuevo al arrancar: reinicia el servicio. Desde 0.3.1, lo firma la misma autoridad local y los equipos no tienen que hacer nada; con un certificado anterior, vuelve a instalarlo en cada equipo que imprime ([instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md#vencimiento)).
 
 ## La impresora no imprime
 

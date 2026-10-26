@@ -6,6 +6,11 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 
 ## [Sin publicar]
 
+### Corregido
+
+- La guía de HTTPS y el código para integrar del panel nombraban `certificado.pem` o `autoridad.pem`, pero *Descargar certificado* entrega `prisma.crt`. Ahora todos usan `prisma.crt`.
+- La documentación de administración, operación, instalación e integradores todavía decía que, al regenerar el certificado, cambiar la IP o vencerse, había que reinstalarlo en cada equipo; desde 0.3.1, con la autoridad local, no hace falta. También decía «certificado» donde ahora se instala la autoridad (`prisma.crt`), y la guía de inicio rápido citaba la versión `@v0.1.0` del SDK.
+
 ## [0.3.1] — 2026-10-26
 
 ### Cambiado

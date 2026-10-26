@@ -18,7 +18,13 @@ PRISMA es un servicio que se instala en una PC, Raspberry Pi o Mac dentro de la 
 }
 ```
 
-> **Versión actual: [0.1.0](https://github.com/bayalad7/prisma/releases/tag/v0.1.0)** ([registro de cambios](CHANGELOG.md)). Funciona en Windows, Linux/Raspberry Pi y macOS: las aplicaciones imprimen por la [API v1](docs/referencia/api-v1.md) con HTTPS y autorización por niveles, el dueño configura todo desde el [panel de administración](docs/administracion/README.md), y los integradores tienen un [SDK JavaScript](docs/integradores/sdk.md) y firmadores de nivel 3 para PHP, Node.js y Python. Se instala como servicio con los [instaladores](docs/instalacion/README.md) de cada sistema.
+> **Versión actual: [0.3.1](https://github.com/bayalad7/prisma/releases/tag/v0.3.1)** ([registro de cambios](CHANGELOG.md)). Funciona en Windows, Linux/Raspberry Pi y macOS.
+>
+> - Las aplicaciones imprimen por la [API v1](docs/referencia/api-v1.md), con HTTPS y autorización por niveles.
+> - El dueño configura todo desde el [panel de administración](docs/administracion/README.md): primeros pasos guiados, impresoras con prueba de acentos, aplicaciones y solicitudes, trabajos con «qué pasó y qué hacer», y el manual y los diagramas dentro del panel, sin Internet.
+> - Con la **impresora virtual** y *Probar impresión* se puede probar sin papel.
+> - Los integradores tienen un [SDK JavaScript](docs/integradores/sdk.md) y firmadores de nivel 3 para PHP, Node.js y Python.
+> - Se instala como servicio con los [instaladores](docs/instalacion/README.md) de cada sistema. En ese equipo, el panel abre sin advertencia de certificado.
 
 ## Principios
 
@@ -50,6 +56,17 @@ Además:
 - Las operaciones sensibles (`abrir_cajon`, `raw`) están deshabilitadas por defecto y se habilitan por cliente.
 - Cuando un origen desconocido intenta imprimir, queda como solicitud pendiente para que el dueño la apruebe o la rechace.
 
+### HTTPS en la red local
+
+Los navegadores solo dejan que una página HTTPS hable con otra dirección HTTPS. Por eso el puente genera una **autoridad local** y un certificado del servidor firmado por ella ([ADR 0021](docs/adr/0021-autoridad-local-y-certificado-del-servidor.md)).
+
+- **La autoridad local** está limitada a la red local ([ADR 0020](docs/adr/0020-confiar-en-el-certificado-del-puente-al-instalar.md)): aunque un equipo confíe en ella, no sirve para hacerse pasar por ningún sitio de Internet.
+- **En el equipo del puente**, el instalador hace que el sistema confíe en ella.
+- **En los demás equipos que imprimen**, se instala una sola vez: `prisma.crt`, en *Ajustes → HTTPS* del panel.
+- **Regenerar el certificado del servidor** (cambio de IP o vencimiento) no obliga a reinstalar nada.
+
+Con un dominio propio también se puede usar Let's Encrypt ([guía](docs/instalacion/https-y-certificados.md)).
+
 ## Requisitos para compilar
 
 - Go 1.26 o superior (1.26.4 o superior para empaquetar el `.deb`).
@@ -68,6 +85,12 @@ En Windows:
 .\build.ps1 deb          # paquetes .deb; también: instalador (Inno Setup), checksums
 ```
 
+Pruebas de punta a punta del panel (Playwright; compilan y arrancan sus propios puentes):
+
+```sh
+cd e2e && npm ci && npx playwright install chromium && npm test
+```
+
 En Linux y macOS:
 
 ```sh
@@ -79,7 +102,14 @@ make test-sdk
 make deb                 # también: pkg (solo en macOS), checksums
 ```
 
-El CI ([`.github/workflows`](.github/workflows/)) corre `go test -race`, las pruebas del SDK y la instalación real del servicio en Windows, Ubuntu y macOS. Las versiones se publican con una etiqueta `v*` ([docs/publicar.md](docs/desarrollo/publicar.md)).
+El CI ([`.github/workflows`](.github/workflows/)) corre en Windows, Ubuntu y macOS:
+
+- `go test -race` y las pruebas del SDK y los firmadores;
+- la instalación real del servicio, incluida la reinstalación con el servicio en marcha;
+- la confianza en la autoridad local, validada por el propio sistema;
+- las pruebas de punta a punta del panel: flujos, pantallas en claro y oscuro con axe, teclado, usuario nuevo y un Firefox real contra el certificado.
+
+Las versiones se publican con una etiqueta `v*` ([docs/desarrollo/publicar.md](docs/desarrollo/publicar.md)).
 
 ## Documentación
 
@@ -103,7 +133,9 @@ prisma config validar [--config ruta]  # valida config.toml y muestra la configu
 prisma ejecutar [--config ruta]        # ejecuta el puente (API HTTPS y panel /admin) en primer plano
 prisma admin codigo-inicial            # código para configurar el panel desde otro equipo
 prisma admin restablecer-contrasena    # genera una contraseña nueva para el panel
-prisma tls info | regenerar            # certificado HTTPS en uso / uno nuevo con las IPs actuales
+prisma tls info                        # certificado del servidor y autoridad local en uso
+prisma tls regenerar [--nueva-autoridad]  # certificado del servidor nuevo (misma autoridad: los equipos no hacen nada)
+prisma tls confiar [--quitar]          # como administrador: este equipo confía en la autoridad local
 prisma servicio instalar | iniciar | estado | detener | reiniciar | desinstalar
 prisma actualizar [--comprobar]        # instala la última versión (firma y SHA-256 verificados)
 ```
@@ -123,6 +155,7 @@ Cómo integrar PRISMA en una aplicación (SDK, niveles, firmas y errores): [docs
 ```sh
 prisma impresoras detectar [--red] [--json]   # impresoras, colas y puertos de este equipo (y de la red)
 prisma impresoras agregar --alias caja --tipo red --destino 192.168.1.50 [--ancho 58|80] [--cajon]
+prisma impresoras agregar --alias prueba --tipo virtual   # impresora virtual: el ticket se ve en el panel
 prisma impresoras listar
 prisma impresoras probar caja                 # comprueba la conexión sin imprimir
 prisma impresoras eliminar caja
@@ -190,12 +223,13 @@ internal/cola/        cola FIFO por impresora y estado (desconocido / en línea 
 internal/dev/         decodificador ESC/POS, impresora virtual y previsualización
 internal/seguridad/   autorización, llaves, límites, contraseñas y firmas Ed25519 (JCS)
 internal/servidor/    HTTPS y API pública /v1
-internal/admin/       panel de administración /admin (HTML/CSS/JS embebidos)
+internal/admin/       panel de administración /admin (HTML/CSS/JS embebidos, manual y diagramas sin Internet)
 internal/servicio/    servicio del sistema (Windows, systemd, launchd) y bitácora rotativa
 internal/actualizacion/ versiones nuevas: firma, checksums y reemplazo del binario
 internal/version/     versión del binario
 sdk/js/               SDK JavaScript público
 sdk/firmadores/       firmadores de nivel 3 (PHP, Node.js, Python)
+e2e/                  pruebas de punta a punta del panel (Playwright, axe, Firefox real)
 testdata/             vector de firma público
 schema/               JSON Schema publicados (embebidos en el binario)
 docs/                 documentación por tipo de lector (ver docs/README.md)
@@ -222,6 +256,9 @@ Crea tu rama desde `develop` y abre el pull request hacia `develop`; `main` solo
 - [x] SDK JavaScript, firmadores de referencia y guías para integradores
 - [x] Instalación como servicio, instaladores por plataforma, actualizaciones y CI
 - [x] Primera versión publicada (0.1.0)
+- [x] Panel rediseñado, accesible y con el manual y los diagramas dentro, sin Internet (0.2.0)
+- [x] Probar impresión, rollo en vivo y comprobador de permisos (0.2.0)
+- [x] Panel sin advertencia de certificado en el equipo del puente: autoridad local limitada a la red local (0.3.0 y 0.3.1)
 - [ ] SDK publicado en npm
 - [ ] Firma de código de los instaladores de Windows y macOS
 - [ ] Negociación de versiones del documento (contrato §10)

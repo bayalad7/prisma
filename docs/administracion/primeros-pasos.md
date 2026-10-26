@@ -6,7 +6,7 @@ Antes de empezar, PRISMA debe estar instalado en el equipo que se queda encendid
 
 ## 1. Abre el panel y crea la contraseña
 
-En el equipo donde instalaste PRISMA, abre el navegador en `https://localhost:8443/admin`. El instalador hizo que ese equipo confíe en el certificado del puente, así que no hay advertencia. Si el navegador avisa que «la conexión no es privada» (por ejemplo, porque actualizaste desde 0.2.0, o en Linux con Chrome), continúa con *Configuración avanzada → Continuar* y revisa *Ajustes → HTTPS*, o instala el certificado como explica [HTTPS y certificados](../instalacion/https-y-certificados.md#confiar-en-el-certificado).
+En el equipo donde instalaste PRISMA, abre el navegador en `https://localhost:8443/admin`. El instalador hizo que ese equipo confíe en el certificado del puente, así que no hay advertencia. Si el navegador avisa que «la conexión no es privada» (por ejemplo, porque actualizaste desde 0.2.0 o 0.3.0, o en Linux con Chrome), continúa con *Configuración avanzada → Continuar* y revisa *Ajustes → HTTPS*, o instala el certificado como explica [HTTPS y certificados](../instalacion/https-y-certificados.md#confiar-en-el-certificado).
 
 Crea la contraseña del panel: al menos 10 caracteres. Una frase es más fácil de recordar y más segura.
 

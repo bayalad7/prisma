@@ -34,4 +34,4 @@ Abajo están los **últimos trabajos**; *Ver todos* lleva a [Trabajos](trabajos.
 El Inicio avisa arriba cuando hay algo que atender:
 
 - **Una versión nueva de PRISMA.** Se instala desde el equipo del puente ([Actualización](../operacion/actualizacion.md)).
-- **El certificado está por vencer o venció.** Con el certificado autofirmado, si vence el puente genera uno nuevo al arrancar, y hay que volver a confiar en él en cada equipo ([HTTPS y certificados](../instalacion/https-y-certificados.md#vencimiento)).
+- **El certificado está por vencer o venció.** Con el certificado autofirmado, el puente lo renueva al arrancar. Desde 0.3.1 lo firma la misma autoridad local, y los equipos no tienen que hacer nada; con un certificado anterior, hay que volver a confiar en él en cada equipo ([HTTPS y certificados](../instalacion/https-y-certificados.md#vencimiento)).

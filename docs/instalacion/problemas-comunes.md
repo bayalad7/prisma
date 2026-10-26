@@ -27,7 +27,12 @@ Nunca abras el puerto 8443 hacia Internet en el router.
 
 El puente usa un certificado propio. En el equipo donde lo instalaste, el instalador ya confía en él; si aun así avisa, el certificado es de antes de 0.3.0: *Ajustes → HTTPS* explica cómo regenerarlo y ejecutar `prisma tls confiar`. En los demás equipos, el navegador todavía no lo conoce. Para entrar al panel basta con *Configuración avanzada → Continuar*. Para que las **aplicaciones** puedan imprimir desde ese equipo, en cambio, hay que instalar el certificado: el aviso aceptado solo vale para navegar ([instalacion/https-y-certificados.md](https-y-certificados.md#confiar-en-el-certificado)).
 
-Si el aviso aparece en equipos que antes funcionaban, cambió la IP del equipo de PRISMA: regenera el certificado en *Ajustes → HTTPS* y vuelve a instalarlo en los equipos. Para evitarlo, dale IP fija.
+Si el aviso aparece en equipos que antes funcionaban:
+
+- **Puente 0.3.1 o posterior:** se creó una autoridad local nueva, porque cambió el nombre del equipo o se pidió una; *Ajustes → HTTPS* lo dijo al regenerar. Descarga `prisma.crt` e instálalo de nuevo en esos equipos. Un cambio de IP ya no obliga a nada: reinicia el servicio o regenera el certificado.
+- **Puente anterior:** cambió la IP del equipo de PRISMA. Regenera el certificado en *Ajustes → HTTPS* y vuelve a instalarlo en los equipos.
+
+Para evitarlo, dale IP fija al equipo del puente.
 
 ## Linux: la impresora USB no responde (permiso denegado)
 

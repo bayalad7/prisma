@@ -4,7 +4,7 @@ Para macOS 12 Monterey o posterior, en Mac con Intel o con Apple Silicon.
 
 1. Descarga `PRISMA-<versión>-macos.pkg` de la [página de versiones](https://github.com/bayalad7/prisma/releases/latest). Sirve para Mac con Intel y con Apple Silicon.
 2. Ábrelo y sigue el instalador. Si macOS dice que **no puede verificar el desarrollador**, abre *Ajustes del Sistema → Privacidad y seguridad* y pulsa *Abrir de todas formas* junto al aviso de PRISMA.
-3. Abre `https://localhost:8443/admin` en Safari o Chrome y crea la contraseña del panel. No hay aviso de certificado: el instalador hizo que este Mac confíe en el del puente (`prisma tls confiar`), que está limitado a la red local. Si actualizaste desde 0.2.0 y aparece un aviso, revisa *Ajustes → HTTPS*.
+3. Abre `https://localhost:8443/admin` en Safari o Chrome y crea la contraseña del panel. No hay aviso de certificado: el instalador hizo que este Mac confíe en la autoridad local del puente (`prisma tls confiar`), que está limitada a la red local. Si actualizaste desde 0.2.0 o 0.3.0 y aparece un aviso, revisa *Ajustes → HTTPS*.
 
 El instalador crea el usuario oculto `_prisma` y un servicio de sistema (LaunchDaemon) que arranca con la Mac y se reinicia si falla. Configuración y datos: `/Library/Application Support/PRISMA`. Bitácoras: `/Library/Logs/PRISMA`, también visibles en la app **Consola**.
 

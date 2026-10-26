@@ -241,7 +241,7 @@ curl --cacert prisma.crt https://192.168.1.10:8443/v1/imprimir \
   --data-binary @ejemplos/validos/venta-simple.json
 ```
 
-`prisma.crt` es el certificado que se descarga del panel, en *Ajustes → HTTPS*. Para una prueba rápida, `-k` acepta el certificado autofirmado sin verificarlo.
+`prisma.crt` es la autoridad local del puente, que se descarga del panel en *Ajustes → HTTPS* (en un puente de antes de 0.3.1, el certificado mismo). Para una prueba rápida, `-k` acepta el certificado autofirmado sin verificarlo.
 
 ### Nivel 3 con curl
 
