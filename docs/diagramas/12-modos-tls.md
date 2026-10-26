@@ -13,7 +13,7 @@ secciones_manual: [instalacion/https-y-certificados]
 flowchart TD
     a["arranque"]:::prisma --> m{"servidor.modo_tls"}:::prisma
     m -- autofirmado --> e{"¿tls/certificado.pem existe y no venció?"}:::seguridad
-    e -- no --> g["generar ECDSA P-256, 825 días,<br/>localhost, nombre del equipo e IPs"]:::seguridad
+    e -- no --> g["generar ECDSA P-256, 825 días,<br/>localhost, nombre del equipo e IPs,<br/>limitado a la red local"]:::seguridad
     e -- sí --> u["usarlo"]:::seguridad
     g --> u
     m -- archivos --> f["cargar certificado y llave<br/>de config.toml"]:::datos
@@ -24,6 +24,9 @@ flowchart TD
     v -- "menos de 60" --> warn["bitácora WARN y aviso en Inicio"]:::seguridad
     u --> ip["si faltan IPs actuales: WARN, regenerarlo"]:::seguridad
     r["regenerar: panel o prisma tls regenerar"]:::prisma --> rc["se recarga en unos segundos, sin reiniciar"]:::prisma
+    i["instalador o administrador:<br/>prisma tls confiar"]:::externo --> c{"¿limitado a la red local?"}:::seguridad
+    c -- sí --> cs["este equipo confía en él<br/>(almacén del sistema)"]:::seguridad
+    c -- "no (de 0.2.0)" --> cn["rechazado: regenerarlo primero"]:::seguridad
     classDef externo fill:#e8f0fe,stroke:#3b6db3,color:#102a43
     classDef prisma fill:#e6f4ea,stroke:#2f7d32,color:#0b2e13
     classDef datos fill:#fff4e0,stroke:#b26a00,color:#3d2400
@@ -33,7 +36,8 @@ flowchart TD
 - **Solo existen tres modos.** No hay un modo «remoto» ni descarga de certificados desde un servidor en PRISMA 0.1.0: `config.Validar` rechaza cualquier otro valor de `modo_tls`. Por eso no hay diagrama de certificado remoto.
 - Con `autofirmado`, un certificado vencido se **regenera al arrancar**; con `archivos`, el puente no puede renovarlo y solo avisa.
 - `archivos` también se recarga en caliente: el puente vuelve a leer los archivos cada 5 s si cambian.
-- Después de regenerar, hay que volver a instalar el certificado en cada equipo que imprime.
+- Después de regenerar, hay que volver a instalar el certificado en cada equipo que imprime, y ejecutar otra vez `prisma tls confiar` en el del puente.
+- `prisma tls confiar` solo acepta el certificado limitado a la red local (desde 0.3.0): aunque un equipo confíe en él como raíz, su llave no sirve para ningún sitio de Internet ([ADR 0020](../adr/0020-confiar-en-el-certificado-del-puente-al-instalar.md)).
 
 **Fuentes en el código:**
 
@@ -41,6 +45,7 @@ flowchart TD
 - internal/servidor/escuchar.go (`Escuchar`, `avisarVencimiento`)
 - internal/servidor/tls.go (`CargarAutofirmado`, `NuevoArchivos`, `Vencimiento`, `IPsSinCubrir`)
 - internal/admin/ajustes.go (`avisoCertificado`, `regenerarTLS`)
+- internal/servicio/confianza.go (`ConfiarCertificado`, `QuitarConfianza`)
 - cmd/prisma/tls.go
 
-**Última verificación:** PRISMA 0.1.0 (rama `develop`, commit `5f67e19`), 22 de octubre de 2026.
+**Última verificación:** PRISMA 0.3.0 en desarrollo (rama `develop`), 25 de octubre de 2026.

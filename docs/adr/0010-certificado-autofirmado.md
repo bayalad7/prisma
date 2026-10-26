@@ -1,6 +1,6 @@
 # 0010. Certificado autofirmado de 825 días, con aviso y regeneración
 
-- **Estado:** aceptada, vigente en PRISMA 0.1.0
+- **Estado:** aceptada, vigente en PRISMA 0.1.0; complementada por [0020](0020-confiar-en-el-certificado-del-puente-al-instalar.md) (límite a la red local y confianza al instalar)
 - **Fecha:** 2026-10-15
 
 ## Contexto

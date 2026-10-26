@@ -192,8 +192,10 @@ Elimina la aplicación con sus orígenes y permisos. Su historial de trabajos se
 
 | Comando | Descripción |
 |---|---|
-| `tls info` | Muestra el certificado en uso: archivo, nombres, IPs, vencimiento y huella SHA-256. Avisa si alguna IP actual del equipo no está incluida. |
-| `tls regenerar` | Solo en modo `autofirmado`. Genera un certificado nuevo con el nombre y las IPs actuales. El puente en marcha lo toma sin reiniciar. |
+| `tls info` | Muestra el certificado en uso: archivo, nombres, IPs, vencimiento, huella SHA-256 y si está limitado a la red local. Avisa si alguna IP actual del equipo no está incluida. |
+| `tls regenerar` | Solo en modo `autofirmado`. Genera un certificado nuevo con el nombre y las IPs actuales, limitado a la red local. El puente en marcha lo toma sin reiniciar. |
+| `tls confiar [--esperar 60s]` | Solo en modo `autofirmado` y como administrador. Agrega el certificado al almacén de confianza de **este** equipo (Windows, macOS o `ca-certificates` en Linux), después de quitar los que PRISMA haya puesto antes. Con `--esperar`, espera a que el puente lo genere. Rechaza un certificado de antes de 0.3.0, sin límites: regenéralo primero. Lo usan los instaladores ([ADR 0020](../adr/0020-confiar-en-el-certificado-del-puente-al-instalar.md)). |
+| `tls confiar --quitar` | Quita del almacén de confianza de este equipo los certificados que puso PRISMA. Lo usan los desinstaladores. |
 
 Cómo confiar en el certificado en cada sistema: [instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md).
 

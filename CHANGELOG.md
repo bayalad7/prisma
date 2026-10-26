@@ -6,6 +6,15 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 
 ## [Sin publicar]
 
+### Agregado
+
+- `prisma tls confiar` agrega el certificado autofirmado al almacén de confianza de ese equipo (Windows, macOS y `ca-certificates` en Linux), y `--quitar` lo quita (ADR 0020).
+- Guía para usar un certificado de Let's Encrypt con tu propio dominio (`modo_tls = "archivos"`).
+
+### Cambiado
+
+- El certificado autofirmado nuevo está limitado a la red local (restricciones de nombre): solo vale para `localhost`, nombres `.local`, el nombre del equipo, redes privadas y sus propias IPs. Así, confiar en él no permite hacerse pasar por ningún sitio de Internet. Los certificados de 0.2.0 siguen funcionando, pero `prisma tls confiar` pide regenerarlos antes. `prisma tls info` dice si un certificado está limitado.
+
 ## [0.2.0] — 2026-10-23
 
 ### Agregado

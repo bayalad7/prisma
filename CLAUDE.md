@@ -68,6 +68,8 @@ según el perfil de la impresora y lo imprime por USB, red (TCP 9100) o Bluetoot
   base, la bitácora ni los respaldos, tampoco desde «Probar impresión», y no sobreviven a un reinicio
   (TestImpresoraVirtualDePrincipioAFin, TestProbarImpresionNoGuardaElContenido, e2e/usuario-nuevo.spec.mjs).
   Su rollo coincide con los golden del renderizador (TestImpresoraVirtualCoincideConLosGolden).
+- El certificado autofirmado está limitado a la red local (nameConstraints) y `prisma tls confiar` solo
+  confía en uno así (TestCertificadoLimitadoALaRedLocal, TestTLSConfiarSoloConCertificadoLimitado; ADR 0020).
 - Permisos: base y llave del certificado 0600; datos solo para el usuario del servicio
   (en Windows, SYSTEM y Administradores).
 
