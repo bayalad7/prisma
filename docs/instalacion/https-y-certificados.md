@@ -45,7 +45,7 @@ prisma tls confiar     # como administrador: este equipo confía en él (lo hace
 Los instaladores de Windows, macOS y Linux (`.deb`) ejecutan `prisma tls confiar` al terminar: agregan el certificado al almacén de confianza de ese equipo, así que el panel se abre sin advertencia de seguridad en Edge, Chrome, Safari y Firefox. Al desinstalar, lo quitan (`prisma tls confiar --quitar`).
 
 - **Si actualizaste desde 0.2.0:** tu certificado no está limitado a la red local y el instalador no confía en él. *Ajustes → HTTPS* lo avisa. Regenéralo y ejecuta `prisma tls confiar` como administrador; después, vuelve a confiar en él en los demás equipos.
-- **Si lo regeneras** (panel o `prisma tls regenerar`): ejecuta otra vez `prisma tls confiar` como administrador en el equipo del puente.
+- **Si lo regeneras** (panel o `prisma tls regenerar`): ejecuta otra vez `prisma tls confiar` como administrador en el equipo del puente. En Windows y Linux reemplaza al anterior. En macOS solo agrega el nuevo: para quitar los anteriores, `sudo prisma tls confiar --quitar` (macOS pide autorizarlo en una ventana) y después `sudo prisma tls confiar`.
 - **Chrome y Chromium en Linux** usan además su propia base (NSS): ahí sigue haciendo falta el paso de abajo.
 
 ### Confiar en el certificado

@@ -24,7 +24,7 @@ El certificado es una CA (así lo aceptan todos los almacenes al importarlo). Co
   Aunque un equipo confíe en él como raíz, su llave no sirve para hacerse pasar por un sitio de Internet. `TestCertificadoLimitadoALaRedLocal` lo comprueba firmando con esa llave un certificado para un dominio público y para `8.8.8.8`.
 - **`prisma tls confiar`** agrega el certificado al almacén de confianza del sistema de ese equipo, después de quitar los que PRISMA haya puesto antes; con `--quitar`, los quita. Requiere administrador.
   - Windows: «Entidades de certificación raíz de confianza» del equipo, con la API de certificados de Windows (sin PowerShell ni `certutil`, cuya salida cambia con el idioma).
-  - macOS: el llavero del sistema, con `security add-trusted-cert`. Al quitarlo, se quita también su configuración de confianza (`remove-trusted-cert`), que macOS guarda aparte.
+  - macOS: el llavero del sistema, con `security add-trusted-cert`. Ahí `confiar` **solo agrega** (y no hace nada si el certificado ya está): quitar una confianza de administrador, con `remove-trusted-cert` o `delete-certificate -t`, espera una autorización en una ventana. Se comprobó en el CI que sin pantalla se queda esperando para siempre, y que después hasta agregar se cuelga. Por eso solo `--quitar` lo hace, desde la Terminal, donde macOS muestra esa ventana.
   - Linux: `ca-certificates`.
   
   Chrome, Edge, Safari y Firefox (que importa las raíces del sistema en Windows y macOS) dejan de avisar en ese equipo.
@@ -38,3 +38,5 @@ El certificado es una CA (así lo aceptan todos los almacenes al importarlo). Co
 - Al regenerar el certificado desde el panel no se vuelve a confiar en él solo: en Linux y macOS el servicio no corre como administrador. La CLI y el panel indican que hay que ejecutar `prisma tls confiar`.
 - Chrome y Chromium en Linux usan además su propia base (NSS): ahí sigue haciendo falta el paso a mano de la guía.
 - Agregar una raíz al sistema es una acción visible: el instalador lo hace solo en el equipo donde se instala y la documentación lo dice.
+- En macOS, regenerar el certificado deja la confianza del anterior en el llavero hasta que se ejecute `sudo prisma tls confiar --quitar` desde la Terminal; está limitado a la red local y su llave solo está en ese equipo.
+- Ninguna herramienta del sistema puede colgar al instalador: en Linux y macOS cada una tiene un límite de 2 minutos.

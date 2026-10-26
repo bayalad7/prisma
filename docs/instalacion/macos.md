@@ -20,6 +20,6 @@ Para generar el código del panel desde la Terminal: `sudo -u _prisma prisma adm
 
 ## Desinstalar
 
-`sudo prisma tls confiar --quitar && sudo prisma servicio desinstalar && sudo rm /usr/local/bin/prisma`. Se conservan `/Library/Application Support/PRISMA` y `/Library/Logs/PRISMA`.
+`sudo prisma tls confiar --quitar && sudo prisma servicio desinstalar && sudo rm /usr/local/bin/prisma`. Al quitar el certificado, macOS pide autorizar el cambio en una ventana. Se conservan `/Library/Application Support/PRISMA` y `/Library/Logs/PRISMA`.
 
 Siguiente paso: [después de instalar](README.md#después-de-instalar).
