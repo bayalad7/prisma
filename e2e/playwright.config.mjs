@@ -31,6 +31,8 @@ export default defineConfig({
     { name: 'celular', testMatch: /flujos\.spec\.mjs/, use: VISTAS.celular },
     { name: 'escritorio-pantallas', testMatch: /(pantallas|teclado)\.spec\.mjs/, dependencies: ['escritorio'], use: VISTAS.escritorio },
     { name: 'celular-pantallas', testMatch: /pantallas\.spec\.mjs/, dependencies: ['celular'], use: VISTAS.celular },
+    // Firefox real contra la autoridad local del puente de escritorio (ADR 0021).
+    { name: 'certificado-firefox', testMatch: /certificado-firefox\.spec\.mjs/, use: VISTAS.escritorio },
     // Con su propio puente (lo reinicia): de recién instalado a imprimir, y el reinicio.
     { name: 'usuario-nuevo', testMatch: /usuario-nuevo\.spec\.mjs/, use: { ...VISTAS.escritorio, baseURL: 'https://127.0.0.1:18603' } },
   ],

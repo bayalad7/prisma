@@ -24,6 +24,7 @@ Cada archivo registra una decisión que ya está tomada en el código: el contex
 | 0018 | [Diagramas del panel en SVG pregenerado, servidos como imágenes](0018-diagramas-del-panel-en-svg-pregenerado.md) | 2026-10-22 |
 | 0019 | [Enlaces en los nodos de los diagramas, superpuestos a la imagen](0019-enlaces-en-los-nodos-de-los-diagramas.md) | 2026-10-23 |
 | 0020 | [El instalador confía en el certificado del puente, limitado a la red local](0020-confiar-en-el-certificado-del-puente-al-instalar.md) | 2026-10-25 |
+| 0021 | [Una autoridad local firma el certificado del servidor](0021-autoridad-local-y-certificado-del-servidor.md) | 2026-10-26 |
 
 ## Cómo agregar una decisión
 

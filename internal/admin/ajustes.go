@@ -395,8 +395,13 @@ func (a *Admin) estadoTLS() map[string]any {
 	resp["certificado"] = map[string]any{"vence": c.NotAfter.Format("02/01/2006"), "nombres": c.DNSNames, "ips": ips,
 		"ips_sin_cubrir": sinCubrir, "huella": servidor.Huella(c), "estado": estado, "dias_restantes": dias}
 	if a.op.Config.Servidor.ModoTLS == config.TLSAutofirmado {
-		// Los de 0.2.0 no están limitados a la red local: prisma tls confiar los rechaza (ADR 0020).
-		resp["certificado"].(map[string]any)["limitado"] = servidor.LimitadoALaRedLocal(c)
+		// Desde 0.3.1 lo firma una autoridad local limitada a la red local, que es en lo que confían los
+		// equipos (ADR 0021). Los de antes no tienen: prisma tls confiar pide regenerarlo.
+		ca, err := servidor.AutoridadLocal(a.op.Config.DirDatos())
+		resp["certificado"].(map[string]any)["limitado"] = err == nil
+		if err == nil {
+			resp["autoridad"] = map[string]any{"huella": servidor.Huella(ca), "vence": ca.NotAfter.Format("02/01/2006")}
+		}
 	}
 	return resp
 }
@@ -476,16 +481,25 @@ func (a *Admin) regenerarTLS(w http.ResponseWriter, r *http.Request) {
 			"Con certificado propio, reemplaza los archivos configurados en config.toml."))
 		return
 	}
-	if _, err := servidor.GenerarAutofirmado(a.op.Config.DirDatos()); err != nil {
+	gen, err := servidor.GenerarAutofirmado(a.op.Config.DirDatos(), false)
+	if err != nil {
 		a.error(w, r, err)
 		return
 	}
-	a.op.Log.Info("certificado autofirmado regenerado desde el panel")
-	responder(w, ok)
+	a.op.Log.Info("certificado autofirmado regenerado desde el panel", "autoridad_nueva", gen.AutoridadNueva)
+	// Con la misma autoridad, los equipos que ya confían en ella no tienen que hacer nada.
+	responder(w, map[string]any{"ok": true, "autoridad_nueva": gen.AutoridadNueva})
 }
 
+// descargarCertificado entrega lo que hay que instalar en los equipos: la autoridad local, o el
+// certificado mismo si es de antes de 0.3.1 (o de archivos propios).
 func (a *Admin) descargarCertificado(w http.ResponseWriter, r *http.Request) {
 	ruta := a.rutaCertificado()
+	if a.op.Config.Servidor.ModoTLS == config.TLSAutofirmado {
+		if _, err := servidor.AutoridadLocal(a.op.Config.DirDatos()); err == nil {
+			ruta, _ = servidor.RutasAutoridad(a.op.Config.DirDatos())
+		}
+	}
 	datos, err := os.ReadFile(ruta)
 	if ruta == "" || err != nil {
 		a.error(w, r, rechazo(http.StatusNotFound, "SIN_CERTIFICADO", "Este puente no usa un certificado.", ""))

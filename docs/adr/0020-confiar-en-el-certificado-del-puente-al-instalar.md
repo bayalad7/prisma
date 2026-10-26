@@ -2,6 +2,7 @@
 
 - **Estado:** aceptada, en desarrollo para PRISMA 0.3.0
 - **Fecha:** 2026-10-25
+- **Reemplazada en parte por:** [0021](0021-autoridad-local-y-certificado-del-servidor.md). Desde 0.3.1 se confía en una autoridad local que firma el certificado del servidor: Firefox rechazaba el certificado único de 0.3.0 (`MOZILLA_PKIX_ERROR_CA_CERT_USED_AS_END_ENTITY`).
 - **Complementa:** [0010](0010-certificado-autofirmado.md)
 
 ## Contexto

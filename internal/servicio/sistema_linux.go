@@ -78,3 +78,6 @@ func estadoSistema(e Estado) Estado { return e }
 func limpiarSistema(Opciones) {}
 
 func esAccesoDenegado(error) bool { return false }
+
+// marcadoParaEliminacion solo pasa en Windows (ver reinstalar).
+func marcadoParaEliminacion(error) bool { return false }

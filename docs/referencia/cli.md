@@ -192,9 +192,9 @@ Elimina la aplicación con sus orígenes y permisos. Su historial de trabajos se
 
 | Comando | Descripción |
 |---|---|
-| `tls info` | Muestra el certificado en uso: archivo, nombres, IPs, vencimiento, huella SHA-256 y si está limitado a la red local. Avisa si alguna IP actual del equipo no está incluida. |
-| `tls regenerar` | Solo en modo `autofirmado`. Genera un certificado nuevo con el nombre y las IPs actuales, limitado a la red local. El puente en marcha lo toma sin reiniciar. |
-| `tls confiar [--esperar 60s]` | Solo en modo `autofirmado` y como administrador. Agrega el certificado al almacén de confianza de **este** equipo (Windows, macOS o `ca-certificates` en Linux), después de quitar los que PRISMA haya puesto antes. Con `--esperar`, espera a que el puente lo genere. Rechaza un certificado de antes de 0.3.0, sin límites: regenéralo primero. Lo usan los instaladores ([ADR 0020](../adr/0020-confiar-en-el-certificado-del-puente-al-instalar.md)). |
+| `tls info` | Muestra el certificado del servidor (archivo, nombres, IPs, vencimiento y huella SHA-256) y la autoridad local que lo firma (archivo, vencimiento y huella), o que no tiene si es de antes de 0.3.1. Avisa si alguna IP actual del equipo no está incluida. |
+| `tls regenerar [--nueva-autoridad]` | Solo en modo `autofirmado`. Genera un certificado del servidor nuevo con el nombre y las IPs actuales, firmado por la misma autoridad local: los equipos que ya confían en ella no tienen que hacer nada. Crea una autoridad nueva si no había, si ya no cubre el nombre del equipo o con `--nueva-autoridad`, y lo dice. El puente en marcha lo toma sin reiniciar ([ADR 0021](../adr/0021-autoridad-local-y-certificado-del-servidor.md)). |
+| `tls confiar [--esperar 60s]` | Solo en modo `autofirmado` y como administrador. Agrega la autoridad local al almacén de confianza de **este** equipo (Windows, macOS o `ca-certificates` en Linux). En Windows y Linux reemplaza a la que PRISMA haya puesto antes; en macOS solo agrega. Con `--esperar`, espera a que el puente genere el certificado. Si el certificado es de antes de 0.3.1, sin autoridad, pide regenerarlo primero. Lo usan los instaladores ([ADR 0020](../adr/0020-confiar-en-el-certificado-del-puente-al-instalar.md)). |
 | `tls confiar --quitar` | Quita del almacén de confianza de este equipo los certificados que puso PRISMA. Lo usan los desinstaladores. |
 
 Cómo confiar en el certificado en cada sistema: [instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md).

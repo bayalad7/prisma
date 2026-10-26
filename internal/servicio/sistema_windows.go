@@ -61,3 +61,8 @@ func limpiarSistema(Opciones) {
 }
 
 func esAccesoDenegado(err error) bool { return errors.Is(err, windows.ERROR_ACCESS_DENIED) }
+
+// marcadoParaEliminacion: el servicio anterior sigue «marcado para eliminación» (ver reinstalar).
+func marcadoParaEliminacion(err error) bool {
+	return errors.Is(err, windows.ERROR_SERVICE_MARKED_FOR_DELETE)
+}

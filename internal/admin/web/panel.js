@@ -2492,13 +2492,18 @@
     function https() {
       const T = TAj.https;
       const cert = a.tls.certificado;
+      // Desde 0.3.1, una autoridad local firma el certificado del servidor (ADR 0021): regenerarlo
+      // con la misma autoridad no obliga a reinstalar nada en los equipos.
+      const autoridad = a.tls.autoridad;
       const regenerar = a.tls.modo === 'autofirmado' && UI.boton({ texto: T.regenerar, variante: 'peligro', icono: 'recargar' });
       if (regenerar) {
         regenerar.addEventListener('click', async () => {
-          if (!(await confirmar(T.regenerarTitulo, T.regenerarTexto, { boton: T.regenerar, peligro: true, consecuencias: T.regenerarConsecuencias }))) return;
+          if (!(await confirmar(T.regenerarTitulo, T.regenerarTexto, { boton: T.regenerar, peligro: !autoridad,
+            consecuencias: autoridad ? T.regenerarConsecuenciasAutoridad : T.regenerarConsecuencias }))) return;
           try {
-            await conEspera(regenerar, () => api.post('/tls/regenerar'));
-            aviso(T.regenerado, 'ok', { persistente: true });
+            const r = await conEspera(regenerar, () => api.post('/tls/regenerar'));
+            // Solo hay algo que hacer si la autoridad es nueva: entonces el aviso se queda.
+            aviso(r.autoridad_nueva ? T.regeneradoAutoridadNueva : T.regenerado, 'ok', { persistente: r.autoridad_nueva });
             ir('ajustes', '?pestana=https');
           } catch (e) { avisoError(e); }
         });
@@ -2512,8 +2517,11 @@
               cert.estado === 'vencido' ? UI.insignia('error', T.vencido) : cert.estado === 'por_vencer' ? UI.insignia('aviso', T.venceEn(cert.dias_restantes)) : null),
             h('dt', {}, T.nombres), h('dd', { class: 'fila' }, cert.nombres.map((n) => h('span', { class: 'chip' }, n))),
             h('dt', {}, T.ips), h('dd', { class: 'fila' }, cert.ips.map((n) => h('span', { class: 'chip' }, n))),
-            h('dt', {}, T.huella), h('dd', { class: 'mono pequeno' }, cert.huella),
-            cert.limitado !== undefined && [h('dt', {}, T.limitado), h('dd', {}, cert.limitado ? T.limitadoSi : T.limitadoNo)]]),
+            autoridad
+              ? [h('dt', {}, T.autoridad), h('dd', {}, T.autoridadSi(autoridad.vence)),
+                h('dt', {}, T.huellaAutoridad), h('dd', { class: 'mono pequeno' }, autoridad.huella)]
+              : [h('dt', {}, T.huella), h('dd', { class: 'mono pequeno' }, cert.huella),
+                cert.limitado !== undefined && [h('dt', {}, T.autoridad), h('dd', {}, T.autoridadNo)]]]),
         cert && cert.limitado === false && UI.nota({ tipo: 'aviso', titulo: T.sinLimites, texto: T.sinLimitesTexto }),
         cert && cert.ips_sin_cubrir && cert.ips_sin_cubrir.length > 0 && UI.nota({ tipo: 'aviso', texto: T.ipsFaltan(cert.ips_sin_cubrir.join(', ')) }),
         a.tls.modo === 'archivos' && UI.nota({ tipo: 'info', texto: T.archivos }),

@@ -266,7 +266,7 @@
       ],
       "enlaces": [],
       "alt": "Modos de TLS y ciclo del certificado: Cómo funciona el certificado HTTPS del puente",
-      "hash": "a44f3720b5b6b5cf1901f8c1a06c1435e8d0adb239814f21edb2d5037ab5c71e",
+      "hash": "385070d861d525b532e1212d5a7d1c79b6101d1b366bc7347a72ab3d7fd25b02",
       "claro": "12-modos-tls.claro.svg.gz",
       "oscuro": "12-modos-tls.oscuro.svg.gz"
     },

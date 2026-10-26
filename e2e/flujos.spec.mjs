@@ -219,7 +219,8 @@ test('f) contraseña, certificado y respaldo', async () => {
   await sinViolaciones(page, 'Ajustes: seguridad');
   await page.getByRole('tab', { name: 'HTTPS' }).click();
   await page.getByRole('button', { name: 'Regenerar certificado' }).click();
-  await expect(page.locator('dialog[open]').getByText(/tendrá que volver a confiar/)).toBeVisible();
+  // Con la autoridad local (ADR 0021), regenerar no pide nada a los equipos que ya confían en ella.
+  await expect(page.locator('dialog[open]').getByText(/Lo firma la misma autoridad local/)).toBeVisible();
   await page.locator('dialog[open]').getByRole('button', { name: 'Cancelar' }).click();
   await page.getByRole('tab', { name: 'Respaldo' }).click();
   const [descarga] = await Promise.all([page.waitForEvent('download'), page.getByRole('link', { name: 'Descargar respaldo' }).click()]);

@@ -12,48 +12,51 @@ PRISMA exige **TLS 1.2 o superior**. Con tu propio dominio también puedes usar 
 
 ## Certificado autofirmado
 
-Al primer arranque, PRISMA crea en la carpeta de datos:
+Desde 0.3.1, PRISMA usa dos certificados ([ADR 0021](../adr/0021-autoridad-local-y-certificado-del-servidor.md)). Al primer arranque, los crea en la carpeta de datos:
 
-- `tls/certificado.pem` (público);
-- `tls/llave.pem` (privada, con permisos solo para el usuario del servicio).
+| Archivo | Qué es |
+|---|---|
+| `tls/autoridad.pem` | La **autoridad local**: lo único que se instala y en lo que confían los equipos. Dura 10 años. |
+| `tls/autoridad-llave.pem` | Su llave privada, con permisos solo para el usuario del servicio. |
+| `tls/certificado.pem` | El **certificado del servidor**, firmado por la autoridad, seguido de ella: la cadena que presenta el puente. |
+| `tls/llave.pem` | Su llave privada, también solo para el usuario del servicio. |
 
-El certificado:
-
-- incluye `localhost`, el nombre del equipo (y `<nombre>.local`) y **todas sus IPs actuales**;
-- usa ECDSA P-256 y dura 825 días, el máximo que aceptan macOS e iOS;
-- desde 0.3.0 está **limitado a la red local**: solo vale para `localhost`, nombres `.local`, el nombre del equipo, redes privadas y sus propias IPs. Aunque un equipo confíe en él, su llave no sirve para hacerse pasar por ningún sitio de Internet ([ADR 0020](../adr/0020-confiar-en-el-certificado-del-puente-al-instalar.md)).
+- **El certificado del servidor:**
+  - incluye `localhost`, el nombre del equipo (y `<nombre>.local`) y **todas sus IPs actuales**;
+  - usa ECDSA P-256 y dura 825 días, el máximo que aceptan macOS e iOS.
+- **La autoridad está limitada a la red local:** solo puede firmar certificados para `localhost`, nombres `.local`, el nombre del equipo, redes privadas y sus propias IPs. Aunque un equipo confíe en ella, su llave no sirve para hacerse pasar por ningún sitio de Internet ([ADR 0020](../adr/0020-confiar-en-el-certificado-del-puente-al-instalar.md)).
 
 ```sh
-prisma tls info        # archivo, nombres, IPs, vencimiento, huella SHA-256 y si está limitado
-prisma tls regenerar   # uno nuevo con el nombre y las IPs actuales
-prisma tls confiar     # como administrador: este equipo confía en él (lo hace el instalador)
+prisma tls info        # el certificado del servidor y la autoridad: nombres, IPs, vencimiento y huellas
+prisma tls regenerar   # un certificado del servidor nuevo, con la misma autoridad
+prisma tls confiar     # como administrador: este equipo confía en la autoridad (lo hace el instalador)
 ```
 
-- **Cuándo regenerarlo:** si cambia la IP del equipo, o cuando esté por vencer. Al arrancar, el puente avisa en la bitácora si alguna IP actual no está en el certificado.
+- **Cuándo regenerarlo:** si cambia la IP del equipo, o cuando esté por vencer. Al arrancar, el puente lo renueva solo en esos casos.
 - **Sin reiniciar:** el puente en marcha toma el certificado nuevo en unos segundos.
-- **Después de regenerar:** hay que volver a confiar en él en cada equipo.
+- **Después de regenerar no hay que hacer nada en los equipos:** lo firma la misma autoridad. Solo si cambia el nombre del equipo (o con `prisma tls regenerar --nueva-autoridad`) se crea otra autoridad, y entonces sí hay que instalarla de nuevo en cada equipo; la CLI y el panel lo avisan.
 
 ### Vencimiento
 
-- **Desde 60 días antes:** la bitácora lo avisa en cada arranque, *Inicio* del panel muestra un aviso con el botón *Ir a Ajustes*, y la fila *Vence* lo marca como «Vence en N días». Regenéralo con tiempo y vuelve a instalarlo en cada caja.
-- **Si ya venció:** con `modo_tls = "autofirmado"`, el puente genera uno nuevo al arrancar, porque con el vencido ningún cliente podría conectarse. Hay que volver a confiar en él en cada equipo. Con `modo_tls = "archivos"` el puente no puede renovarlo: lo avisa en la bitácora y en el panel, y hay que reemplazar los archivos.
+- **Desde 60 días antes:** al arrancar, el puente lo renueva solo con la misma autoridad. Si lleva mucho tiempo sin reiniciarse, *Inicio* muestra un aviso con el botón *Ir a Ajustes*, y la fila *Vence* lo marca como «Vence en N días»: regenéralo ahí, sin tener que tocar los equipos.
+- **Si ya venció:** con `modo_tls = "autofirmado"`, el puente genera uno nuevo al arrancar, porque con el vencido ningún cliente podría conectarse. Con la autoridad local no hay que hacer nada en los equipos; con un certificado de antes de 0.3.1, hay que volver a confiar en él en cada uno. Con `modo_tls = "archivos"` el puente no puede renovarlo: lo avisa en la bitácora y en el panel, y hay que reemplazar los archivos.
 
 > Conviene que el equipo del puente tenga **IP fija**: el certificado nombra sus IPs, y las aplicaciones lo buscan por su dirección.
 
 ### En el equipo del puente: lo hace el instalador
 
-Los instaladores de Windows, macOS y Linux (`.deb`) ejecutan `prisma tls confiar` al terminar: agregan el certificado al almacén de confianza de ese equipo, así que el panel se abre sin advertencia de seguridad en Edge, Chrome, Safari y Firefox. Al desinstalar, lo quitan (`prisma tls confiar --quitar`).
+Los instaladores de Windows, macOS y Linux (`.deb`) ejecutan `prisma tls confiar` al terminar: agregan la autoridad local al almacén de confianza de ese equipo, así que el panel se abre sin advertencia de seguridad en Edge, Chrome, Safari y Firefox. Al desinstalar, la quitan (`prisma tls confiar --quitar`).
 
-- **Si actualizaste desde 0.2.0:** tu certificado no está limitado a la red local y el instalador no confía en él. *Ajustes → HTTPS* lo avisa. Regenéralo y ejecuta `prisma tls confiar` como administrador; después, vuelve a confiar en él en los demás equipos.
-- **Si lo regeneras** (panel o `prisma tls regenerar`): ejecuta otra vez `prisma tls confiar` como administrador en el equipo del puente. En Windows y Linux reemplaza al anterior. En macOS solo agrega el nuevo: para quitar los anteriores, `sudo prisma tls confiar --quitar` (macOS pide autorizarlo en una ventana) y después `sudo prisma tls confiar`.
+- **Si actualizaste desde 0.2.0 o 0.3.0:** tu certificado no tiene autoridad local y el instalador no puede confiar en él. *Ajustes → HTTPS* lo avisa. Regenéralo (se crea la autoridad) y ejecuta `prisma tls confiar` como administrador; después, instala la autoridad una vez en los demás equipos. En Windows, `tls confiar` quita el certificado anterior de PRISMA de las raíces; en macOS quedan los dos hasta `sudo prisma tls confiar --quitar` (macOS pide autorizarlo en una ventana) y otra vez `sudo prisma tls confiar`.
+- **Si lo regeneras** (panel o `prisma tls regenerar`): no hay que hacer nada, salvo que se haya creado una autoridad nueva; entonces, `prisma tls confiar` como administrador en el equipo del puente.
 - **Chrome y Chromium en Linux** usan además su propia base (NSS): ahí sigue haciendo falta el paso de abajo.
 
 ### Confiar en el certificado
 
 Se hace una vez en cada equipo (o teléfono) desde el que se imprimirá; en el del puente ya lo hizo el instalador:
 
-1. Copia `certificado.pem` del puente a ese equipo. El archivo es público, así que no hace falta protegerlo.
-2. Antes de instalarlo, compara su huella con la que muestra `prisma tls info`. Así te aseguras de instalar el certificado correcto.
+1. Descarga la autoridad en el panel (*Ajustes → HTTPS → Descargar certificado*) o copia `tls/autoridad.pem` del puente a ese equipo. Es pública, así que no hace falta protegerla. (En un puente de antes de 0.3.1, sin autoridad, se descarga `certificado.pem`.)
+2. Antes de instalarla, compara su huella con la de la autoridad que muestran *Ajustes → HTTPS* y `prisma tls info`. Así te aseguras de instalar la correcta.
 
 **Windows** (Chrome y Edge usan el almacén de Windows). En PowerShell como administrador:
 
