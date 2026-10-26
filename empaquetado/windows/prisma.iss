@@ -8,9 +8,11 @@
 ;   - crea C:\ProgramData\PRISMA con un config.toml de ejemplo (nunca sobrescribe el existente);
 ;   - «prisma servicio instalar»: carpetas de datos y bitácoras, regla del firewall para el puerto
 ;     del puente (solo subred local) y servicio de Windows con inicio automático y reinicio ante fallos;
-;   - inicia el servicio y, al terminar, abre https://localhost:8443/admin.
-; Al actualizar detiene el servicio antes de copiar; al desinstalar quita servicio, regla y PATH,
-; y conserva los datos de C:\ProgramData\PRISMA.
+;   - inicia el servicio y «prisma tls confiar»: este equipo confía en el certificado del puente
+;     (limitado a la red local, ADR 0020), así que el panel se abre sin advertencia;
+;   - al terminar, abre https://localhost:8443/admin.
+; Al actualizar detiene el servicio antes de copiar; al desinstalar quita el certificado del almacén
+; de confianza, el servicio, la regla y el PATH, y conserva los datos de C:\ProgramData\PRISMA.
 
 #ifndef Version
   #define Version "0.0.0"
@@ -56,7 +58,7 @@ SignedUninstaller=yes
 Name: "es"; MessagesFile: "compiler:Languages\Spanish.isl"
 
 [Messages]
-es.FinishedLabel=PRISMA quedó instalado como servicio de Windows y arrancará solo con el equipo.%n%nEn el panel de administración vas a crear tu contraseña y agregar las impresoras. El navegador avisará que el certificado no es de confianza: es normal la primera vez (el puente usa uno propio). Elige «Configuración avanzada» → «Continuar».
+es.FinishedLabel=PRISMA quedó instalado como servicio de Windows y arrancará solo con el equipo.%n%nEn el panel de administración vas a crear tu contraseña y agregar las impresoras. Este equipo ya confía en el certificado del puente, así que el navegador no debería mostrar advertencias. Si actualizaste desde una versión anterior y aparece una, en Ajustes → HTTPS se explica qué hacer.
 
 [Files]
 Source: "..\..\dist\prisma-windows-{#Arq}.exe"; DestDir: "{app}"; DestName: "prisma.exe"; Flags: ignoreversion
@@ -65,9 +67,12 @@ Source: "..\config.toml"; DestDir: "{commonappdata}\PRISMA"; Flags: onlyifdoesnt
 [Run]
 Filename: "{app}\prisma.exe"; Parameters: "servicio instalar"; StatusMsg: "Instalando el servicio de Windows…"; Flags: runhidden waituntilterminated
 Filename: "{app}\prisma.exe"; Parameters: "servicio iniciar"; StatusMsg: "Iniciando el servicio…"; Flags: runhidden waituntilterminated
+; Si el certificado es de 0.2.0 (sin límites), confiar falla sin detener la instalación: el panel lo avisa.
+Filename: "{app}\prisma.exe"; Parameters: "tls confiar --esperar 60s"; StatusMsg: "Haciendo que este equipo confíe en el certificado del puente…"; Flags: runhidden waituntilterminated
 Filename: "https://localhost:8443/admin"; Description: "Abrir el panel de administración"; Flags: postinstall shellexec nowait skipifsilent
 
 [UninstallRun]
+Filename: "{app}\prisma.exe"; Parameters: "tls confiar --quitar"; RunOnceId: "QuitarCertificado"; Flags: runhidden waituntilterminated
 Filename: "{app}\prisma.exe"; Parameters: "servicio desinstalar"; RunOnceId: "QuitarServicio"; Flags: runhidden waituntilterminated
 
 [Code]
