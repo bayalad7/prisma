@@ -55,40 +55,42 @@ Los instaladores de Windows, macOS y Linux (`.deb`) ejecutan `prisma tls confiar
 
 Se hace una vez en cada equipo (o teléfono) desde el que se imprimirá; en el del puente ya lo hizo el instalador:
 
-1. Descarga la autoridad en el panel (*Ajustes → HTTPS → Descargar certificado*) o copia `tls/autoridad.pem` del puente a ese equipo. Es pública, así que no hace falta protegerla. (En un puente de antes de 0.3.1, sin autoridad, se descarga `certificado.pem`.)
+1. En el panel, *Ajustes → HTTPS → Descargar certificado* descarga **`prisma.crt`**: es la autoridad local del puente (el mismo contenido que `tls/autoridad.pem` en la carpeta de datos). Cópiala a ese equipo. Es pública, así que no hace falta protegerla. En un puente de antes de 0.3.1, sin autoridad, `prisma.crt` es el certificado mismo.
 2. Antes de instalarla, compara su huella con la de la autoridad que muestran *Ajustes → HTTPS* y `prisma tls info`. Así te aseguras de instalar la correcta.
+
+En los comandos de abajo, `prisma.crt` es ese archivo.
 
 **Windows** (Chrome y Edge usan el almacén de Windows). En PowerShell como administrador:
 
 ```powershell
-Import-Certificate -FilePath .\certificado.pem -CertStoreLocation Cert:\LocalMachine\Root
+Import-Certificate -FilePath .\prisma.crt -CertStoreLocation Cert:\LocalMachine\Root
 ```
 
-También puedes hacerlo con doble clic en el archivo → *Instalar certificado* → *Equipo local* → *Colocar todos los certificados en el siguiente almacén* → **Entidades de certificación raíz de confianza**.
+También puedes hacerlo con doble clic en `prisma.crt` → *Instalar certificado* → *Equipo local* → *Colocar todos los certificados en el siguiente almacén* → **Entidades de certificación raíz de confianza**.
 
 **macOS** (Safari y Chrome usan el llavero):
 
 ```sh
-sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain certificado.pem
+sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain prisma.crt
 ```
 
 **Linux (Debian, Ubuntu, Raspberry Pi OS):**
 
 ```sh
-sudo cp certificado.pem /usr/local/share/ca-certificates/prisma.crt
+sudo cp prisma.crt /usr/local/share/ca-certificates/prisma.crt
 sudo update-ca-certificates
 # Chrome/Chromium en Linux usa su propia base (NSS):
-certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n "PRISMA" -i certificado.pem
+certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n "PRISMA" -i prisma.crt
 ```
 
-**Firefox** usa en Windows y macOS las raíces del sistema, así que basta con el paso de ese sistema. Si aun así avisa (en Linux, o si se desactivó esa opción), importa el certificado: Ajustes → Privacidad y seguridad → Certificados → *Ver certificados* → *Autoridades* → *Importar*, y marca «Confiar en esta CA para identificar sitios web».
+**Firefox** usa en Windows y macOS las raíces del sistema, así que basta con el paso de ese sistema. Si aun así avisa (en Linux, o si se desactivó esa opción), importa `prisma.crt`: Ajustes → Privacidad y seguridad → Certificados → *Ver certificados* → *Autoridades* → *Importar*, y marca «Confiar en esta CA para identificar sitios web».
 
 **Android:**
-1. Ajustes → Seguridad → *Cifrado y credenciales* → *Instalar un certificado* → *Certificado de CA*.
+1. Copia `prisma.crt` al teléfono. Luego, Ajustes → Seguridad → *Cifrado y credenciales* → *Instalar un certificado* → *Certificado de CA*, y elige ese archivo.
 2. Chrome para Android confía en los certificados de CA instalados por el usuario. Las aplicaciones nativas (no el navegador) pueden no hacerlo.
 
 **iOS / iPadOS:**
-1. Abre el archivo, que se instala como perfil, en *Ajustes → General → VPN y gestión de dispositivos*.
+1. Abre `prisma.crt` (por ejemplo, desde Archivos o un correo): se instala como perfil, en *Ajustes → General → VPN y gestión de dispositivos*.
 2. Actívalo en *Ajustes → General → Información → Ajustes de confianza de certificados*.
 
 Para comprobarlo, abre `https://<ip-del-puente>:8443/v1/salud` en ese equipo: debe responder sin advertencia de seguridad.

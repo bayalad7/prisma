@@ -15,7 +15,7 @@ El panel solo está disponible mientras el puente está en marcha:
 - **En un negocio:** el puente corre como servicio y arranca solo ([instalacion/](../instalacion/README.md)).
 - **En tu computadora, para probar:** ejecuta `prisma ejecutar --config config.dev.toml`, deja esa terminal abierta y entra a `https://localhost:8443/admin`. Los pasos están en [primeros-pasos.md](../desarrollo/primeros-pasos.md#7-configurar-todo-desde-el-panel).
 
-La primera vez el navegador avisará que el certificado es autofirmado. Continúa, o instálalo como explica [instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md).
+En el equipo donde instalaste PRISMA, el instalador ya hizo que confíe en la autoridad local del puente, así que no hay advertencia. Desde otro equipo, el navegador avisará hasta que instales en él la autoridad (`prisma.crt`, en *Ajustes → HTTPS*) como explica [instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md#confiar-en-el-certificado).
 
 ## Primer acceso
 

@@ -72,7 +72,7 @@ Get-Content C:\ProgramData\PRISMA\logs\prisma.log -Tail 50 -Wait     # Windows
 | `origen aprobado desde el panel` · `con una aplicación nueva` | INFO | Solicitudes aprobadas (campo `cliente`). |
 | `imagen guardada desde el panel` | INFO | Recurso nuevo. |
 | `ajustes cambiados desde el panel` | INFO | Límites, retención, acceso, etc. |
-| `certificado autofirmado regenerado desde el panel` | INFO | Hay que volver a instalarlo en los equipos. |
+| `certificado autofirmado regenerado desde el panel` | INFO | `autoridad_nueva`. Con `false`, lo firmó la misma autoridad local y los equipos no tienen que hacer nada; con `true`, hay que instalar la autoridad nueva en cada equipo. |
 | `respaldo descargado desde el panel` | INFO | Alguien descargó la base completa. La IP está en la línea `petición` de esa descarga. |
 | `base de datos restaurada desde un respaldo` | WARN | Se reemplazó la base; se cerraron todas las sesiones. |
 

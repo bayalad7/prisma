@@ -18,7 +18,9 @@ Muestra una contraseña nueva, cierra las sesiones abiertas y el panel obliga a 
 
 Síntoma: todas las aplicaciones dejan de conectarse el mismo día; la bitácora dice `el certificado HTTPS venció`.
 
-- **Autofirmado:** reinicia el servicio (`prisma servicio reiniciar`). Al arrancar, el puente genera un certificado nuevo. Descárgalo del panel (*Ajustes → HTTPS*) y vuelve a instalarlo en **cada** equipo que imprime ([instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md#confiar-en-el-certificado)).
+- **Autofirmado:** reinicia el servicio (`prisma servicio reiniciar`). Al arrancar, el puente genera un certificado del servidor nuevo.
+  - **Desde 0.3.1:** lo firma la misma autoridad local, así que los equipos no tienen que hacer nada.
+  - **Si el certificado es de una versión anterior, sin autoridad:** descarga `prisma.crt` del panel (*Ajustes → HTTPS*) e instálalo de nuevo en **cada** equipo que imprime ([instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md#confiar-en-el-certificado)).
 - **Certificado propio (`modo_tls = "archivos"`):** el puente no puede renovarlo. Reemplaza los archivos de `certificado` y `llave` de `config.toml`; el puente los toma en unos segundos, sin reiniciar.
 
 Para que no vuelva a pasar: *Inicio* lo avisa desde 60 días antes.

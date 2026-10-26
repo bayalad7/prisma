@@ -16,7 +16,12 @@ El puente usa HTTPS con un certificado autofirmado: cada equipo que imprime debe
 
 > Aceptar la advertencia con *Continuar de todos modos* **no basta**: el navegador lo recuerda solo para esa pestaña y solo para navegar. Las peticiones `fetch` de tu página siguen fallando.
 
-**Si el certificado dejó de servir** en equipos que ya lo tenían, es porque cambió la IP del puente y el dueño lo regeneró: hay que volver a instalarlo. Por eso conviene que el equipo del puente tenga IP fija.
+**Si el certificado dejó de servir** en equipos que ya lo tenían:
+
+- **Puente 0.3.1 o posterior:** se creó una autoridad local nueva, porque cambió el nombre del equipo del puente o el dueño la pidió, y hay que instalarla de nuevo. Un cambio de IP ya no obliga a nada: el puente renueva su certificado con la misma autoridad.
+- **Puente anterior:** cambió la IP del puente y el dueño regeneró el certificado; hay que volver a instalarlo.
+
+En los dos casos conviene que el equipo del puente tenga IP fija.
 
 **En Node.js:** `NODE_EXTRA_CA_CERTS=prisma.crt node app.js`. **En curl:** `--cacert prisma.crt`. Evita `-k` y `NODE_TLS_REJECT_UNAUTHORIZED=0` fuera de pruebas.
 

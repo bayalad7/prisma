@@ -141,7 +141,7 @@ Para el nivel 3 (documentos firmados) y para llamar desde un navegador, sigue lo
 Lo mismo que hiciste con la CLI se puede hacer desde el navegador. Con el puente de la sección 6 en marcha (`prisma ejecutar` debe seguir abierto; Ctrl+C lo detiene):
 
 1. Abre `https://localhost:8443/admin` en el navegador de **ese mismo equipo**.
-2. El navegador avisa que el certificado no es de confianza, porque es autofirmado. Elige *Configuración avanzada → Continuar a localhost*. Para que no vuelva a avisar, instálalo como explica [instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md).
+2. El navegador avisa que el certificado no es de confianza: sin instalador, nadie hizo que el equipo confíe en la autoridad local. Elige *Configuración avanzada → Continuar a localhost*. Para que no vuelva a avisar, ejecuta como administrador `prisma tls confiar --config <tu config.toml>`, o instala `prisma.crt` como explica [instalacion/https-y-certificados.md](../instalacion/https-y-certificados.md#confiar-en-el-certificado).
 3. La primera vez el panel pide crear la contraseña de administrador (al menos 10 caracteres). Desde el propio equipo no hace falta ningún código.
 4. Prueba el recorrido completo:
    - En *Impresoras → Agregar impresora → Escribir a mano*, usa el tipo **Red** con destino `127.0.0.1:9100` (la impresora virtual de la sección 4) o el tipo **Archivo** con una carpeta.

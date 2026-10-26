@@ -83,7 +83,7 @@ según el perfil de la impresora y lo imprime por USB, red (TCP 9100) o Bluetoot
 - Interfaz y mensajes al usuario en español (preparar i18n para inglés en el futuro).
 - Logs estructurados (log/slog, JSON). NUNCA registrar el contenido de los tickets ni las llaves.
 - Documentación: en español, fiel al código (si no coinciden, manda el código y se corrige la doc).
-  Versiones distintas: programa (0.3.1), API (/v1) y documento ("1").
+  Versiones distintas: programa (0.3.2), API (/v1) y documento ("1").
 - `go test ./...` debe pasar en Windows, Linux y macOS. Cambios incrementales; pregunta antes de reestructurar.
 - Ramas: `main` (producción) y `develop` (trabajo). Commits en español: `tipo(ámbito): asunto`, con cuerpo,
   líneas ≤100 caracteres, un commit por ámbito, y cada commit debe compilar y pasar las pruebas.
