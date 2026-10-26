@@ -6,7 +6,7 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 
 ## [Sin publicar]
 
-## [0.3.0] — 2026-10-25
+## [0.3.0] — 2026-10-26
 
 ### Agregado
 
