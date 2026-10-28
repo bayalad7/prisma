@@ -2,7 +2,8 @@
 
 ## Saber si hay una versión nueva
 
-- **Panel:** *Inicio* la avisa. El puente pregunta a GitHub una vez al día; no envía datos del negocio y se desactiva en *Ajustes → Actualizaciones*.
+- **Panel:** *Inicio* la avisa. El puente pregunta a GitHub unos minutos después de arrancar y luego una vez al día, contando con la fecha y hora reales, así que no importa que el equipo se suspenda. Si no hay Internet en ese momento (por ejemplo, al salir de una suspensión, antes de que vuelva la red), reintenta a los 15 minutos y duplica la espera en cada fallo, hasta un día. La versión nueva que encuentra se recuerda aunque el puente se reinicie. No envía datos del negocio.
+- ***Ajustes → General → Versiones nuevas*** muestra la última comprobación y su resultado («estás al día», «hay una versión nueva» o «no se pudo consultar GitHub: sin conexión a Internet»), tiene **Comprobar ahora** y permite desactivar el aviso.
 - **CLI:** `prisma actualizar --comprobar`.
 - **Qué cambió:** [CHANGELOG.md](../../CHANGELOG.md) y la [página de versiones](https://github.com/bayalad7/prisma/releases).
 

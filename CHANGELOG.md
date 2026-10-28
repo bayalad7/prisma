@@ -6,6 +6,14 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 
 ## [Sin publicar]
 
+### Corregido
+
+- El aviso de versión nueva no llegaba en un equipo que se suspende. El reloj del proceso no avanza en suspensión, así que la consulta diaria se hacía justo al despertar, antes de que volviera la red; fallaba (`no such host`) y se esperaba otro día entero. Ahora se cuenta con la fecha y hora reales, se reintenta a los 15 minutos después de un fallo (con espera creciente hasta un día) y la versión nueva vista se recuerda aunque el puente se reinicie.
+
+### Agregado
+
+- *Ajustes → General → Versiones nuevas* muestra la última comprobación y su resultado, y tiene **Comprobar ahora** (`POST /admin/api/actualizaciones/comprobar`).
+
 ## [0.3.2] — 2026-10-26
 
 ### Corregido
