@@ -45,6 +45,9 @@ type Opciones struct {
 	Log      *slog.Logger
 	Ahora    func() time.Time     // reloj (pruebas)
 	Aviso    *actualizacion.Aviso // versión nueva disponible (nil = sin aviso)
+	// Actualizaciones consulta GitHub y guarda el resultado; el panel muestra la última comprobación
+	// y permite comprobar ahora (nil = sin comprobador, como en las pruebas).
+	Actualizaciones *actualizacion.Comprobador
 }
 
 // Admin es el panel de administración.
@@ -132,6 +135,7 @@ func (a *Admin) Handler() http.Handler {
 
 	privada("GET /admin/api/ajustes", a.leerAjustes)
 	privada("PUT /admin/api/ajustes", a.guardarAjustes)
+	privada("POST /admin/api/actualizaciones/comprobar", a.comprobarActualizaciones)
 	privada("POST /admin/api/tls/regenerar", a.regenerarTLS)
 	privada("GET /admin/api/tls/certificado", a.descargarCertificado)
 	privada("GET /admin/api/respaldo", a.respaldo)

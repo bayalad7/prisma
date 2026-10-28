@@ -154,6 +154,7 @@ Los genera `internal/admin` en la API interna `/admin/api`, que **no es pública
 | `TICKET_NO_ENCONTRADO` | 404 | El ticket ya no está en el rollo de la impresora virtual: solo recuerda los últimos y los olvida al reiniciar el puente. |
 | `TLS_NO_AUTOFIRMADO` | 409 | Solo se puede regenerar el certificado autofirmado. |
 | `SIN_CERTIFICADO` | 404 | No hay archivo de certificado que descargar (por ejemplo, en el modo `solo_localhost_http`). |
+| `SIN_COMPROBADOR` | 409 | *Comprobar ahora* en una compilación de desarrollo, que no busca versiones nuevas. |
 | `CLIENTE_NO_ENCONTRADO` | 404 | La aplicación ya no existe. |
 | `SOLICITUD_NO_ENCONTRADA` | 404 | La solicitud de origen ya no existe. |
 | `NO_ENCONTRADO` | 404 | Lo que se buscaba ya no existe. |

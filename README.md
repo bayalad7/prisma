@@ -18,7 +18,7 @@ PRISMA es un servicio que se instala en una PC, Raspberry Pi o Mac dentro de la 
 }
 ```
 
-> **Versión actual: [0.3.2](https://github.com/bayalad7/prisma/releases/tag/v0.3.2)** ([registro de cambios](CHANGELOG.md)). Funciona en Windows, Linux/Raspberry Pi y macOS.
+> **Versión actual: [0.3.3](https://github.com/bayalad7/prisma/releases/tag/v0.3.3)** ([registro de cambios](CHANGELOG.md)). Funciona en Windows, Linux/Raspberry Pi y macOS.
 >
 > - Las aplicaciones imprimen por la [API v1](docs/referencia/api-v1.md), con HTTPS y autorización por niveles.
 > - El dueño configura todo desde el [panel de administración](docs/administracion/README.md): primeros pasos guiados, impresoras con prueba de acentos, aplicaciones y solicitudes, trabajos con «qué pasó y qué hacer», y el manual y los diagramas dentro del panel, sin Internet.

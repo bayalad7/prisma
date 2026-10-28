@@ -2,6 +2,7 @@ package admin
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"image/png"
@@ -14,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bayalad7/prisma/internal/actualizacion"
 	"github.com/bayalad7/prisma/internal/almacen"
 	"github.com/bayalad7/prisma/internal/config"
 	"github.com/bayalad7/prisma/internal/escpos"
@@ -337,6 +339,45 @@ func (a *Admin) soloRedPrivada(r *http.Request) bool {
 	return v != "0"
 }
 
+// estadoActualizaciones: la última comprobación de versiones nuevas, para Ajustes → General.
+func (a *Admin) estadoActualizaciones() map[string]any {
+	e := a.op.Actualizaciones.Estado()
+	resp := map[string]any{"version": a.op.Version, "ultima": fecha(e.UltimoIntento), "error": errorLegible(e.Error), "disponible": nil}
+	if e.Disponible != nil && actualizacion.EsNueva(a.op.Version, e.Disponible.Numero) {
+		resp["disponible"] = map[string]string{"version": e.Disponible.Numero, "url": e.Disponible.URL}
+	}
+	return resp
+}
+
+// errorLegible resume para el dueño por qué falló la consulta a GitHub (la bitácora tiene el detalle).
+func errorLegible(err string) string {
+	switch {
+	case err == "":
+		return ""
+	case strings.Contains(err, "no such host"), strings.Contains(err, "lookup "), strings.Contains(err, "dial tcp"),
+		strings.Contains(err, "network is unreachable"):
+		return "sin conexión a Internet"
+	case strings.Contains(err, "deadline exceeded"), strings.Contains(err, "Timeout"):
+		return "GitHub no respondió a tiempo"
+	case strings.Contains(err, "respondió"):
+		return "GitHub no respondió como se esperaba"
+	}
+	return "error al consultar GitHub"
+}
+
+// POST /admin/api/actualizaciones/comprobar: consulta GitHub ahora (el botón «Comprobar ahora»).
+func (a *Admin) comprobarActualizaciones(w http.ResponseWriter, r *http.Request) {
+	if a.op.Actualizaciones == nil || actualizacion.Desarrollo(a.op.Version) {
+		a.error(w, r, rechazo(http.StatusConflict, "SIN_COMPROBADOR", "Esta compilación no busca versiones nuevas.",
+			"Las compilaciones de desarrollo no consultan GitHub."))
+		return
+	}
+	ctx, cancelar := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancelar()
+	a.op.Actualizaciones.Comprobar(ctx)
+	responder(w, a.estadoActualizaciones())
+}
+
 // buscarActualizaciones: el puente consulta GitHub una vez al día salvo que el dueño lo desactive.
 func (a *Admin) buscarActualizaciones(r *http.Request) bool {
 	v, _, _ := a.op.Almacen.Ajustes.Obtener(r.Context(), almacen.AjusteBuscarActualizaciones)
@@ -356,6 +397,7 @@ func (a *Admin) leerAjustes(w http.ResponseWriter, r *http.Request) {
 		"retencion_dias":         retencion,
 		"solo_red_privada":       a.soloRedPrivada(r),
 		"buscar_actualizaciones": a.buscarActualizaciones(r),
+		"actualizaciones":        a.estadoActualizaciones(),
 		"direccion":              a.direccion(),
 		"tls":                    a.estadoTLS(),
 	}

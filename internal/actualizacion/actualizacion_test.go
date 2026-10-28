@@ -27,6 +27,7 @@ type publicacion struct {
 	archivos  map[string][]byte
 	etiqueta  string
 	consultas atomic.Int32
+	fallar    atomic.Int32 // cuántas consultas más responden 503 (sin red, GitHub caído)
 }
 
 func nuevaPublicacion(t *testing.T, etiqueta string) *publicacion {
@@ -48,6 +49,11 @@ func nuevaPublicacion(t *testing.T, etiqueta string) *publicacion {
 	p.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/latest" {
 			p.consultas.Add(1)
+			if p.fallar.Load() > 0 {
+				p.fallar.Add(-1)
+				http.Error(w, "no disponible", http.StatusServiceUnavailable)
+				return
+			}
 			if !strings.HasPrefix(r.Header.Get("User-Agent"), "prisma/") {
 				http.Error(w, "sin user agent", http.StatusForbidden)
 				return
@@ -192,7 +198,7 @@ func TestComprobador(t *testing.T) {
 	ctx, cancelar := context.WithCancel(context.Background())
 	defer cancelar()
 	c := &Comprobador{Cliente: p.cliente(), Actual: "1.0.0", Aviso: aviso, Activo: func(context.Context) bool { return activo.Load() },
-		Inicial: time.Millisecond, Cada: 20 * time.Millisecond, Log: slog.New(slog.DiscardHandler)}
+		Inicial: time.Millisecond, Revisar: time.Millisecond, Cada: 20 * time.Millisecond, Log: slog.New(slog.DiscardHandler)}
 	go c.Correr(ctx)
 	esperar(t, func() bool { return aviso.Disponible() != nil })
 	if aviso.Disponible().Numero != "1.2.0" {

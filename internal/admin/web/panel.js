@@ -2436,6 +2436,25 @@
       const dias = UI.entrada({ tipo: 'number', value: a.retencion_dias, min: 1, max: 3650 });
       const cDias = UI.campo({ id: 'aj-retencion', etiqueta: G.dias, control: dias, validar: entero(1, 3650, G.diasMal) });
       const buscar = UI.interruptor({ id: 'aj-actualizaciones', texto: G.buscar, marcado: a.buscar_actualizaciones });
+      // La última comprobación y «Comprobar ahora»: así se ve si el puente llega a GitHub.
+      const estadoVersion = h('div', { 'aria-live': 'polite' });
+      const pintarEstadoVersion = (e) => {
+        if (!e) return;
+        const nota = !e.ultima ? UI.nota({ tipo: 'info', texto: G.sinComprobar })
+          : e.error ? UI.nota({ tipo: 'aviso', texto: G.comprobacionFallo(hace(e.ultima), e.error) })
+            : e.disponible ? UI.nota({ tipo: 'info', texto: G.comprobacionNueva(hace(e.ultima), e.disponible.version),
+              acciones: h('a', { class: 'boton chico', href: e.disponible.url, target: '_blank', rel: 'noopener noreferrer' }, UI.icono('externo'), G.verVersion) })
+              : UI.nota({ tipo: 'ok', texto: G.comprobacionAlDia(hace(e.ultima), e.version) });
+        vaciar(estadoVersion, nota);
+      };
+      pintarEstadoVersion(a.actualizaciones);
+      const comprobar = UI.boton({ texto: G.comprobarAhora, icono: 'recargar', chico: true });
+      comprobar.addEventListener('click', async () => {
+        try {
+          pintarEstadoVersion(await conEspera(comprobar, () => api.post('/actualizaciones/comprobar')));
+          refrescarPendientes();
+        } catch (e) { avisoError(e); }
+      });
       return h('div', { class: 'rejilla' },
         formulario(G.puente, 'inicio', null, [cNombre], [cNombre], async () => {
           await api.put('/ajustes', { nombre_puente: nombre.value.trim() });
@@ -2449,7 +2468,7 @@
           await api.put('/ajustes', { retencion_dias: Number(dias.value) });
           guardado();
         }),
-        formulario(G.actualizaciones, 'recargar', G.actualizacionesTexto, [buscar], [], async () => {
+        formulario(G.actualizaciones, 'recargar', G.actualizacionesTexto, [buscar, estadoVersion, h('div', {}, comprobar)], [], async () => {
           await api.put('/ajustes', { buscar_actualizaciones: buscar.input.checked });
           guardado();
         }));
