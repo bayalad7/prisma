@@ -6,6 +6,8 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 
 ## [Sin publicar]
 
+## [0.3.3] — 2026-10-28
+
 ### Corregido
 
 - El aviso de versión nueva no llegaba en un equipo que se suspende. El reloj del proceso no avanza en suspensión, así que la consulta diaria se hacía justo al despertar, antes de que volviera la red; fallaba (`no such host`) y se esperaba otro día entero. Ahora se cuenta con la fecha y hora reales, se reintenta a los 15 minutos después de un fallo (con espera creciente hasta un día) y la versión nueva vista se recuerda aunque el puente se reinicie.
@@ -128,7 +130,8 @@ Primera versión publicada.
 - Los trabajos que llegan por la API pasan directo de `encolado` a `completado` o `fallido`; el estado `imprimiendo` solo lo usa `prisma imprimir`.
 - La *Ayuda* del panel enlaza la documentación de la rama `develop`.
 
-[Sin publicar]: https://github.com/bayalad7/prisma/compare/v0.3.2...develop
+[Sin publicar]: https://github.com/bayalad7/prisma/compare/v0.3.3...develop
+[0.3.3]: https://github.com/bayalad7/prisma/releases/tag/v0.3.3
 [0.3.2]: https://github.com/bayalad7/prisma/releases/tag/v0.3.2
 [0.3.1]: https://github.com/bayalad7/prisma/releases/tag/v0.3.1
 [0.3.0]: https://github.com/bayalad7/prisma/releases/tag/v0.3.0
