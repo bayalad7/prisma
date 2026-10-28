@@ -16,6 +16,7 @@ const (
 	AjusteCodigoInicial         = "admin.codigo_inicial"      // "<sha256>|<vence ms>": configuración inicial desde otro equipo
 	AjusteSoloRedPrivada        = "panel.solo_red_privada"    // "0" permite abrir el panel desde cualquier IP
 	AjusteBuscarActualizaciones = "actualizaciones.comprobar" // "0" = no consultar GitHub por versiones nuevas
+	AjusteEstadoActualizaciones = "actualizaciones.estado"    // JSON: última comprobación y versión nueva vista
 	// Primeros pasos del panel: se marcan una vez y quedan aunque el historial se purgue.
 	AjustePrimeraPrueba   = "panel.primera_prueba"   // "1" = ya se imprimió un ticket de diagnóstico
 	AjusteAcentosProbados = "panel.acentos_probados" // "1" = ya se probaron las páginas de códigos en una impresora física

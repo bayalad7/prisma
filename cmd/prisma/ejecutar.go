@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -102,6 +103,9 @@ func ejecutar(ctx context.Context, rutaConfig string, log *slog.Logger) error {
 		return err
 	}
 	// Aviso de versiones nuevas en el panel: una consulta diaria a GitHub, desactivable en Ajustes.
+	// El estado se guarda en la base: la próxima consulta se cuenta con la fecha y hora reales (el
+	// equipo puede suspenderse) y el aviso sobrevive a un reinicio. Tras un fallo (por ejemplo, al
+	// salir de una suspensión, antes de que vuelva la red), reintenta a los 15 minutos.
 	aviso := &actualizacion.Aviso{}
 	comprobador := &actualizacion.Comprobador{
 		Cliente: actualizacion.NuevoCliente(version.Version), Actual: version.Version, Aviso: aviso,
@@ -109,10 +113,22 @@ func ejecutar(ctx context.Context, rutaConfig string, log *slog.Logger) error {
 			v, _, _ := alm.Ajustes.Obtener(ctx, almacen.AjusteBuscarActualizaciones)
 			return v != "0"
 		},
-		Inicial: time.Hour, Cada: 24 * time.Hour, Log: log,
+		Inicial: 2 * time.Minute, Revisar: 10 * time.Minute, Cada: 24 * time.Hour, Reintento: 15 * time.Minute, Log: log,
+		Cargar: func(ctx context.Context) actualizacion.Estado {
+			var e actualizacion.Estado
+			if v, ok, _ := alm.Ajustes.Obtener(ctx, almacen.AjusteEstadoActualizaciones); ok {
+				json.Unmarshal([]byte(v), &e)
+			}
+			return e
+		},
+		Guardar: func(ctx context.Context, e actualizacion.Estado) {
+			if datos, err := json.Marshal(e); err == nil {
+				alm.Ajustes.Establecer(ctx, almacen.AjusteEstadoActualizaciones, string(datos))
+			}
+		},
 	}
 	go comprobador.Correr(ctx)
-	panel := admin.Nuevo(admin.Opciones{Almacen: alm, Servidor: srv, Cola: q, Config: cfg, Version: version.Version, Log: log, Aviso: aviso})
+	panel := admin.Nuevo(admin.Opciones{Almacen: alm, Servidor: srv, Cola: q, Config: cfg, Version: version.Version, Log: log, Aviso: aviso, Actualizaciones: comprobador})
 	srv.MontarPanel(panel.Handler())
 	errServidor := make(chan error, 1)
 	go func() { errServidor <- srv.Escuchar(ctx, cfg, nil) }()
