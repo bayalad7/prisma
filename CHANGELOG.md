@@ -6,6 +6,10 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 
 ## [Sin publicar]
 
+### Cambiado
+
+- Las barras de desplazamiento del panel siguen su diseño: son delgadas y en cápsula, con los colores del tema claro u oscuro, y se marcan con el acento al arrastrarlas. Firefox usa las propiedades estándar y Chromium, Edge y Safari, las suyas. Con el contraste alto de Windows se dejan las del sistema.
+
 ## [0.3.3] — 2026-10-28
 
 ### Corregido
