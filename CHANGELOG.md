@@ -6,6 +6,16 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 
 ## [Sin publicar]
 
+## [0.3.4] — 2026-10-28
+
+### Cambiado
+
+- Las barras de desplazamiento del panel siguen su diseño: son delgadas y en cápsula, con los colores del tema claro u oscuro, y se marcan con el acento al arrastrarlas. Firefox usa las propiedades estándar y Chromium, Edge y Safari, las suyas. Con el contraste alto de Windows se dejan las del sistema.
+
+### Corregido
+
+- Firefox podía rechazar el panel con `SEC_ERROR_UNKNOWN` si el equipo confiaba en una autoridad local anterior del mismo puente (por ejemplo, tras reinstalar en macOS, donde desinstalar no puede quitarla). Las dos se llamaban igual, con el nombre del equipo. Ahora el nombre de cada autoridad nueva lleva también un identificador de su llave. Las autoridades ya instaladas no cambian.
+
 ## [0.3.3] — 2026-10-28
 
 ### Corregido
@@ -130,7 +140,8 @@ Primera versión publicada.
 - Los trabajos que llegan por la API pasan directo de `encolado` a `completado` o `fallido`; el estado `imprimiendo` solo lo usa `prisma imprimir`.
 - La *Ayuda* del panel enlaza la documentación de la rama `develop`.
 
-[Sin publicar]: https://github.com/bayalad7/prisma/compare/v0.3.3...develop
+[Sin publicar]: https://github.com/bayalad7/prisma/compare/v0.3.4...develop
+[0.3.4]: https://github.com/bayalad7/prisma/releases/tag/v0.3.4
 [0.3.3]: https://github.com/bayalad7/prisma/releases/tag/v0.3.3
 [0.3.2]: https://github.com/bayalad7/prisma/releases/tag/v0.3.2
 [0.3.1]: https://github.com/bayalad7/prisma/releases/tag/v0.3.1

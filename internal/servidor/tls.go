@@ -351,7 +351,7 @@ func crearAutoridad(dirDatos string) (*x509.Certificate, *ecdsa.PrivateKey, erro
 	ahora := time.Now()
 	plantilla := &x509.Certificate{
 		SerialNumber:                serie,
-		Subject:                     pkix.Name{CommonName: "PRISMA autoridad local " + dns[len(dns)-1], Organization: []string{OrganizacionAutoridad}},
+		Subject:                     pkix.Name{CommonName: nombreAutoridad(dns[len(dns)-1], &llave.PublicKey), Organization: []string{OrganizacionAutoridad}},
 		NotBefore:                   ahora.Add(-time.Hour),
 		NotAfter:                    ahora.Add(vigenciaAutoridad),
 		IsCA:                        true,
@@ -372,6 +372,16 @@ func crearAutoridad(dirDatos string) (*x509.Certificate, *ecdsa.PrivateKey, erro
 	}
 	ca, err := x509.ParseCertificate(der)
 	return ca, llave, err
+}
+
+// nombreAutoridad lleva el nombre del equipo y un identificador de la llave: dos autoridades del
+// mismo equipo (una reinstalación que no pudo quitar la vieja, como en macOS, o un puente de prueba)
+// nunca tienen el mismo sujeto. Con el mismo sujeto, Firefox arma la cadena con la que no es y
+// falla con SEC_ERROR_UNKNOWN.
+func nombreAutoridad(equipo string, llave *ecdsa.PublicKey) string {
+	der, _ := x509.MarshalPKIXPublicKey(llave)
+	suma := sha256.Sum256(der)
+	return fmt.Sprintf("PRISMA autoridad local %s %X", equipo, suma[:4])
 }
 
 // emitirServidor crea el certificado del servidor (no es autoridad) con los nombres e IPs actuales,
