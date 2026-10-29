@@ -16,7 +16,8 @@ El modelo de mkcert:
 
 - **Autoridad local** (`tls/autoridad.pem` y `tls/autoridad-llave.pem`, la llave solo para el usuario del servicio):
   - ECDSA P-256, válida 10 años, `MaxPathLen 0` (no firma otras autoridades);
-  - limitada a la red local con restricciones de nombre críticas (ADR 0020).
+  - limitada a la red local con restricciones de nombre críticas (ADR 0020);
+  - se llama «PRISMA autoridad local», seguido del nombre del equipo y de un identificador de su llave (desde 0.3.4). Dos autoridades del mismo equipo nunca tienen el mismo sujeto: con el mismo, Firefox arma la cadena con la que no es y falla (`SEC_ERROR_UNKNOWN`). Pasa cuando la vieja sigue entre las raíces, por ejemplo tras reinstalar en macOS o con un puente de prueba.
 
   Es lo único en lo que confían los equipos: la instalan `prisma tls confiar` y los instaladores, y la entrega *Descargar certificado* del panel.
 - **Certificado del servidor** (`tls/certificado.pem` y `tls/llave.pem`):
@@ -43,6 +44,6 @@ El modelo de mkcert:
   - En Windows, `tls confiar` reemplaza el certificado anterior de PRISMA en las raíces.
 - **Pruebas que lo cubren:**
   - `TestAutoridadLocalYCertificadoDelServidor` comprueba la cadena y los límites de la autoridad.
-  - `TestRegenerarConservaLaAutoridad` y `TestCargarRenuevaConLaMismaAutoridad` comprueban que se conserva al regenerar y al arrancar.
+  - `TestRegenerarConservaLaAutoridad` y `TestCargarRenuevaConLaMismaAutoridad` comprueban que se conserva al regenerar y al arrancar, y que una autoridad nueva tiene otro sujeto.
   - En el CI de Linux, `e2e/certificado-firefox.spec.mjs` abre el puente con un **Firefox real**. Sin la autoridad en su base NSS, falla (`SEC_ERROR_UNKNOWN_ISSUER`); con ella, abre.
 - La carpeta `tls/` tiene una llave más que proteger (la de la autoridad), con los mismos permisos que la del certificado.

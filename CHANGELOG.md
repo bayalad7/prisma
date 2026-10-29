@@ -10,6 +10,10 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 
 - Las barras de desplazamiento del panel siguen su diseño: son delgadas y en cápsula, con los colores del tema claro u oscuro, y se marcan con el acento al arrastrarlas. Firefox usa las propiedades estándar y Chromium, Edge y Safari, las suyas. Con el contraste alto de Windows se dejan las del sistema.
 
+### Corregido
+
+- Firefox podía rechazar el panel con `SEC_ERROR_UNKNOWN` si el equipo confiaba en una autoridad local anterior del mismo puente (por ejemplo, tras reinstalar en macOS, donde desinstalar no puede quitarla). Las dos se llamaban igual, con el nombre del equipo. Ahora el nombre de cada autoridad nueva lleva también un identificador de su llave. Las autoridades ya instaladas no cambian.
+
 ## [0.3.3] — 2026-10-28
 
 ### Corregido

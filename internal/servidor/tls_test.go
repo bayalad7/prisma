@@ -1,6 +1,7 @@
 package servidor
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -147,6 +148,11 @@ func TestRegenerarConservaLaAutoridad(t *testing.T) {
 	tercero, err := GenerarAutofirmado(dir, true)
 	if err != nil || !tercero.AutoridadNueva || tercero.Autoridad.Equal(primero.Autoridad) {
 		t.Fatalf("con nuevaAutoridad debe crear otra: %v", err)
+	}
+	// En el mismo equipo, con otro sujeto: si no, Firefox confunde la vieja con la nueva
+	// (SEC_ERROR_UNKNOWN) cuando las dos están en sus raíces.
+	if bytes.Equal(tercero.Autoridad.RawSubject, primero.Autoridad.RawSubject) || tercero.Servidor.Issuer.String() != tercero.Autoridad.Subject.String() {
+		t.Fatalf("dos autoridades del mismo equipo con el mismo sujeto: %s", primero.Autoridad.Subject)
 	}
 
 	// Sin autoridad (como un puente de 0.3.0): se crea al regenerar.
