@@ -1,6 +1,6 @@
 // Todas las pantallas del panel, en claro y en oscuro, con axe (sin violaciones críticas ni serias) y
 // sin desbordes. Corre después de flujos.spec.mjs (el puente ya tiene impresoras, aplicaciones y
-// trabajos). Con CAPTURAS=<carpeta> guarda una captura de cada una en tema claro (docs/ux/despues/).
+// trabajos). Con CAPTURAS=<carpeta> guarda una captura de cada una en tema claro.
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -31,7 +31,7 @@ const cerrarDialogos = async () => {
   for (let k = 0; k < 3 && await page.locator('dialog[open]').count(); k++) await page.keyboard.press('Escape');
 };
 
-// [nombre (como en docs/ux/antes/), ruta, qué hacer antes de revisar]
+// [nombre (numerado como las capturas de docs/ux/ANALISIS-PANEL-V1.md), ruta, qué hacer antes de revisar]
 const PANTALLAS = [
   ['12-inicio', '/admin/'],
   ['20-impresoras', '/admin/impresoras'],
