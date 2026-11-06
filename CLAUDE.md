@@ -84,6 +84,8 @@ según el perfil de la impresora y lo imprime por USB, red (TCP 9100) o Bluetoot
 - Logs estructurados (log/slog, JSON). NUNCA registrar el contenido de los tickets ni las llaves.
 - Documentación: en español, fiel al código (si no coinciden, manda el código y se corrige la doc).
   Versiones distintas: programa (0.3.4), API (/v1) y documento ("1").
+- Capturas e informes de una entrega van fuera del repo (scratchpad o artefactos del CI), salvo las que
+  un documento enlace. Cada versión deja en docs/ux solo su análisis, sus resultados y sus decisiones.
 - `go test ./...` debe pasar en Windows, Linux y macOS. Cambios incrementales; pregunta antes de reestructurar.
 - Ramas: `main` (producción) y `develop` (trabajo). Commits en español: `tipo(ámbito): asunto`, con cuerpo,
   líneas ≤100 caracteres, un commit por ámbito, y cada commit debe compilar y pasar las pruebas.
