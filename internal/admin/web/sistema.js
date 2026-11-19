@@ -69,22 +69,30 @@
     return s;
   }
 
+  // Logo «Conversión» (ADR 0022): el documento de la app arriba, el puente (PRISMA) en acento y el
+  // ticket abajo. Geometría de internal/marca (TestLogoDelPanelCoincideConLaMarca); de 20 px para
+  // abajo usa la variante de bandeja. La tinta es currentColor y el puente, --marca-acento: así
+  // sirve igual en la barra (secundario) y en las pantallas de entrada.
+  const LOGO = [
+    'M8.5 2H19L26 9V12H6V4.5A2.5 2.5 0 0 1 8.5 2Z',
+    'M4.5 14H27.5A2 2 0 0 1 27.5 18H4.5A2 2 0 0 1 4.5 14Z',
+    'M6 20H26V29L22.67 26.5L19.33 29L16 26.5L12.67 29L9.33 26.5L6 29Z',
+  ];
+  const LOGO_BANDEJA = [
+    'M8.5 1.5H18L26 9.5V12H6V4A2.5 2.5 0 0 1 8.5 1.5Z',
+    'M4 13.5H28A2.5 2.5 0 0 1 28 18.5H4A2.5 2.5 0 0 1 4 13.5Z',
+    'M6 20H26V30.5L21 27.5L16 30.5L11 27.5L6 30.5Z',
+  ];
   function logo(tam = 28) {
-    // Un prisma que separa la luz en tres franjas: el documento entra y sale en tres conexiones.
     const s = document.createElementNS(NS, 'svg');
     s.setAttribute('viewBox', '0 0 32 32'); s.setAttribute('width', tam); s.setAttribute('height', tam);
-    s.setAttribute('aria-hidden', 'true');
-    const p = (d, color, ancho) => {
+    s.setAttribute('aria-hidden', 'true'); s.setAttribute('class', 'logo');
+    (tam <= 20 ? LOGO_BANDEJA : LOGO).forEach((d, i) => {
       const e = document.createElementNS(NS, 'path');
-      e.setAttribute('d', d); e.setAttribute('fill', 'none'); e.setAttribute('stroke', color);
-      e.setAttribute('stroke-width', ancho); e.setAttribute('stroke-linejoin', 'round'); e.setAttribute('stroke-linecap', 'round');
+      e.setAttribute('d', d); e.setAttribute('fill', 'currentColor');
+      if (i === 1) e.style.fill = 'var(--marca-acento)';
       s.append(e);
-    };
-    p('M3 13 L12 15', 'currentColor', 2);
-    p('M12 5 L21 25 L3 25 Z', 'var(--acento)', 2.2);
-    p('M16 15 L29 10', 'var(--acento)', 2);
-    p('M16.8 16.8 L29 16.8', 'var(--ok)', 2);
-    p('M17.6 18.6 L29 23.6', 'var(--aviso)', 2);
+    });
     return s;
   }
 

@@ -25,7 +25,7 @@ import (
 	"github.com/bayalad7/prisma/internal/servidor"
 )
 
-//go:embed web/index.html web/panel.css web/panel.js web/textos.js web/sistema.js web/manual.js web/iconos.svg web/estilos.html web/estilos.js
+//go:embed web/index.html web/panel.css web/panel.js web/textos.js web/sistema.js web/manual.js web/iconos.svg web/favicon.svg web/favicon.ico web/estilos.html web/estilos.js
 var archivosWeb embed.FS
 
 // archivosDiagramas son los diagramas de docs/diagramas/ dibujados para el panel (SVG claro y oscuro,
@@ -170,13 +170,15 @@ func (a *Admin) Handler() http.Handler {
 }
 
 var tiposEstaticos = map[string]string{
-	"index.html": "text/html; charset=utf-8",
-	"panel.css":  "text/css; charset=utf-8",
-	"panel.js":   "text/javascript; charset=utf-8",
-	"textos.js":  "text/javascript; charset=utf-8",
-	"sistema.js": "text/javascript; charset=utf-8",
-	"manual.js":  "text/javascript; charset=utf-8",
-	"iconos.svg": "image/svg+xml",
+	"index.html":  "text/html; charset=utf-8",
+	"panel.css":   "text/css; charset=utf-8",
+	"panel.js":    "text/javascript; charset=utf-8",
+	"textos.js":   "text/javascript; charset=utf-8",
+	"sistema.js":  "text/javascript; charset=utf-8",
+	"manual.js":   "text/javascript; charset=utf-8",
+	"iconos.svg":  "image/svg+xml",
+	"favicon.svg": "image/svg+xml",
+	"favicon.ico": "image/x-icon",
 }
 
 // paginasDesarrollo: la galería del sistema de diseño (/admin/estilos) solo existe con

@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/bayalad7/prisma/internal/marca"
 )
 
 func TestGaleriaDeEstilosSoloEnModoDesarrollo(t *testing.T) {
@@ -37,7 +39,8 @@ func TestGaleriaDeEstilosSoloEnModoDesarrollo(t *testing.T) {
 func TestArchivosDelSistemaDeDiseno(t *testing.T) {
 	b := nuevoBanco(t)
 	n := b.nuevoNavegador("127.0.0.1")
-	for ruta, tipo := range map[string]string{"/admin/textos.js": "text/javascript", "/admin/sistema.js": "text/javascript", "/admin/iconos.svg": "image/svg+xml"} {
+	for ruta, tipo := range map[string]string{"/admin/textos.js": "text/javascript", "/admin/sistema.js": "text/javascript", "/admin/iconos.svg": "image/svg+xml",
+		"/admin/favicon.svg": "image/svg+xml", "/admin/favicon.ico": "image/x-icon"} {
 		r := n.exigir("GET", ruta, nil, 200)
 		if !strings.HasPrefix(r.Header().Get("Content-Type"), tipo) {
 			t.Errorf("%s: Content-Type %q", ruta, r.Header().Get("Content-Type"))
@@ -232,5 +235,91 @@ func TestRutasDeLasPantallas(t *testing.T) {
 	}
 	if fmt.Sprint(rutas) != fmt.Sprint(vistasPanel) {
 		t.Errorf("las rutas de panel.js %v no coinciden con vistasPanel %v", rutas, vistasPanel)
+	}
+}
+
+// TestContrasteDelSecundario: la barra lateral (el 30 % del reparto 60-30-10) redefine los tokens base
+// con --secundario-*; sus pares también cumplen AA en los dos temas.
+func TestContrasteDelSecundario(t *testing.T) {
+	texto := [][2]string{
+		{"secundario-texto", "secundario"}, {"secundario-texto", "secundario-2"},
+		{"secundario-suave", "secundario"}, {"secundario-suave", "secundario-2"},
+		{"secundario-texto-elegido", "secundario-elegido"}, {"secundario-acento", "secundario"},
+		{"secundario-sobre-acento", "secundario-acento"}, {"secundario", "secundario-aviso"},
+	}
+	graficos := [][2]string{{"secundario-control", "secundario"}, {"secundario-control", "secundario-2"}, {"marca-acento", "fondo"}, {"marca-acento", "superficie"}}
+	claro, oscuro, _ := tokensCSS(t)
+	for nombre, tema := range map[string]map[string]string{"claro": claro, "oscuro": oscuro} {
+		valor := func(token string) string {
+			if v, ok := tema["--"+token]; ok {
+				return v
+			}
+			return claro["--"+token]
+		}
+		for minimo, pares := range map[float64][][2]string{4.5: texto, 3: graficos} {
+			for _, p := range pares {
+				if c := contraste(t, valor(p[0]), valor(p[1])); c < minimo {
+					t.Errorf("tema %s: --%s sobre --%s tiene contraste %.2f:1 (mínimo %.1f:1)", nombre, p[0], p[1], c, minimo)
+				}
+			}
+		}
+	}
+}
+
+// TestColoresDelPanelCoincidenConLaMarca: la tinta y el acento del logo en el panel son los de
+// internal/marca, y la barra lateral es la placa del icono de app.
+func TestColoresDelPanelCoincidenConLaMarca(t *testing.T) {
+	claro, oscuro, _ := tokensCSS(t)
+	for _, c := range []struct {
+		tema          map[string]string
+		token, quiere string
+	}{
+		{claro, "--tinta", marca.TintaClaro}, {claro, "--marca-acento", marca.AcentoClaro},
+		{oscuro, "--tinta", marca.TintaOscuro}, {oscuro, "--marca-acento", marca.AcentoOscuro},
+		{claro, "--secundario", marca.Placa}, {claro, "--secundario-acento", marca.AcentoPlaca},
+	} {
+		if c.tema[c.token] != c.quiere {
+			t.Errorf("%s = %q, la marca usa %q", c.token, c.tema[c.token], c.quiere)
+		}
+	}
+}
+
+// TestLogoDelPanelCoincideConLaMarca: sistema.js dibuja el isotipo y la variante de bandeja con la
+// geometría oficial de internal/marca.
+func TestLogoDelPanelCoincideConLaMarca(t *testing.T) {
+	js, err := fs.ReadFile(archivosWeb, "web/sistema.js")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range append(append([]marca.Figura{}, marca.Isotipo...), marca.Bandeja...) {
+		if !strings.Contains(string(js), "'"+f.D+"'") {
+			t.Errorf("sistema.js no dibuja %q", f.D)
+		}
+	}
+}
+
+// TestUtilidadesSoloAcomodan: las utilidades de composición (docs/ux/DESIGN_SYSTEM.md §5) solo
+// acomodan: dirección, hueco y rejilla. Nada de color, sombra, radio ni letra.
+func TestUtilidadesSoloAcomodan(t *testing.T) {
+	datos, err := fs.ReadFile(archivosWeb, "web/panel.css")
+	if err != nil {
+		t.Fatal(err)
+	}
+	css := string(datos)
+	permitidas := map[string]bool{"display": true, "flex-wrap": true, "flex-direction": true, "align-items": true,
+		"justify-content": true, "gap": true, "grid-template-columns": true}
+	for _, sel := range []string{".fila", ".fila-entre", ".pila", ".pila-amplia", ".lista", ".rejilla", ".rejilla.de-cuatro"} {
+		_, resto, ok := strings.Cut(css, "\n"+sel+" {")
+		if !ok {
+			t.Errorf("panel.css no tiene la utilidad %s", sel)
+			continue
+		}
+		cuerpo, _, _ := strings.Cut(resto, "}")
+		for _, decl := range strings.Split(cuerpo, ";") {
+			prop, _, ok := strings.Cut(strings.TrimSpace(decl), ":")
+			if ok && !permitidas[strings.TrimSpace(prop)] {
+				t.Errorf("la utilidad %s declara %q: las utilidades solo acomodan", sel, prop)
+			}
+		}
 	}
 }
