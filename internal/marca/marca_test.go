@@ -2,9 +2,12 @@ package marca
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/xml"
 	"flag"
 	"fmt"
+	"image/color"
+	"image/png"
 	"io"
 	"os"
 	"path/filepath"
@@ -42,11 +45,91 @@ func TestArchivosDeLaMarca(t *testing.T) {
 		if strings.HasSuffix(ruta, ".svg") {
 			// Git en Windows puede convertir los saltos de línea de los archivos de texto.
 			enDisco = bytes.ReplaceAll(enDisco, []byte("\r\n"), []byte("\n"))
+			if !bytes.Equal(enDisco, datos) {
+				t.Errorf("%s no coincide con la geometría de internal/marca: go test ./internal/marca -actualizar", ruta)
+			}
+			continue
 		}
-		if !bytes.Equal(enDisco, datos) {
-			t.Errorf("%s no coincide con la geometría de internal/marca: go test ./internal/marca -actualizar", ruta)
+		// Las imágenes se comparan por sus píxeles, no por sus bytes: el compresor de PNG cambia
+		// entre versiones de Go, y el redondeo de punto flotante, entre arquitecturas.
+		if err := mismasImagenes(enDisco, datos); err != nil {
+			t.Errorf("%s no coincide con la geometría de internal/marca (%v): go test ./internal/marca -actualizar", ruta, err)
 		}
 	}
+}
+
+// pngsDe devuelve los PNG de un archivo: él mismo, o los que lleva dentro un .ico o un .icns.
+func pngsDe(datos []byte) ([][]byte, error) {
+	switch {
+	case bytes.HasPrefix(datos, []byte("\x89PNG")):
+		return [][]byte{datos}, nil
+	case bytes.HasPrefix(datos, []byte("icns")):
+		var res [][]byte
+		for i := 8; i+8 <= len(datos); {
+			n := int(binary.BigEndian.Uint32(datos[i+4:]))
+			if n < 8 || i+n > len(datos) {
+				return nil, fmt.Errorf("entrada .icns inválida en %d", i)
+			}
+			res = append(res, datos[i+8:i+n])
+			i += n
+		}
+		return res, nil
+	case len(datos) > 6 && binary.LittleEndian.Uint16(datos[2:]) == 1:
+		var res [][]byte
+		for k := 0; k < int(binary.LittleEndian.Uint16(datos[4:])); k++ {
+			e := 6 + 16*k
+			n := int(binary.LittleEndian.Uint32(datos[e+8:]))
+			o := int(binary.LittleEndian.Uint32(datos[e+12:]))
+			if o+n > len(datos) {
+				return nil, fmt.Errorf("entrada .ico inválida %d", k)
+			}
+			res = append(res, datos[o:o+n])
+		}
+		return res, nil
+	}
+	return nil, fmt.Errorf("formato desconocido")
+}
+
+// mismasImagenes compara dos PNG, .ico o .icns imagen por imagen, en color premultiplicado y con una
+// tolerancia de 2/255 por canal.
+func mismasImagenes(a, b []byte) error {
+	pa, err := pngsDe(a)
+	if err != nil {
+		return err
+	}
+	pb, err := pngsDe(b)
+	if err != nil {
+		return err
+	}
+	if len(pa) != len(pb) {
+		return fmt.Errorf("%d imágenes, se esperaban %d", len(pa), len(pb))
+	}
+	for k := range pa {
+		ia, err := png.Decode(bytes.NewReader(pa[k]))
+		if err != nil {
+			return err
+		}
+		ib, err := png.Decode(bytes.NewReader(pb[k]))
+		if err != nil {
+			return err
+		}
+		if ia.Bounds() != ib.Bounds() {
+			return fmt.Errorf("imagen %d mide %v, se esperaba %v", k, ia.Bounds(), ib.Bounds())
+		}
+		r := ia.Bounds()
+		for y := r.Min.Y; y < r.Max.Y; y++ {
+			for x := r.Min.X; x < r.Max.X; x++ {
+				ca := color.RGBAModel.Convert(ia.At(x, y)).(color.RGBA)
+				cb := color.RGBAModel.Convert(ib.At(x, y)).(color.RGBA)
+				for _, d := range []int{int(ca.R) - int(cb.R), int(ca.G) - int(cb.G), int(ca.B) - int(cb.B), int(ca.A) - int(cb.A)} {
+					if d > 2 || d < -2 {
+						return fmt.Errorf("imagen %d, píxel (%d, %d): %v, se esperaba %v", k, x, y, ca, cb)
+					}
+				}
+			}
+		}
+	}
+	return nil
 }
 
 // TestSVGLimpios: los SVG de la marca solo tienen formas básicas, sin fuentes, estilos, scripts,
