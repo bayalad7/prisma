@@ -6,6 +6,16 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 
 ## [Sin publicar]
 
+### Cambiado
+
+- PRISMA estrena marca: el logo «Conversión» (un documento que cruza el puente y sale como ticket) y la paleta Magenta de proceso, con neutros sin tinte. La barra lateral del panel pasa a grafito, y el magenta queda solo para la acción principal, la selección y el foco. Todo cumple AA en claro y oscuro.
+
+### Agregado
+
+- El panel tiene favicon con el logo.
+- Los instaladores ponen el logo donde se busca el programa: el acceso «PRISMA» del menú Inicio en Windows, la entrada del menú de aplicaciones en Linux (`.deb`) y `PRISMA.app` en macOS (Spotlight y Launchpad). Los tres abren el panel.
+- [docs/ux/DESIGN_SYSTEM.md](docs/ux/DESIGN_SYSTEM.md): el sistema de diseño completo (marca, color, tipografía, tokens, utilidades y componentes).
+
 ## [0.3.4] — 2026-10-28
 
 ### Cambiado

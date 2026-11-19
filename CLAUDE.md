@@ -52,6 +52,8 @@ según el perfil de la impresora y lo imprime por USB, red (TCP 9100) o Bluetoot
 - CI y publicación compilan con el último parche de Go 1.26 (`go-version: '1.26.x'`, `check-latest`);
   go.mod declara solo el mínimo (1.26.0). nfpm v2.48.0 exige 1.26.4 para el .deb.
 - Licencia Apache-2.0 (LICENSE, NOTICE); el SDK también.
+- Marca (ADR 0022): logo «Conversión» y paleta Magenta de proceso. internal/marca es la única fuente
+  de la geometría y los colores; de ahí salen empaquetado/marca/ (SVG, PNG, .ico, .icns) y el favicon.
 - Cada decisión tiene su registro en docs/adr/; una decisión nueva lleva un ADR nuevo.
 
 ## Invariantes (verificadas; no las rompas)
@@ -75,6 +77,22 @@ según el perfil de la impresora y lo imprime por USB, red (TCP 9100) o Bluetoot
 - Permisos: base y llave del certificado 0600; datos solo para el usuario del servicio
   (en Windows, SYSTEM y Administradores).
 
+## Sistema de diseño (docs/ux/DESIGN_SYSTEM.md; ADR 0015 y 0022)
+- Logo «Conversión»: documento → puente en acento (PRISMA) → ticket. Isotipo de 24 px para arriba,
+  variante de bandeja de 20 px para abajo; logotipo «prisma» en minúsculas y dibujado. No rotarlo, no
+  separar sus piezas ni pintarlo con colores de estado.
+- Paleta Magenta de proceso: neutros puros, acento magenta (#be185d claro, #f472b6 oscuro), secundario
+  grafito (#1a1a1a). Reparto 60-30-10: neutros para el contenido, secundario para la estructura (la
+  barra lateral, la placa del icono) y acento solo para la acción. Los estados no cuentan.
+- Color por función, nunca por tono; un estado siempre con icono y texto; una sola acción primaria
+  por zona; solo tokens (nada de colores sueltos); AA: 4.5:1 en texto y 3:1 en bordes, foco e iconos.
+- Tres bloques de tokens en panel.css (claro, oscuro automático y oscuro manual, los dos oscuros
+  idénticos). La barra lateral redefine los tokens base con --secundario-*; no lleva reglas propias.
+- Tipografía del sistema (sin fuentes externas); escala --fs-*, espacio --e-*, radios --radio-*.
+- Utilidades: lista cerrada que solo acomoda (.fila, .fila-entre, .pila, .pila-amplia, .lista,
+  .rejilla); componentes en sistema.js (PrismaUI). Lo nuevo se agrega primero a DESIGN_SYSTEM.md.
+- Cambiar la marca: internal/marca + PrismaUI.logo, y `go test ./internal/marca -actualizar`.
+
 ## Convenciones
 - Código: nombres de dominio en español (impresora, cliente, documento, operacion, trabajo, conector, perfil);
   términos técnicos de Go en inglés.
@@ -97,8 +115,9 @@ según el perfil de la impresora y lo imprime por USB, red (TCP 9100) o Bluetoot
 - Panel de punta a punta: `cd e2e && npm ci && npx playwright install chromium && npm test` (flujos a–g,
   escritorio y celular, pantallas en claro y oscuro, teclado y usuario nuevo, con axe; compila y arranca
   sus propios puentes; lo corre el CI).
-- Archivos generados por pruebas: `go test ./internal/dev -actualizar` (golden) y
-  `go test ./internal/servicio -run Deb -actualizar` (unidad de systemd del .deb).
+- Archivos generados por pruebas: `go test ./internal/dev -actualizar` (golden),
+  `go test ./internal/servicio -run Deb -actualizar` (unidad de systemd del .deb) y
+  `go test ./internal/marca -actualizar` (logo, iconos de los instaladores y favicon).
 - Binarios y paquetes: `make build-todo | deb | pkg | checksums` / `.\build.ps1 build-todo | deb | instalador | checksums`.
 - Documentación fiel al código: `go test ./docs` compara las rutas de la API con
   docs/referencia/openapi.yaml, exige cada código de error en docs/referencia/codigos-de-error.md y
@@ -127,6 +146,7 @@ internal/servidor/      HTTPS, CORS, API pública /v1 (monta el panel /admin)
 internal/admin/         panel de administración (HTML/CSS/JS embebidos) y API interna /admin/api
 internal/servicio/      instalación como servicio (kardianos/service) y bitácora rotativa
 internal/actualizacion/ versiones nuevas: firma, checksums, reemplazo del binario y aviso del panel
+internal/marca/         geometría y colores del logo; genera SVG, PNG, .ico y .icns (Go puro)
 internal/dev/           herramientas: impresora virtual, decodificador, simulador, firmar
 internal/version/       versión, commit y fecha (-ldflags)
 sdk/js/                 SDK JavaScript público (@bayalad7/prisma; dist/ se versiona para el CDN)
@@ -140,5 +160,6 @@ docs/                   por lector: integradores/ instalacion/ administracion/ o
                         arquitectura/ adr/ diagramas/ referencia/ (API, OpenAPI, contrato, errores, CLI)
                         desarrollo/ (con pruebas/). Las rutas viejas citadas por 0.1.0 son páginas
                         cortas que redirigen: no las borres
-empaquetado/            Inno Setup, .deb (nfpm), .pkg, instalador de Raspberry Pi, llave pública de versiones
+empaquetado/            Inno Setup, .deb (nfpm), .pkg (con PRISMA.app), instalador de Raspberry Pi, marca/
+                        (logo generado) y llave pública de versiones
 .github/workflows/      CI (3 sistemas, -race, SDK, servicio real) y publicación de versiones

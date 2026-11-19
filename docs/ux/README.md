@@ -1,5 +1,7 @@
 # Experiencia del panel
 
+[DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) es el sistema de diseño vigente: la marca (logo «Conversión»), la paleta Magenta de proceso con su reparto 60-30-10, la tipografía, los tokens, las utilidades y los componentes.
+
 El trabajo de experiencia del panel de la versión 0.2.0:
 
 - [ANALISIS-PANEL-V1.md](ANALISIS-PANEL-V1.md): hallazgos sobre el panel de 0.1.0, flujos, accesibilidad, plan acordado y decisiones tomadas.

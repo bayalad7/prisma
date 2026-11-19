@@ -25,6 +25,7 @@ Cada archivo registra una decisión que ya está tomada en el código: el contex
 | 0019 | [Enlaces en los nodos de los diagramas, superpuestos a la imagen](0019-enlaces-en-los-nodos-de-los-diagramas.md) | 2026-10-23 |
 | 0020 | [El instalador confía en el certificado del puente, limitado a la red local](0020-confiar-en-el-certificado-del-puente-al-instalar.md) | 2026-10-25 |
 | 0021 | [Una autoridad local firma el certificado del servidor](0021-autoridad-local-y-certificado-del-servidor.md) | 2026-10-26 |
+| 0022 | [Logo «Conversión», paleta Magenta de proceso y reparto 60-30-10](0022-marca-conversion-y-paleta-magenta.md) | 2026-11-19 |
 
 ## Cómo agregar una decisión
 
