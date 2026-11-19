@@ -6,6 +6,8 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 
 ## [Sin publicar]
 
+## [0.4.0] — 2026-11-19
+
 ### Cambiado
 
 - PRISMA estrena marca: el logo «Conversión» (un documento que cruza el puente y sale como ticket) y la paleta Magenta de proceso, con neutros sin tinte. La barra lateral del panel pasa a grafito, y el magenta queda solo para la acción principal, la selección y el foco. Todo cumple AA en claro y oscuro.
@@ -150,7 +152,8 @@ Primera versión publicada.
 - Los trabajos que llegan por la API pasan directo de `encolado` a `completado` o `fallido`; el estado `imprimiendo` solo lo usa `prisma imprimir`.
 - La *Ayuda* del panel enlaza la documentación de la rama `develop`.
 
-[Sin publicar]: https://github.com/bayalad7/prisma/compare/v0.3.4...develop
+[Sin publicar]: https://github.com/bayalad7/prisma/compare/v0.4.0...develop
+[0.4.0]: https://github.com/bayalad7/prisma/releases/tag/v0.4.0
 [0.3.4]: https://github.com/bayalad7/prisma/releases/tag/v0.3.4
 [0.3.3]: https://github.com/bayalad7/prisma/releases/tag/v0.3.3
 [0.3.2]: https://github.com/bayalad7/prisma/releases/tag/v0.3.2
