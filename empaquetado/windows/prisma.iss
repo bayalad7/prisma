@@ -5,6 +5,8 @@
 ;
 ; Qué hace:
 ;   - copia prisma.exe a Archivos de programa\PRISMA y lo agrega al PATH del sistema;
+;   - con el icono de la marca (empaquetado\marca\prisma.ico, generado por internal/marca) crea el
+;     acceso «PRISMA» del menú Inicio, que abre el panel, y lo usa en el asistente y en «Aplicaciones»;
 ;   - crea C:\ProgramData\PRISMA con un config.toml de ejemplo (nunca sobrescribe el existente);
 ;   - «prisma servicio instalar»: carpetas de datos y bitácoras, regla del firewall para el puerto
 ;     del puente (solo subred local) y servicio de Windows con inicio automático y reinicio ante fallos;
@@ -44,7 +46,8 @@ OutputBaseFilename=PRISMA-{#Version}-windows-{#Arq}-setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
-UninstallDisplayIcon={app}\prisma.exe
+SetupIconFile=..\marca\prisma.ico
+UninstallDisplayIcon={app}\prisma.ico
 UninstallDisplayName=PRISMA - Puente de Impresión Térmica
 ChangesEnvironment=yes
 CloseApplications=no
@@ -63,6 +66,19 @@ es.FinishedLabel=PRISMA quedó instalado como servicio de Windows y arrancará s
 [Files]
 Source: "..\..\dist\prisma-windows-{#Arq}.exe"; DestDir: "{app}"; DestName: "prisma.exe"; Flags: ignoreversion
 Source: "..\config.toml"; DestDir: "{commonappdata}\PRISMA"; Flags: onlyifdoesntexist uninsneveruninstall
+Source: "..\marca\prisma.ico"; DestDir: "{app}"; Flags: ignoreversion
+
+; Acceso «PRISMA» en el menú Inicio: al buscar «PRISMA» aparece con el logo y abre el panel.
+[INI]
+Filename: "{app}\PRISMA.url"; Section: "InternetShortcut"; Key: "URL"; String: "https://localhost:8443/admin"
+Filename: "{app}\PRISMA.url"; Section: "InternetShortcut"; Key: "IconFile"; String: "{app}\prisma.ico"
+Filename: "{app}\PRISMA.url"; Section: "InternetShortcut"; Key: "IconIndex"; String: "0"
+
+[Icons]
+Name: "{autoprograms}\PRISMA"; Filename: "{app}\PRISMA.url"; IconFilename: "{app}\prisma.ico"; Comment: "Abre el panel de administración de PRISMA"
+
+[UninstallDelete]
+Type: files; Name: "{app}\PRISMA.url"
 
 [Run]
 Filename: "{app}\prisma.exe"; Parameters: "servicio instalar"; StatusMsg: "Instalando el servicio de Windows…"; Flags: runhidden waituntilterminated

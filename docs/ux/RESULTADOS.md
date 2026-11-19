@@ -1,6 +1,6 @@
 # Resultados del rediseño del panel (0.2.0)
 
-El antes y el después del trabajo que planteó el [análisis del panel](ANALISIS-PANEL-V1.md). «Antes» es la versión 0.1.0. «Después» es `develop` al cerrar la Fase 7. Las capturas están en [antes/](antes/) y [despues/](despues/), con los mismos números de pantalla cuando la pantalla existe en las dos.
+El antes y el después del trabajo que planteó el [análisis del panel](ANALISIS-PANEL-V1.md). «Antes» es la versión 0.1.0. «Después» es `develop` al cerrar la Fase 7. Las capturas de «antes» y «después», con los mismos números de pantalla cuando la pantalla existe en las dos, están en la etiqueta [v0.3.4](https://github.com/bayalad7/prisma/tree/v0.3.4/docs/ux) (ver [README.md](README.md)).
 
 ## Resumen
 

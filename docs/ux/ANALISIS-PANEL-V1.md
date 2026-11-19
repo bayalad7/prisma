@@ -4,8 +4,8 @@ Fase 1 del trabajo de experiencia del panel: cómo está hoy, qué estorba a cad
 
 - **Versión analizada:** rama `develop`, commit `8e10fda` (programa 0.1.0, API `/v1`, documento `"1"`).
 - **Fecha:** 22 de octubre de 2026.
-- **Capturas:** [antes/](antes/) (76 capturas en WebP de 40 pantallas o estados, en escritorio 1366×768 y celular 390×844, más los resultados de axe-core).
-- **Cómo repetirlo:** [antes/sembrar.sh](antes/sembrar.sh) prepara los datos y [antes/recorrido.mjs](antes/recorrido.mjs) recorre el panel con Playwright y axe-core. Las capturas se nombran `NN-pantalla-escritorio.webp` y `NN-pantalla-celular.webp` (el recorrido genera PNG y [antes/a-webp.mjs](antes/a-webp.mjs) los convierte).
+- **Capturas:** [antes/](https://github.com/bayalad7/prisma/tree/v0.3.4/docs/ux/antes) (76 capturas en WebP de 40 pantallas o estados, en escritorio 1366×768 y celular 390×844, más los resultados de axe-core).
+- **Cómo repetirlo:** [antes/sembrar.sh](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/sembrar.sh) prepara los datos y [antes/recorrido.mjs](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/recorrido.mjs) recorre el panel con Playwright y axe-core. Las capturas se nombran `NN-pantalla-escritorio.webp` y `NN-pantalla-celular.webp` (el recorrido genera PNG y [antes/a-webp.mjs](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/a-webp.mjs) los convierte).
 
 ## Resumen
 
@@ -58,7 +58,7 @@ Prioridades: **crítico** (impide la meta o incumple una restricción del proyec
 | Agregar impresora, paso 1 | 623 px |
 | Las demás secciones | 390 px |
 
-Capturas: [60-trabajos-celular](antes/60-trabajos-celular.webp), [25-asistente-paso1-celular](antes/25-asistente-paso1-celular.webp), [90-ayuda-celular](antes/90-ayuda-celular.webp).
+Capturas: [60-trabajos-celular](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/60-trabajos-celular.webp), [25-asistente-paso1-celular](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/25-asistente-paso1-celular.webp), [90-ayuda-celular](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/90-ayuda-celular.webp).
 
 - **Heurística:** N8. **WCAG:** 1.4.10 Reflujo (AA).
 - **Impacto:** la barra superior y el contenido quedan desalineados. En el asistente, Playwright no pudo pulsar «Continuar» porque otro elemento lo tapa. En un celular real, el instalador ve la pantalla «rota» justo en el alta de la impresora.
@@ -70,7 +70,7 @@ Capturas: [60-trabajos-celular](antes/60-trabajos-celular.webp), [25-asistente-p
 
 **C2. No hay camino guiado de «recién instalado» a «listo».**
 
-Capturas: [03-inicio-vacio-escritorio](antes/03-inicio-vacio-escritorio.webp), [05-aplicaciones-vacio-escritorio](antes/05-aplicaciones-vacio-escritorio.webp).
+Capturas: [03-inicio-vacio-escritorio](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/03-inicio-vacio-escritorio.webp), [05-aplicaciones-vacio-escritorio](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/05-aplicaciones-vacio-escritorio.webp).
 
 - **Heurística:** N1, N10.
 - **Impacto:** después de crear la contraseña aparece un aviso de 4 s («Contraseña guardada.») y un tablero con ceros. No dice qué es lo siguiente, ni cuántos pasos faltan, ni cuándo terminó. En Aplicaciones vacía no hay botón ni explicación de qué es una aplicación. La persona no técnica no sabe que debe agregar una impresora, probarla y luego autorizar su sistema.
@@ -90,7 +90,7 @@ Capturas: [03-inicio-vacio-escritorio](antes/03-inicio-vacio-escritorio.webp), [
 
 **C4. La Ayuda y la documentación dependen de Internet.**
 
-Captura: [90-ayuda-escritorio](antes/90-ayuda-escritorio.webp).
+Captura: [90-ayuda-escritorio](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/90-ayuda-escritorio.webp).
 
 - **Heurística:** N10. **Restricción del proyecto:** el panel debe funcionar sin conexión, incluido el manual.
 - **Impacto:** los 8 enlaces de Ayuda abren GitHub. En un negocio sin Internet, o con Internet pero sin saber leer un repositorio, no hay manual.
@@ -98,7 +98,7 @@ Captura: [90-ayuda-escritorio](antes/90-ayuda-escritorio.webp).
 
 **C5. Un trabajo fallido solo muestra su código.**
 
-Capturas: [61-trabajos-fallidos-escritorio](antes/61-trabajos-fallidos-escritorio.webp), [12-inicio-escritorio](antes/12-inicio-escritorio.webp).
+Capturas: [61-trabajos-fallidos-escritorio](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/61-trabajos-fallidos-escritorio.webp), [12-inicio-escritorio](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/12-inicio-escritorio.webp).
 
 - **Heurística:** N9, N2.
 - **Impacto:** el dueño ve `IMPRESORA_INALCANZABLE` en una pastilla amarilla. El trabajo guarda solo el código, no el mensaje, así que el panel no puede mostrar qué pasó ni qué hacer. Las filas no se pueden abrir.
@@ -114,7 +114,7 @@ Capturas: [61-trabajos-fallidos-escritorio](antes/61-trabajos-fallidos-escritori
 
 **A1. El foco no se ve en las opciones de tarjeta** (nivel de seguridad, página de códigos, modo de aprobación).
 
-Capturas: [42-aplicacion-nueva](antes/42-aplicacion-nueva-escritorio.webp), [23-paginas-codigos](antes/23-paginas-codigos-escritorio.webp).
+Capturas: [42-aplicacion-nueva](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/42-aplicacion-nueva-escritorio.webp), [23-paginas-codigos](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/23-paginas-codigos-escritorio.webp).
 
 - **WCAG:** 2.4.7 Foco visible (AA).
 - **Detalle:** `.opcion input { position: absolute; opacity: 0 }` esconde el radio y ninguna regla dibuja el foco en la tarjeta. Con el teclado, el foco «desaparece».
@@ -122,7 +122,7 @@ Capturas: [42-aplicacion-nueva](antes/42-aplicacion-nueva-escritorio.webp), [23-
 
 **A2. Los errores de formulario no quedan junto al campo.**
 
-Captura: [27-asistente-alias-vacio](antes/27-asistente-alias-vacio-escritorio.webp).
+Captura: [27-asistente-alias-vacio](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/27-asistente-alias-vacio-escritorio.webp).
 
 - **WCAG:** 3.3.1 Identificación de errores, 3.3.3 Sugerencias ante errores. **Heurística:** N9.
 - **Detalle:** los errores llegan como aviso flotante que desaparece a los 7 s, o como la burbuja nativa del navegador, en el idioma del navegador («Please fill out this field»).
@@ -130,7 +130,7 @@ Captura: [27-asistente-alias-vacio](antes/27-asistente-alias-vacio-escritorio.we
 
 **A3. El ejemplo del alias parece un valor ya escrito.**
 
-Captura: [26-asistente-paso2](antes/26-asistente-paso2-escritorio.webp).
+Captura: [26-asistente-paso2](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/26-asistente-paso2-escritorio.webp).
 
 - **Heurística:** N5.
 - **Detalle:** el campo Alias muestra «caja» en gris monoespaciado como `placeholder`. Parece lleno, la persona pulsa «Guardar» y recibe un error.
@@ -138,7 +138,7 @@ Captura: [26-asistente-paso2](antes/26-asistente-paso2-escritorio.webp).
 
 **A4. La vista previa del ticket se corta y no se parece al papel.**
 
-Captura: [22-diagnostico-celular](antes/22-diagnostico-celular.webp).
+Captura: [22-diagnostico-celular](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/22-diagnostico-celular.webp).
 
 - **Heurística:** N2.
 - **Detalle:** el diálogo de diagnóstico muestra el texto de la terminal (`dev.VistaTexto`) en una caja de 360 px. En 48 columnas se corta la derecha: falta el valor de «Alias» y la palabra «Derecha». El QR sale como bloques.
@@ -147,7 +147,7 @@ Captura: [22-diagnostico-celular](antes/22-diagnostico-celular.webp).
 
 **A5. La prueba de acentos exige entender «páginas de códigos».**
 
-Captura: [23-paginas-codigos](antes/23-paginas-codigos-escritorio.webp).
+Captura: [23-paginas-codigos](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/23-paginas-codigos-escritorio.webp).
 
 - **Heurística:** N2, N6.
 - **Detalle:** el diálogo muestra las 4 líneas como las dibuja el simulador, que decodifica bien las cuatro: la vista previa casi no ayuda, porque el problema real está en la tabla de la impresora. Las opciones se llaman «ESC t 16 · WPC1252 (Windows)».
@@ -160,7 +160,7 @@ Captura: [23-paginas-codigos](antes/23-paginas-codigos-escritorio.webp).
 
 **A6. El paso «3. Probar y guardar» del asistente no existe.**
 
-Capturas: [25-asistente-paso1](antes/25-asistente-paso1-escritorio.webp), [26-asistente-paso2](antes/26-asistente-paso2-escritorio.webp), [28-asistente-probado](antes/28-asistente-probado-escritorio.webp).
+Capturas: [25-asistente-paso1](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/25-asistente-paso1-escritorio.webp), [26-asistente-paso2](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/26-asistente-paso2-escritorio.webp), [28-asistente-probado](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/28-asistente-probado-escritorio.webp).
 
 - **Heurística:** N1, N4.
 - **Detalle:**
@@ -174,7 +174,7 @@ Capturas: [25-asistente-paso1](antes/25-asistente-paso1-escritorio.webp), [26-as
 
 **A7. El código de integración está desactualizado y elige una impresora al azar.**
 
-Capturas: [44-llave-nueva](antes/44-llave-nueva-escritorio.webp), [41-codigo-integracion](antes/41-codigo-integracion-escritorio.webp).
+Capturas: [44-llave-nueva](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/44-llave-nueva-escritorio.webp), [41-codigo-integracion](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/41-codigo-integracion-escritorio.webp).
 
 - **Heurística:** N2, N5.
 - **Detalle:**
@@ -211,18 +211,18 @@ Capturas: [44-llave-nueva](antes/44-llave-nueva-escritorio.webp), [41-codigo-int
 
 | # | Hallazgo | Captura | Heurística | Propuesta |
 |---|---|---|---|---|
-| M1 | Los textos técnicos aparecen sin explicación (ver [revisión de textos](#revisión-de-textos)). | [26](antes/26-asistente-paso2-escritorio.webp), [29](antes/29-asistente-avanzado-escritorio.webp), [42](antes/42-aplicacion-nueva-escritorio.webp) | N2 | Palabras simples con el término técnico entre paréntesis o en «Opciones avanzadas», más un glosario en el manual. |
-| M2 | Nada se actualiza solo: el estado de las impresoras, la cola y el contador de solicitudes cambian en el puente, pero el panel no lo muestra hasta navegar. | [12](antes/12-inicio-escritorio.webp) | N1 | Refrescar el resumen cada 15 s mientras la pestaña está visible (`visibilitychange`), con la hora de la última actualización. Usa `GET /admin/api/resumen`, que ya existe. |
-| M3 | «Hoy: 11 impresos, 5 con error» cuenta las pruebas del panel (diagnósticos y páginas), así que asusta al dueño con errores de prueba. | [12](antes/12-inicio-escritorio.webp) | N2 | Contar aparte los trabajos del panel (`cli_panel`), o excluirlos del «Hoy» y marcarlos «Prueba» en el historial. |
-| M4 | Ajustes es una página larga con 7 formularios y 7 botones «Guardar», y mezcla lo cotidiano con lo peligroso (regenerar certificado, restaurar). En celular, la contraseña queda al fondo. | [80](antes/80-ajustes-celular.webp) | N8, N4 | Subsecciones: General, Seguridad y acceso, HTTPS y certificado, Respaldo; las acciones peligrosas en un bloque «Cuidado». |
-| M5 | Aprobar un origen no da contexto: no dice si es una IP de la red local o un sitio de Internet, ni si usa `http` sin cifrar. El nivel se elige en un `select` sin explicación. | [51](antes/51-aprobar-origen-celular.webp) | N2, N5 | Etiquetas «Equipo de tu red» o «Sitio de Internet» y «Sin cifrar (http)»; nivel 2 recomendado, con una línea de explicación; después de aprobar, «Entrega esta llave a quien programa la aplicación», con copiar y descargar. |
-| M6 | El nombre del puente se repite: la barra muestra «PRISMA / PRISMA» y la versión aparece dos veces. | [12](antes/12-inicio-escritorio.webp) | N8 | Si el nombre es el predeterminado, mostrar «Puente de impresión» e invitar a ponerle nombre; la versión solo en la barra. |
+| M1 | Los textos técnicos aparecen sin explicación (ver [revisión de textos](#revisión-de-textos)). | [26](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/26-asistente-paso2-escritorio.webp), [29](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/29-asistente-avanzado-escritorio.webp), [42](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/42-aplicacion-nueva-escritorio.webp) | N2 | Palabras simples con el término técnico entre paréntesis o en «Opciones avanzadas», más un glosario en el manual. |
+| M2 | Nada se actualiza solo: el estado de las impresoras, la cola y el contador de solicitudes cambian en el puente, pero el panel no lo muestra hasta navegar. | [12](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/12-inicio-escritorio.webp) | N1 | Refrescar el resumen cada 15 s mientras la pestaña está visible (`visibilitychange`), con la hora de la última actualización. Usa `GET /admin/api/resumen`, que ya existe. |
+| M3 | «Hoy: 11 impresos, 5 con error» cuenta las pruebas del panel (diagnósticos y páginas), así que asusta al dueño con errores de prueba. | [12](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/12-inicio-escritorio.webp) | N2 | Contar aparte los trabajos del panel (`cli_panel`), o excluirlos del «Hoy» y marcarlos «Prueba» en el historial. |
+| M4 | Ajustes es una página larga con 7 formularios y 7 botones «Guardar», y mezcla lo cotidiano con lo peligroso (regenerar certificado, restaurar). En celular, la contraseña queda al fondo. | [80](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/80-ajustes-celular.webp) | N8, N4 | Subsecciones: General, Seguridad y acceso, HTTPS y certificado, Respaldo; las acciones peligrosas en un bloque «Cuidado». |
+| M5 | Aprobar un origen no da contexto: no dice si es una IP de la red local o un sitio de Internet, ni si usa `http` sin cifrar. El nivel se elige en un `select` sin explicación. | [51](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/51-aprobar-origen-celular.webp) | N2, N5 | Etiquetas «Equipo de tu red» o «Sitio de Internet» y «Sin cifrar (http)»; nivel 2 recomendado, con una línea de explicación; después de aprobar, «Entrega esta llave a quien programa la aplicación», con copiar y descargar. |
+| M6 | El nombre del puente se repite: la barra muestra «PRISMA / PRISMA» y la versión aparece dos veces. | [12](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/12-inicio-escritorio.webp) | N8 | Si el nombre es el predeterminado, mostrar «Puente de impresión» e invitar a ponerle nombre; la versión solo en la barra. |
 | M7 | Las impresoras desactivadas aparecen en Inicio con el estado crudo «inactiva», sin traducir ni color: `aJSON` devuelve `inactiva` y `ESTADOS_IMPRESORA` no lo tiene. | — (código: `panel.js`, `impresoras.go`) | N4 | Agregar «Desactivada» a los estados y a la leyenda. |
-| M8 | En la tarjeta de impresora, los 5 botones pesan igual y el error repite el código: «IMPRESORA_INALCANZABLE: La impresora…». | [20](antes/20-impresoras-escritorio.webp), [21](antes/21-impresora-probar-error-escritorio.webp) | N8, N9 | Acción principal según el estado («Imprimir prueba» si está en línea, «Probar conexión» si no); el resto en «Más»; mensaje y sugerencia primero y el código al final, pequeño. |
+| M8 | En la tarjeta de impresora, los 5 botones pesan igual y el error repite el código: «IMPRESORA_INALCANZABLE: La impresora…». | [20](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/20-impresoras-escritorio.webp), [21](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/21-impresora-probar-error-escritorio.webp) | N8, N9 | Acción principal según el estado («Imprimir prueba» si está en línea, «Probar conexión» si no); el resto en «Más»; mensaje y sugerencia primero y el código al final, pequeño. |
 | M9 | La sesión vence a los 30 min sin aviso y lleva al inicio de sesión, con lo que se pierde lo que se estaba escribiendo. | — (`sesiones.go`) | N3 | Avisar 2 min antes con «Seguir conectado» (una petición a `/admin/api/sesion`) sin cambiar los plazos. |
-| M10 | Los avisos flotantes con información importante desaparecen solos (4–7 s). | [03](antes/03-inicio-vacio-escritorio.webp) | N1 | Las confirmaciones importantes se quedan en la página como nota cerrable; los avisos flotantes solo para lo trivial. |
-| M11 | «Activa (las aplicaciones pueden usarla)» está dentro de «Capacidades», y la tarjeta no tiene botón «Desactivar», aunque [administracion/README.md](../administracion/README.md) dice que se puede desactivar. | [26](antes/26-asistente-paso2-escritorio.webp) | N4 | Mover «Activa» a «Identificación» y agregar «Desactivar / Activar» en la tarjeta. Así coinciden documentación y panel. |
-| M12 | «Confirmar impresión» explica con jerga (DLE EOT, `TIEMPO_AGOTADO`) en un párrafo largo. | [26](antes/26-asistente-paso2-escritorio.webp) | N2 | Una línea simple («Preguntar a la impresora si recibió cada ticket; recomendado si tu impresora lo admite») y un enlace a la ayuda con el diagrama [25](../diagramas/25-confirmar-impresion.md). Mejor aún: que el paso 3 del asistente lo pruebe solo y lo active si la impresora responde. |
+| M10 | Los avisos flotantes con información importante desaparecen solos (4–7 s). | [03](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/03-inicio-vacio-escritorio.webp) | N1 | Las confirmaciones importantes se quedan en la página como nota cerrable; los avisos flotantes solo para lo trivial. |
+| M11 | «Activa (las aplicaciones pueden usarla)» está dentro de «Capacidades», y la tarjeta no tiene botón «Desactivar», aunque [administracion/README.md](../administracion/README.md) dice que se puede desactivar. | [26](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/26-asistente-paso2-escritorio.webp) | N4 | Mover «Activa» a «Identificación» y agregar «Desactivar / Activar» en la tarjeta. Así coinciden documentación y panel. |
+| M12 | «Confirmar impresión» explica con jerga (DLE EOT, `TIEMPO_AGOTADO`) en un párrafo largo. | [26](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/26-asistente-paso2-escritorio.webp) | N2 | Una línea simple («Preguntar a la impresora si recibió cada ticket; recomendado si tu impresora lo admite») y un enlace a la ayuda con el diagrama [25](../diagramas/25-confirmar-impresion.md). Mejor aún: que el paso 3 del asistente lo pruebe solo y lo active si la impresora responde. |
 
 ### Bajos
 
@@ -267,7 +267,7 @@ Se cuentan los clics, toques y campos desde que la persona decide hacerlo, sin c
 
 ## Accesibilidad (WCAG 2.1 AA)
 
-**axe-core** (reglas WCAG 2.0/2.1 A y AA, 24 pantallas): una sola regla incumplida, `scrollable-region-focusable` (seria), en 5 pantallas (bloques `pre` del diagnóstico y de la llave, y la tabla del Inicio en celular). El contraste de color pasa en modo claro. Resultados completos: [antes/axe-antes.json](antes/axe-antes.json).
+**axe-core** (reglas WCAG 2.0/2.1 A y AA, 24 pantallas): una sola regla incumplida, `scrollable-region-focusable` (seria), en 5 pantallas (bloques `pre` del diagnóstico y de la llave, y la tabla del Inicio en celular). El contraste de color pasa en modo claro. Resultados completos: [antes/axe-antes.json](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/axe-antes.json).
 
 axe no detecta lo que depende del comportamiento. La revisión manual encontró:
 
@@ -279,7 +279,7 @@ axe no detecta lo que depende del comportamiento. La revisión manual encontró:
 | 2.1.1 Teclado | **Parcial** | `pre` desplazables sin foco; pestañas sin flechas (A9). |
 | 2.4.1 Evitar bloques | Parcial | Sin «Saltar al contenido» (B1). |
 | 2.4.3 Orden del foco | Cumple | Orden lógico; los diálogos usan `showModal()`, que atrapa el foco y lo devuelve al cerrar. |
-| 2.4.7 Foco visible | **No cumple** | Tarjetas de opción (A1). En el resto, el contorno es claro (captura [13-foco-teclado](antes/13-foco-teclado-escritorio.webp)). |
+| 2.4.7 Foco visible | **No cumple** | Tarjetas de opción (A1). En el resto, el contorno es claro (captura [13-foco-teclado](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/13-foco-teclado-escritorio.webp)). |
 | 2.2.1 Tiempo ajustable | Parcial | Avisos que desaparecen (M10); la sesión vence sin aviso (M9). |
 | 3.3.1 / 3.3.3 Errores | **No cumple** | A2. |
 | 3.1.1 Idioma | Cumple | `lang="es"`; se propone `es-MX`. |
@@ -325,8 +325,8 @@ axe no detecta lo que depende del comportamiento. La revisión manual encontró:
 **Estados vacíos:**
 
 - Impresoras vacía tiene botón (bien);
-- Aplicaciones vacía no tiene explicación ni botón ([05](antes/05-aplicaciones-vacio-escritorio.webp));
-- Solicitudes vacía no explica cómo llegan ([06](antes/06-solicitudes-vacio-escritorio.webp));
+- Aplicaciones vacía no tiene explicación ni botón ([05](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/05-aplicaciones-vacio-escritorio.webp));
+- Solicitudes vacía no explica cómo llegan ([06](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/06-solicitudes-vacio-escritorio.webp));
 - Inicio vacío no guía (C2);
 - Trabajos vacía usa el mismo texto genérico que el Inicio (B7).
 
@@ -599,7 +599,7 @@ Respuestas del 22 de octubre de 2026:
 2. **Tickets de impresoras virtuales en memoria: sí,** como excepción acotada a la invariante de no guardar tickets. Solo impresoras virtuales; los últimos N por impresora (20 por defecto); nunca en la base, la bitácora ni el paquete de soporte; se borran al reiniciar; botón «Vaciar rollo» y aviso en pantalla. Pruebas automatizadas lo verifican.
 3. **Manual: renderizador propio en `panel.js`.** Convierte el Markdown en nodos DOM con `textContent` (nunca `innerHTML`), así que no hay HTML que sanitizar ni dependencias nuevas. **Se aparta del texto de la Fase 4**, que pedía HTML generado en el servidor: lo confirmaste explícitamente. El índice de búsqueda sí se genera en el build. Lleva un ADR.
 4. **Diagramas: SVG versionados**, para que `go build` funcione sin Node. En la Fase 5 se probará primero quitar el `<style>` interno del SVG (estilos como atributos de presentación); si no se ve bien en Chromium, Firefox y Safari, los SVG estáticos tendrán una CSP mínima propia. La página del panel conserva su CSP.
-5. **Capturas en WebP:** las 76 capturas pasaron de 7.7 MB en PNG a 4.8 MB en WebP (calidad 0.85). `recorrido.mjs` sigue generando PNG y [antes/a-webp.mjs](antes/a-webp.mjs) los convierte.
+5. **Capturas en WebP:** las 76 capturas pasaron de 7.7 MB en PNG a 4.8 MB en WebP (calidad 0.85). `recorrido.mjs` sigue generando PNG y [antes/a-webp.mjs](https://github.com/bayalad7/prisma/blob/v0.3.4/docs/ux/antes/a-webp.mjs) los convierte.
 6. **Nombres en el panel: «Aplicaciones» e «Imágenes»,** no «Clientes» y «Recursos» como decía la Fase 3. El manual y el glosario explican que en la API y la CLI se llaman clientes y recursos. «Trabajos» conserva su nombre (no «Historial»).
 
 **Cambios a mis propuestas por el plan:**

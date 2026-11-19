@@ -2,6 +2,7 @@
 
 - **Estado:** aceptada, en desarrollo para PRISMA 0.2.0
 - **Fecha:** 2026-10-22
+- **Complementada por:** [0022](0022-marca-conversion-y-paleta-magenta.md) (logo, paleta y reparto 60-30-10)
 
 ## Contexto
 
