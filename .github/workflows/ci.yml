@@ -69,7 +69,9 @@ jobs:
 
   e2e:
     name: Panel de punta a punta (Playwright)
-    runs-on: ubuntu-latest
+    # Fijo en 24.04: ubuntu-latest pasó a 26.04 y Playwright 1.56.1 no tiene Chromium para ella.
+    # Al subir Playwright a una versión que la admita, vuelve a ubuntu-latest.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
