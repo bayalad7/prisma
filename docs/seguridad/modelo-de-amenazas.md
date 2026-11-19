@@ -97,7 +97,7 @@ El **administrador del equipo** del puente está fuera del modelo: controla el s
 
 | Amenaza | Mitigación |
 |---|---|
-| Un SDK alterado en el CDN | El SDK se sirve desde una etiqueta fija del repositorio (`@v0.1.0`), no desde una rama. |
+| Un SDK alterado en el CDN | El SDK se sirve desde una etiqueta fija del repositorio (`@v0.4.0`), no desde una rama. |
 | Dependencias comprometidas | Pocas dependencias directas, versiones fijadas en `go.mod`/`go.sum`; el SDK no tiene dependencias. |
 | Secretos del CI | La llave de las versiones solo está en el secreto `PRISMA_LLAVE_RELEASES`; el workflow verifica la firma contra la llave pública antes de publicar. |
 

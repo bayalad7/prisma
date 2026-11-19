@@ -6,6 +6,10 @@ Hay tres versiones independientes: la del **programa** (este registro), la de la
 
 ## [Sin publicar]
 
+### Cambiado
+
+- El código para integrar del panel, las guías y los ejemplos cargan el SDK desde `@v0.4.0` (es el mismo archivo que `@v0.2.0`). Las versiones anteriores a 0.4.0 y sus etiquetas se quitaron de GitHub; los enlaces a ellas apuntan ahora al commit de cada versión.
+
 ## [0.4.0] — 2026-11-19
 
 ### Cambiado
@@ -154,10 +158,10 @@ Primera versión publicada.
 
 [Sin publicar]: https://github.com/bayalad7/prisma/compare/v0.4.0...develop
 [0.4.0]: https://github.com/bayalad7/prisma/releases/tag/v0.4.0
-[0.3.4]: https://github.com/bayalad7/prisma/releases/tag/v0.3.4
-[0.3.3]: https://github.com/bayalad7/prisma/releases/tag/v0.3.3
-[0.3.2]: https://github.com/bayalad7/prisma/releases/tag/v0.3.2
-[0.3.1]: https://github.com/bayalad7/prisma/releases/tag/v0.3.1
-[0.3.0]: https://github.com/bayalad7/prisma/releases/tag/v0.3.0
-[0.2.0]: https://github.com/bayalad7/prisma/releases/tag/v0.2.0
-[0.1.0]: https://github.com/bayalad7/prisma/releases/tag/v0.1.0
+[0.3.4]: https://github.com/bayalad7/prisma/tree/f4d29ac1d85b79906182bfa12a53bce07f5a766d
+[0.3.3]: https://github.com/bayalad7/prisma/tree/f9af563b90de8a6ded23e299b94f9007d7643700
+[0.3.2]: https://github.com/bayalad7/prisma/tree/1c71737c6267516e74aa990ef0567e45fd7a29dd
+[0.3.1]: https://github.com/bayalad7/prisma/tree/e7c28017bfa6a76c1c58d2c53af032d9d5d461fa
+[0.3.0]: https://github.com/bayalad7/prisma/tree/db28da213e9d6b6fc5d162496cc1dfaa856c5bcc
+[0.2.0]: https://github.com/bayalad7/prisma/tree/2d79ff11b884ed604fb386b415c17cb904daf7f8
+[0.1.0]: https://github.com/bayalad7/prisma/tree/c6def407ac724896a85ece984799255e704865e5
