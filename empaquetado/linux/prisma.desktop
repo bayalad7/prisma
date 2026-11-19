@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=PRISMA
+GenericName=Puente de impresión
+Comment=Abre el panel de administración de PRISMA en el navegador
+Exec=xdg-open https://localhost:8443/admin
+Icon=prisma
+Terminal=false
+Categories=Settings;Printing;
+Keywords=impresora;ticket;puente;printer;

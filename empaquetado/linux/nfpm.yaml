@@ -26,6 +26,57 @@ contents:
     file_info:
       mode: 0644
 
+  # Logo de la marca (internal/marca) y la entrada «PRISMA» del menú de aplicaciones, que abre el panel.
+  - src: empaquetado/linux/prisma.desktop
+    dst: /usr/share/applications/prisma.desktop
+    file_info:
+      mode: 0644
+
+  - src: empaquetado/marca/prisma-icono.svg
+    dst: /usr/share/icons/hicolor/scalable/apps/prisma.svg
+    file_info:
+      mode: 0644
+
+  - src: empaquetado/marca/png/prisma-16.png
+    dst: /usr/share/icons/hicolor/16x16/apps/prisma.png
+    file_info:
+      mode: 0644
+
+  - src: empaquetado/marca/png/prisma-24.png
+    dst: /usr/share/icons/hicolor/24x24/apps/prisma.png
+    file_info:
+      mode: 0644
+
+  - src: empaquetado/marca/png/prisma-32.png
+    dst: /usr/share/icons/hicolor/32x32/apps/prisma.png
+    file_info:
+      mode: 0644
+
+  - src: empaquetado/marca/png/prisma-48.png
+    dst: /usr/share/icons/hicolor/48x48/apps/prisma.png
+    file_info:
+      mode: 0644
+
+  - src: empaquetado/marca/png/prisma-64.png
+    dst: /usr/share/icons/hicolor/64x64/apps/prisma.png
+    file_info:
+      mode: 0644
+
+  - src: empaquetado/marca/png/prisma-128.png
+    dst: /usr/share/icons/hicolor/128x128/apps/prisma.png
+    file_info:
+      mode: 0644
+
+  - src: empaquetado/marca/png/prisma-256.png
+    dst: /usr/share/icons/hicolor/256x256/apps/prisma.png
+    file_info:
+      mode: 0644
+
+  - src: empaquetado/marca/png/prisma-512.png
+    dst: /usr/share/icons/hicolor/512x512/apps/prisma.png
+    file_info:
+      mode: 0644
+
   # La configuración del administrador nunca se sobrescribe al actualizar.
   - src: empaquetado/config.toml
     dst: /etc/prisma/config.toml

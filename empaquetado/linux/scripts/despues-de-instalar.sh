@@ -4,6 +4,11 @@ set -e
 
 install -d -o prisma -g prisma -m 0750 /var/lib/prisma /var/log/prisma
 
+# El icono de la entrada «PRISMA» del menú de aplicaciones (solo en equipos con escritorio).
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+	gtk-update-icon-cache -q -t /usr/share/icons/hicolor || true
+fi
+
 if [ -d /run/systemd/system ]; then
 	systemctl daemon-reload
 	systemctl enable prisma.service >/dev/null 2>&1

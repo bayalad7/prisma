@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"flag"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -98,3 +99,32 @@ func TestIconosDibujanElLogo(t *testing.T) {
 	}
 }
 
+// TestLosInstaladoresUsanLaMarca: los tres instaladores ponen el logo de la marca donde se busca
+// el programa (menú Inicio, menú de aplicaciones de Linux, Spotlight y Launchpad).
+func TestLosInstaladoresUsanLaMarca(t *testing.T) {
+	leer := func(ruta string) string {
+		datos, err := os.ReadFile(filepath.Join(raiz, filepath.FromSlash(ruta)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(datos)
+	}
+	exigir := func(ruta string, partes ...string) {
+		texto := leer(ruta)
+		for _, p := range partes {
+			if !strings.Contains(texto, p) {
+				t.Errorf("%s no contiene %q", ruta, p)
+			}
+		}
+	}
+	exigir("empaquetado/windows/prisma.iss", `SetupIconFile=..\marca\prisma.ico`, `Source: "..\marca\prisma.ico"`,
+		`Name: "{autoprograms}\PRISMA"`, `IconFilename: "{app}\prisma.ico"`)
+	deb := []string{"src: empaquetado/linux/prisma.desktop", "src: empaquetado/marca/prisma-icono.svg"}
+	for _, n := range TamanosLinux {
+		deb = append(deb, fmt.Sprintf("src: empaquetado/marca/png/prisma-%d.png\n    dst: /usr/share/icons/hicolor/%dx%d/apps/prisma.png", n, n, n))
+	}
+	exigir("empaquetado/linux/nfpm.yaml", deb...)
+	exigir("empaquetado/linux/prisma.desktop", "Icon=prisma", "Name=PRISMA")
+	exigir("empaquetado/macos/construir-pkg.sh", "empaquetado/marca/prisma.icns", "Applications/PRISMA.app")
+	exigir("empaquetado/macos/PRISMA.app/Contents/Info.plist", "<string>prisma</string>", "<string>abrir-panel</string>")
+}
