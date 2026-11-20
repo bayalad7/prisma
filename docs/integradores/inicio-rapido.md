@@ -19,7 +19,7 @@ Guarda esto como `index.html` en una carpeta vacía:
 <!doctype html>
 <meta charset="utf-8">
 <button id="imprimir">Imprimir</button>
-<script src="https://cdn.jsdelivr.net/gh/bayalad7/prisma@v0.2.0/sdk/js/dist/prisma.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/bayalad7/prisma@v0.4.0/sdk/js/dist/prisma.umd.js"></script>
 <script>
   const prisma = new Prisma({ url: "https://192.168.1.10:8443", llave: "pk_..." });
   document.getElementById("imprimir").onclick = () => prisma
@@ -31,7 +31,7 @@ Guarda esto como `index.html` en una carpeta vacía:
 
 Cambia `192.168.1.10` por la IP del puente y `"caja"` por el alias de tu impresora: es el que aparece en el panel, en *Impresoras* (también lo lista `await prisma.impresoras()` una vez que tengas la llave). Por ahora deja `pk_...` tal cual: la llave real llega en el paso 3.
 
-> La dirección fija la versión del SDK (`@v0.2.0`), así que tu página no cambia sin aviso. Para actualizar, cambia el número por el de una versión más nueva. Todas las formas de instalarlo están en [sdk.md](sdk.md#instalación).
+> La dirección fija la versión del SDK (`@v0.4.0`), así que tu página no cambia sin aviso. Para actualizar, cambia el número por el de una versión más nueva. Todas las formas de instalarlo están en [sdk.md](sdk.md#instalación).
 
 ## 2. Sírvela
 
